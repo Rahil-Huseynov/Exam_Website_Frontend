@@ -1,3 +1,7 @@
+"use client"
+
+import { toast } from "react-toastify"
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
 // ================== TYPES ==================
@@ -70,6 +74,7 @@ export type ImportDirectPayload = {
     correctAnswerText?: string
   }>
 }
+
 export type AdminQuestion = {
   id: string
   text: string
@@ -129,8 +134,121 @@ class ApiClient {
     this.token = null
   }
 
-  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  // ------------------ helpers (locale) ------------------
+  private getLocale(): "az" | "en" | "ru" {
+    if (typeof window === "undefined") return "en"
+
+    const ls =
+      window.localStorage.getItem("locale") ||
+      window.localStorage.getItem("lang") ||
+      window.localStorage.getItem("NEXT_LOCALE")
+    if (ls === "az" || ls === "en" || ls === "ru") return ls
+
+    const cookie = document.cookie || ""
+    const pick = (key: string) => {
+      const m = cookie.match(new RegExp(`(?:^|; )${key}=([^;]*)`))
+      return m ? decodeURIComponent(m[1]) : ""
+    }
+    const ck = pick("locale") || pick("lang") || pick("NEXT_LOCALE")
+    if (ck === "az" || ck === "en" || ck === "ru") return ck
+
+    return "en"
+  }
+
+  private pickLang(az: string, en: string, ru: string) {
+    const l = this.getLocale()
+    return l === "az" ? az : l === "ru" ? ru : en
+  }
+
+  private pickFrom3Lang(serverMsg: string) {
+    const msg = String(serverMsg || "").trim()
+    if (!msg) return ""
+
+    const s = msg.replace(/\r/g, "")
+    const hasMarkers = /AZ:\s*/i.test(s) && /EN:\s*/i.test(s) && /RU:\s*/i.test(s)
+    if (!hasMarkers) return msg
+
+    const extract = (tag: "AZ" | "EN" | "RU") => {
+      const re = new RegExp(`${tag}:\\s*([\\s\\S]*?)(?=\\n(?:AZ|EN|RU):\\s*|$)`, "i")
+      const m = s.match(re)
+      return (m?.[1] || "").trim()
+    }
+
+    const az = extract("AZ")
+    const en = extract("EN")
+    const ru = extract("RU")
+
+    return this.pickLang(az || msg, en || msg, ru || msg)
+  }
+
+  private getDefaultErrMsg(status: number, serverMsg?: string) {
+    if (serverMsg && String(serverMsg).trim()) {
+      return this.pickFrom3Lang(String(serverMsg).trim())
+    }
+
+    if (status === 0) {
+      return this.pickLang(
+        "Şəbəkə xətası. İnterneti yoxlayın.",
+        "Network error. Check your internet connection.",
+        "Ошибка сети. Проверьте интернет-соединение.",
+      )
+    }
+
+    if (status === 400) {
+      return this.pickLang("Göndərilən məlumat düzgün deyil.", "Invalid request data.", "Неверные данные запроса.")
+    }
+
+    if (status === 401) {
+      return this.pickLang(
+        "Sessiya bitib. Yenidən daxil olun.",
+        "Session expired. Please log in again.",
+        "Сессия истекла. Войдите снова.",
+      )
+    }
+
+    if (status === 403) {
+      return this.pickLang(
+        "Bu əməliyyat üçün icazəniz yoxdur.",
+        "You don’t have permission for this action.",
+        "У вас нет прав на это действие.",
+      )
+    }
+
+    if (status === 404) {
+      return this.pickLang("Resurs tapılmadı.", "Resource not found.", "Ресурс не найден.")
+    }
+
+    if (status >= 500) {
+      return this.pickLang(
+        "Server xətası. Bir az sonra yenidən yoxlayın.",
+        "Server error. Please try again later.",
+        "Ошибка сервера. Попробуйте позже.",
+      )
+    }
+
+    return this.pickLang("Xəta baş verdi.", "Something went wrong.", "Произошла ошибка.")
+  }
+
+  private toastRequestError(message: string, toastId: string) {
+    toast.error(message, { toastId })
+  }
+
+  private async request<T>(
+    endpoint: string,
+    options: (RequestInit & { skipToast?: boolean }) = {},
+  ): Promise<T> {
     if (!API_URL) {
+      const msg = this.pickLang(
+        "NEXT_PUBLIC_API_URL tapılmadı. .env-də set et.",
+        "NEXT_PUBLIC_API_URL is missing. Set it in .env.",
+        "NEXT_PUBLIC_API_URL не найден. Укажите в .env.",
+      )
+
+      if (typeof window !== "undefined" && !options.skipToast) {
+        const toastId = `reqerr:apiurl:${Date.now()}:${Math.random().toString(16).slice(2)}`
+        this.toastRequestError(msg, toastId)
+      }
+
       throw new Error("NEXT_PUBLIC_API_URL tapılmadı. .env-də set et.")
     }
 
@@ -139,32 +257,62 @@ class ApiClient {
     }
 
     const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData
-    if (!isFormData) {
-      headers["Content-Type"] = headers["Content-Type"] ?? "application/json"
-    }
+    if (!isFormData) headers["Content-Type"] = headers["Content-Type"] ?? "application/json"
 
-    if (process.env.NEXT_PUBLIC_API_KEY) {
-      headers["x-api-key"] = process.env.NEXT_PUBLIC_API_KEY
-    }
+    if (process.env.NEXT_PUBLIC_API_KEY) headers["x-api-key"] = process.env.NEXT_PUBLIC_API_KEY
+    if (this.token) headers["Authorization"] = `Bearer ${this.token}`
 
-    if (this.token) {
-      headers["Authorization"] = `Bearer ${this.token}`
-    }
+    const toastId = `reqerr:${endpoint}:${Date.now()}:${Math.random().toString(16).slice(2)}`
 
-    const res = await fetch(`${API_URL}${endpoint}`, {
-      ...options,
-      headers,
-      credentials: "include",
-    })
+    let res: Response
+    try {
+      res = await fetch(`${API_URL}${endpoint}`, {
+        ...options,
+        headers,
+        credentials: "include",
+      })
+    } catch {
+      const message = this.getDefaultErrMsg(0)
+      if (typeof window !== "undefined" && !options.skipToast) {
+        this.toastRequestError(message, toastId)
+      }
+      throw new Error("Network error")
+    }
 
     if (!res.ok) {
       const contentType = res.headers.get("content-type") || ""
-      const err =
-        contentType.includes("application/json")
-          ? await res.json().catch(() => ({ message: "Request failed" }))
-          : { message: await res.text().catch(() => "Request failed") }
+      let serverMsg = ""
 
-      throw new Error(`${err.message || "Request failed"} (Status: ${res.status})`)
+      try {
+        if (contentType.includes("application/json")) {
+          const j: any = await res.json()
+          serverMsg = j?.message || j?.error || ""
+        } else {
+          serverMsg = await res.text()
+        }
+      } catch {
+        serverMsg = ""
+      }
+
+      const message = this.getDefaultErrMsg(res.status, serverMsg)
+
+      const publicNoAuthEndpoints = [
+        "/",
+        "/faq",
+        "/contact-us",
+      ]
+
+      const suppress401OnAuth =
+        res.status === 401 &&
+        (
+          endpoint.startsWith("/auth/") ||
+          publicNoAuthEndpoints.some((p) => endpoint === p)
+        )
+      const shouldToast = typeof window !== "undefined" && !options.skipToast && !suppress401OnAuth
+
+      if (shouldToast) this.toastRequestError(message, toastId)
+
+      throw new Error(`${message} (Status: ${res.status})`)
     }
 
     const text = await res.text()
@@ -185,7 +333,7 @@ class ApiClient {
   }
 
   async register(email: string, password: string, firstName: string, lastName?: string) {
-    return this.request("/auth/user/signup", {
+    return this.request<{ success: boolean; email?: string; error?: string }>("/auth/user/signup", {
       method: "POST",
       body: JSON.stringify({ email, password, firstName, lastName }),
     })
@@ -193,6 +341,21 @@ class ApiClient {
 
   async getProfile() {
     return this.request<User>("/auth/me")
+  }
+
+  // ================== EMAIL VERIFY ==================
+  async verifyEmail(email: string, code: string) {
+    return this.request<{ success: boolean; error?: string }>("/auth/user/verify-email", {
+      method: "POST",
+      body: JSON.stringify({ email, code }),
+    })
+  }
+
+  async resendVerificationCode(email: string) {
+    return this.request<{ success: boolean; error?: string }>("/auth/user/resend-verification", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    })
   }
 
   // ================== UNIVERSITIES ==================
@@ -207,6 +370,22 @@ class ApiClient {
     })
   }
 
+  async updateUniversity(
+    universityId: string,
+    data: { name?: string; nameAz?: string; nameEn?: string; nameRu?: string; logo?: string | null },
+  ) {
+    return this.request<University>(`/questions/university/${encodeURIComponent(universityId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteUniversity(universityId: string) {
+    return this.request<DeleteOkResponse>(`/questions/university/${encodeURIComponent(universityId)}`, {
+      method: "DELETE",
+    })
+  }
+
   // ================== SUBJECTS ==================
   async getSubjects() {
     return this.request<Subject[]>("/questions/subjects")
@@ -216,6 +395,22 @@ class ApiClient {
     return this.request<Subject>("/questions/subject", {
       method: "POST",
       body: JSON.stringify({ name, nameAz, nameEn, nameRu }),
+    })
+  }
+
+  async updateSubject(
+    subjectId: string,
+    data: { name?: string; nameAz?: string; nameEn?: string; nameRu?: string },
+  ) {
+    return this.request<Subject>(`/questions/subject/${encodeURIComponent(subjectId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteSubject(subjectId: string) {
+    return this.request<DeleteOkResponse>(`/questions/subject/${encodeURIComponent(subjectId)}`, {
+      method: "DELETE",
     })
   }
 
@@ -285,7 +480,7 @@ class ApiClient {
     })
   }
 
-  // ================== ATTEMPTS (səndə varsa saxla) ==================
+  // ================== ATTEMPTS ==================
   async createAttempt(bankId: string, userId: number) {
     return this.request<CreateAttemptResponse>(`/banks/${encodeURIComponent(bankId)}/attempts`, {
       method: "POST",
@@ -317,39 +512,6 @@ class ApiClient {
   async getAttemptAnswers(attemptId: string) {
     return this.request<{ answers: any[] }>(`/attempts/${encodeURIComponent(attemptId)}/answers`)
   }
-
-  async updateSubject(
-    subjectId: string,
-    data: { name?: string; nameAz?: string; nameEn?: string; nameRu?: string },
-  ) {
-    return this.request<Subject>(`/questions/subject/${encodeURIComponent(subjectId)}`, {
-      method: "PATCH",
-      body: JSON.stringify(data),
-    })
-  }
-
-  async deleteSubject(subjectId: string) {
-    return this.request<DeleteOkResponse>(`/questions/subject/${encodeURIComponent(subjectId)}`, {
-      method: "DELETE",
-    })
-  }
-  
-  async updateUniversity(
-    universityId: string,
-    data: { name?: string; nameAz?: string; nameEn?: string; nameRu?: string; logo?: string | null },
-  ) {
-    return this.request<University>(`/questions/university/${encodeURIComponent(universityId)}`, {
-      method: "PATCH",
-      body: JSON.stringify(data),
-    })
-  }
-
-  async deleteUniversity(universityId: string) {
-    return this.request<DeleteOkResponse>(`/questions/university/${encodeURIComponent(universityId)}`, {
-      method: "DELETE",
-    })
-  }
-
 }
 
 export const api = new ApiClient()

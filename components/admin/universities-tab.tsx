@@ -8,8 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Plus, Trash2, Edit2, X, Check } from "lucide-react"
+import { toastConfirm, toastError, toastSuccess } from "@/lib/toast"
 
 export function UniversitiesTab() {
   const { locale } = useLocale()
@@ -17,13 +17,10 @@ export function UniversitiesTab() {
 
   const [universities, setUniversities] = useState<University[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState("")
-  const [success, setSuccess] = useState("")
 
   const [newUniversity, setNewUniversity] = useState({ az: "", en: "", ru: "" })
   const [adding, setAdding] = useState(false)
 
-  // edit state
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editUniversity, setEditUniversity] = useState({ az: "", en: "", ru: "" })
   const [saving, setSaving] = useState(false)
@@ -33,51 +30,46 @@ export function UniversitiesTab() {
     loadUniversities()
   }, [])
 
+  function msgAllLang() {
+    return locale === "az"
+      ? "Bütün dillərdə ad daxil edin"
+      : locale === "ru"
+        ? "Введите название на всех языках"
+        : "Enter name in all languages"
+  }
+
   async function loadUniversities() {
     try {
       setLoading(true)
       const data = await api.getUniversities()
       setUniversities(data)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load universities")
+      toastError(err instanceof Error ? err.message : "Failed to load universities")
     } finally {
       setLoading(false)
     }
   }
 
-  function showOk(msg: string) {
-    setSuccess(msg)
-    setTimeout(() => setSuccess(""), 3000)
-  }
-
   async function handleAdd() {
     if (!newUniversity.az || !newUniversity.en || !newUniversity.ru) {
-      setError(
-        locale === "az"
-          ? "Bütün dillərdə ad daxil edin"
-          : locale === "ru"
-            ? "Введите название на всех языках"
-            : "Enter name in all languages",
-      )
+      toastError(msgAllLang())
       return
     }
 
     try {
       setAdding(true)
-      setError("")
       await api.createUniversity(newUniversity.az, newUniversity.az, newUniversity.en, newUniversity.ru)
-      showOk(t("success"))
+      toastSuccess(t("success"))
       setNewUniversity({ az: "", en: "", ru: "" })
       await loadUniversities()
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("failed"))
+      toastError(err instanceof Error ? err.message : t("failed"))
     } finally {
       setAdding(false)
     }
   }
 
   function startEdit(uni: University) {
-    setError("")
     setEditingId(uni.id)
     setEditUniversity({
       az: uni.nameAz || "",
@@ -93,63 +85,48 @@ export function UniversitiesTab() {
 
   async function saveEdit(universityId: string) {
     if (!editUniversity.az || !editUniversity.en || !editUniversity.ru) {
-      setError(
-        locale === "az"
-          ? "Bütün dillərdə ad daxil edin"
-          : locale === "ru"
-            ? "Введите название на всех языках"
-            : "Enter name in all languages",
-      )
+      toastError(msgAllLang())
       return
     }
 
     try {
       setSaving(true)
-      setError("")
       await api.updateUniversity(universityId, {
-        name: editUniversity.az, // əsas name kimi AZ-ni götürürük (səndə create-də də belədir)
+        name: editUniversity.az,
         nameAz: editUniversity.az,
         nameEn: editUniversity.en,
         nameRu: editUniversity.ru,
       })
-      showOk(t("success"))
+      toastSuccess(t("success"))
       cancelEdit()
       await loadUniversities()
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("failed"))
+      toastError(err instanceof Error ? err.message : t("failed"))
     } finally {
       setSaving(false)
     }
   }
 
-  async function handleDelete(universityId: string) {
-    try {
-      setDeletingId(universityId)
-      setError("")
-      await api.deleteUniversity(universityId)
-      showOk(t("success"))
-      await loadUniversities()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("failed"))
-    } finally {
-      setDeletingId(null)
-    }
+  function handleDelete(universityId: string) {
+    toastConfirm(
+      locale === "az" ? "Universitet silinsin?" : locale === "ru" ? "Удалить университет?" : "Delete university?",
+      async () => {
+        try {
+          setDeletingId(universityId)
+          await api.deleteUniversity(universityId)
+          toastSuccess(t("success"))
+          await loadUniversities()
+        } catch (err) {
+          toastError(err instanceof Error ? err.message : t("failed"))
+        } finally {
+          setDeletingId(null)
+        }
+      },
+    )
   }
 
   return (
     <div className="space-y-6">
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      {success && (
-        <Alert className="border-green-500">
-          <AlertDescription className="text-green-700">{success}</AlertDescription>
-        </Alert>
-      )}
-
       {/* ADD */}
       <Card>
         <CardHeader>
@@ -268,12 +245,7 @@ export function UniversitiesTab() {
                       <div className="flex items-center gap-2">
                         {!isEditing ? (
                           <>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => startEdit(uni)}
-                              title="Edit"
-                            >
+                            <Button variant="ghost" size="icon" onClick={() => startEdit(uni)} title="Edit">
                               <Edit2 className="h-4 w-4" />
                             </Button>
 
@@ -290,23 +262,11 @@ export function UniversitiesTab() {
                           </>
                         ) : (
                           <>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => saveEdit(uni.id)}
-                              disabled={saving}
-                              title="Save"
-                            >
+                            <Button variant="ghost" size="icon" onClick={() => saveEdit(uni.id)} disabled={saving} title="Save">
                               <Check className="h-4 w-4" />
                             </Button>
 
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={cancelEdit}
-                              disabled={saving}
-                              title="Cancel"
-                            >
+                            <Button variant="ghost" size="icon" onClick={cancelEdit} disabled={saving} title="Cancel">
                               <X className="h-4 w-4" />
                             </Button>
                           </>

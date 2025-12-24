@@ -8,8 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Plus, Trash2, Edit3, Save, X } from "lucide-react"
+import { toastError, toastSuccess, toastConfirm } from "@/lib/toast"
 
 export function SubjectsTab() {
   const { locale } = useLocale()
@@ -17,9 +17,6 @@ export function SubjectsTab() {
 
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [loading, setLoading] = useState(true)
-
-  const [error, setError] = useState("")
-  const [success, setSuccess] = useState("")
 
   const [newSubject, setNewSubject] = useState({ az: "", en: "", ru: "" })
   const [adding, setAdding] = useState(false)
@@ -30,56 +27,48 @@ export function SubjectsTab() {
 
   useEffect(() => {
     loadSubjects()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  function msgAllLang() {
+    return locale === "az"
+      ? "Bütün dillərdə ad daxil edin"
+      : locale === "ru"
+        ? "Введите название на всех языках"
+        : "Enter name in all languages"
+  }
 
   async function loadSubjects() {
     try {
       setLoading(true)
-      setError("")
       const data = await api.getSubjects()
       setSubjects(data)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load subjects")
+      toastError(err instanceof Error ? err.message : "Failed to load subjects")
     } finally {
       setLoading(false)
     }
   }
 
-  function localMsg(allLang: string) {
-    if (locale === "az") return "Bütün dillərdə ad daxil edin"
-    if (locale === "ru") return "Введите название на всех языках"
-    return "Enter name in all languages"
-  }
-
   async function handleAdd() {
     if (!newSubject.az || !newSubject.en || !newSubject.ru) {
-      setError(localMsg("all"))
+      toastError(msgAllLang())
       return
     }
 
     try {
       setAdding(true)
-      setError("")
-      setSuccess("")
-
-      // name kimi AZ göndəririk
       await api.createSubject(newSubject.az, newSubject.az, newSubject.en, newSubject.ru)
-
-      setSuccess(t("success"))
+      toastSuccess(t("success"))
       setNewSubject({ az: "", en: "", ru: "" })
       await loadSubjects()
-      setTimeout(() => setSuccess(""), 3000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("failed"))
+      toastError(err instanceof Error ? err.message : t("failed"))
     } finally {
       setAdding(false)
     }
   }
 
   function startEdit(subj: Subject) {
-    setError("")
-    setSuccess("")
     setEditingId(subj.id)
     setEditForm({
       az: subj.nameAz || "",
@@ -95,69 +84,49 @@ export function SubjectsTab() {
 
   async function handleSaveEdit(subjectId: string) {
     if (!editForm.az || !editForm.en || !editForm.ru) {
-      setError(localMsg("all"))
+      toastError(msgAllLang())
       return
     }
 
     try {
       setSaving(true)
-      setError("")
-      setSuccess("")
-
       await api.updateSubject(subjectId, {
         name: editForm.az,
         nameAz: editForm.az,
         nameEn: editForm.en,
         nameRu: editForm.ru,
       })
-
-      setSuccess(t("success"))
+      toastSuccess(t("success"))
       cancelEdit()
       await loadSubjects()
-      setTimeout(() => setSuccess(""), 3000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("failed"))
+      toastError(err instanceof Error ? err.message : t("failed"))
     } finally {
       setSaving(false)
     }
   }
 
-  async function handleDeleteSubject(subjectId: string) {
-    const ok = window.confirm(
+  function handleDeleteSubject(subjectId: string) {
+    toastConfirm(
       locale === "az"
-        ? "Bu fənni silmək istədiyinizə əminsiniz?"
+        ? "Bu fənn silinsin?"
         : locale === "ru"
-          ? "Вы уверены, что хотите удалить предмет?"
-          : "Are you sure you want to delete this subject?",
+          ? "Удалить предмет?"
+          : "Delete subject?",
+      async () => {
+        try {
+          await api.deleteSubject(subjectId)
+          toastSuccess(t("success"))
+          await loadSubjects()
+        } catch (err) {
+          toastError(err instanceof Error ? err.message : t("failed"))
+        }
+      },
     )
-    if (!ok) return
-
-    try {
-      setError("")
-      setSuccess("")
-      await api.deleteSubject(subjectId)
-      setSuccess(t("success"))
-      await loadSubjects()
-      setTimeout(() => setSuccess(""), 3000)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("failed"))
-    }
   }
 
   return (
     <div className="space-y-6">
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      {success && (
-        <Alert className="border-green-500">
-          <AlertDescription className="text-green-700">{success}</AlertDescription>
-        </Alert>
-      )}
-
       {/* ADD */}
       <Card>
         <CardHeader>
@@ -226,7 +195,7 @@ export function SubjectsTab() {
         <CardContent>
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
             </div>
           ) : subjects.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">{t("noData")}</p>
@@ -300,7 +269,13 @@ export function SubjectsTab() {
 
                           <Button onClick={() => handleSaveEdit(subj.id)} disabled={saving}>
                             <Save className="h-4 w-4 mr-2" />
-                            {saving ? t("processing") : locale === "az" ? "Yadda saxla" : locale === "ru" ? "Сохранить" : "Save"}
+                            {saving
+                              ? t("processing")
+                              : locale === "az"
+                                ? "Yadda saxla"
+                                : locale === "ru"
+                                  ? "Сохранить"
+                                  : "Save"}
                           </Button>
                         </div>
                       </>

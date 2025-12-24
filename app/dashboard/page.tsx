@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useRef } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
@@ -11,10 +11,10 @@ import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { BookOpen, TrendingUp, Wallet, FileText, ArrowRight } from "lucide-react"
+import { toastError } from "@/lib/toast"
 
-type Attempt = any 
+type Attempt = any
 
 function getDisplayName(user: any) {
   if (!user) return "User"
@@ -30,11 +30,11 @@ export default function DashboardPage() {
 
   const [attempts, setAttempts] = useState<Attempt[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState("")
+
+  const lastErrorRef = useRef<string>("")
 
   const loadData = useCallback(async () => {
     try {
-      setError("")
       setLoading(true)
 
       const profile = user ?? (await refreshUser())
@@ -43,10 +43,17 @@ export default function DashboardPage() {
         return
       }
 
-      const data = await api.getUserAttempts(profile.id) 
+      const data = await api.getUserAttempts(profile.id)
       setAttempts(Array.isArray(data.attempts) ? data.attempts : [])
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load data")
+
+      lastErrorRef.current = ""
+    } catch (err: any) {
+      const msg = err instanceof Error ? err.message : "Failed to load data"
+
+      if (lastErrorRef.current !== msg) {
+        lastErrorRef.current = msg
+        toastError(msg)
+      }
     } finally {
       setLoading(false)
     }
@@ -90,7 +97,10 @@ export default function DashboardPage() {
   const completedAttempts = attempts.filter((a) => a?.completedAt)
   const averageScore =
     completedAttempts.length > 0
-      ? completedAttempts.reduce((sum, a) => sum + ((a.score || 0) / (a.totalQuestions || 1)) * 100, 0) / completedAttempts.length
+      ? completedAttempts.reduce(
+          (sum, a) => sum + ((a.score || 0) / (a.totalQuestions || 1)) * 100,
+          0,
+        ) / completedAttempts.length
       : 0
 
   return (
@@ -107,11 +117,7 @@ export default function DashboardPage() {
             </h1>
           </div>
 
-          {error && (
-            <Alert variant="destructive" className="rounded-2xl">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
+          {/* ❌ Alert YOX — error yalnız toast ilə */}
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             <Card className="border-2 rounded-3xl">

@@ -1,90 +1,103 @@
 "use client"
 
 import type React from "react"
-
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { verifyEmailAction, resendVerificationAction } from "@/app/actions/auth"
 import { useLocale } from "@/contexts/locale-context"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { CheckCircle2, XCircle, Sparkles } from "lucide-react"
+import { Sparkles } from "lucide-react"
 import { api } from "@/lib/api"
+import { toast } from "react-toastify"
+import { PublicNavbar } from "@/components/public-navbar"
 
 export default function VerifyPage() {
   const [code, setCode] = useState("")
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
-  const [message, setMessage] = useState("")
   const [resending, setResending] = useState(false)
+
   const searchParams = useSearchParams()
   const router = useRouter()
   const { locale } = useLocale()
   const email = searchParams.get("email")
 
+  const lastToastRef = useRef<string>("")
+
+  const pickLang = (az: string, en: string, ru: string) => (locale === "az" ? az : locale === "ru" ? ru : en)
+
+  function toastOnce(type: "success" | "error" | "info", msg: string) {
+    if (!msg) return
+    if (lastToastRef.current === msg) return
+    lastToastRef.current = msg
+
+    const opts = { toastId: msg }
+
+    if (type === "success") toast.success(msg, opts)
+    else if (type === "info") toast.info(msg, opts)
+    else toast.error(msg, opts)
+  }
+
   useEffect(() => {
-    if (!email) {
-      router.push("/register")
-    }
+    if (!email) router.push("/register")
   }, [email, router])
 
   async function handleVerify(e: React.FormEvent) {
     e.preventDefault()
     if (!email) return
 
+    if (code.trim().length !== 6) {
+      toastOnce("error", pickLang("6 rəqəmli kodu daxil edin", "Enter the 6-digit code", "Введите 6-значный код"))
+      return
+    }
+
     setStatus("loading")
-    setMessage("")
 
     try {
-      const result = await api.verifyEmail(email, code)
-      if (result.success) {
+      const result = await api.verifyEmail(email, code.trim())
+
+      if (result?.success) {
         setStatus("success")
-        setMessage(
-          locale === "az"
-            ? "E-poçtunuz uğurla doğrulandı!"
-            : locale === "ru"
-              ? "Ваша электронная почта успешно подтверждена!"
-              : "Your email has been verified successfully!",
+
+        toastOnce(
+          "success",
+          pickLang(
+            "E-poçtunuz uğurla doğrulandı!",
+            "Your email has been verified successfully!",
+            "Ваша электронная почта успешно подтверждена!",
+          ),
         )
-        setTimeout(() => {
-          router.push("/dashboard")
-        }, 2000)
+
+        setTimeout(() => router.push("/dashboard"), 1200)
       } else {
         setStatus("error")
-        setMessage(result.error || "Verification failed")
+        const msg =
+          result?.error ||
+          pickLang("Doğrulama uğursuz oldu", "Verification failed", "Не удалось подтвердить")
+        toastOnce("error", msg)
       }
-    } catch (error) {
+    } catch {
       setStatus("error")
-      setMessage(
-        error instanceof Error
-          ? error.message
-          : locale === "az"
-            ? "Doğrulama uğursuz oldu"
-            : locale === "ru"
-              ? "Не удалось подтвердить"
-              : "Verification failed",
-      )
     }
   }
 
   async function handleResend() {
     if (!email) return
-
     setResending(true)
-    setMessage("")
 
     try {
       const result = await api.resendVerificationCode(email)
-      if (result.success) {
-        setMessage(locale === "az" ? "Yeni kod göndərildi" : locale === "ru" ? "Новый код отправлен" : "New code sent")
+
+      if (result?.success) {
+        toastOnce("success", pickLang("Yeni kod göndərildi", "New code sent", "Новый код отправлен"))
       } else {
-        setMessage(result.error || "Failed to resend")
+        const msg =
+          result?.error || pickLang("Yenidən göndərmək alınmadı", "Failed to resend", "Не удалось отправить снова")
+        toastOnce("error", msg)
       }
-    } catch (error) {
-      setMessage("Failed to resend verification code")
+    } catch {
     } finally {
       setResending(false)
     }
@@ -93,7 +106,10 @@ export default function VerifyPage() {
   if (!email) return null
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
+    <div className="relative min-h-screen overflow-hidden">
+      <div className="absolute top-0 left-0 right-0 z-50">
+        <PublicNavbar />
+      </div>
       <div className="absolute inset-0 bg-gradient-to-br from-violet-50 via-blue-50 to-cyan-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950" />
       <div className="absolute inset-0 bg-grid-slate-200 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] dark:bg-grid-slate-700/25" />
       <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-violet-400/20 to-blue-400/20 rounded-full blur-3xl" />
@@ -121,26 +137,9 @@ export default function VerifyPage() {
                 {locale === "ru" && `Введите 6-значный код, отправленный на ${email}`}
               </CardDescription>
             </CardHeader>
+
             <form onSubmit={handleVerify}>
               <CardContent className="space-y-4">
-                {status === "success" && (
-                  <Alert className="border-green-200 bg-green-50 dark:bg-green-950/20">
-                    <CheckCircle2 className="h-5 w-5 text-green-600" />
-                    <AlertDescription className="text-green-700 dark:text-green-400">{message}</AlertDescription>
-                  </Alert>
-                )}
-                {status === "error" && (
-                  <Alert variant="destructive">
-                    <XCircle className="h-4 w-4" />
-                    <AlertDescription>{message}</AlertDescription>
-                  </Alert>
-                )}
-                {message && status === "idle" && (
-                  <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950/20">
-                    <AlertDescription className="text-blue-700 dark:text-blue-400">{message}</AlertDescription>
-                  </Alert>
-                )}
-
                 <div className="space-y-2">
                   <Label htmlFor="code">
                     {locale === "az" && "Doğrulama Kodu"}
@@ -160,10 +159,11 @@ export default function VerifyPage() {
                   />
                 </div>
               </CardContent>
+
               <CardFooter className="flex flex-col gap-3">
                 <Button
                   type="submit"
-                  className="w-full h-11 bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-700 hover:to-blue-700"
+                  className="w-full mt-2 h-11 bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-700 hover:to-blue-700"
                   disabled={status === "loading" || status === "success"}
                 >
                   {status === "loading"
@@ -178,6 +178,7 @@ export default function VerifyPage() {
                         ? "Подтвердить"
                         : "Verify"}
                 </Button>
+
                 <Button
                   type="button"
                   variant="outline"

@@ -11,14 +11,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { api } from "@/lib/api"
 import { PublicNavbar } from "@/components/public-navbar"
+import { toast } from "react-toastify"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
   const { refreshUser } = useAuth()
@@ -26,26 +25,46 @@ export default function LoginPage() {
   const { t } = useTranslation(locale)
   const router = useRouter()
 
+  const pick = (az: string, en: string, ru: string) => (locale === "az" ? az : locale === "ru" ? ru : en)
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setError("")
+
+    const em = email.trim()
+    const pw = password
+
+    if (!em) {
+      toast.error(pick("Email daxil edin", "Enter email", "Введите email"), { toastId: `login:email:${Date.now()}` })
+      return
+    }
+
+    if (!pw) {
+      toast.error(pick("Şifrə daxil edin", "Enter password", "Введите пароль"), {
+        toastId: `login:pw:${Date.now()}`,
+      })
+      return
+    }
+
     setLoading(true)
 
     try {
-      const result = await api.login(email, password)
+      const result = await api.login(em, pw)
 
       const token = (result as any).accessToken || (result as any).access_token
       if (token) api.setToken(token)
 
       const user = await refreshUser()
 
+      toast.success(pick("Uğurla daxil oldunuz", "Logged in successfully", "Вы успешно вошли"), {
+        toastId: `login:ok:${Date.now()}`,
+      })
+
       if (user && (user.role === "admin" || user.role === "superadmin")) {
         router.replace("/admin")
       } else {
         router.replace("/dashboard")
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed")
+    } catch (err: any) {
     } finally {
       setLoading(false)
     }
@@ -76,11 +95,7 @@ export default function LoginPage() {
 
             <form onSubmit={handleSubmit}>
               <CardContent className="space-y-4">
-                {error && (
-                  <Alert variant="destructive">
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
+                {/* ❌ Alert YOX — error yalnız toast ilə */}
 
                 <div className="space-y-2">
                   <Label htmlFor="email">{t("email")}</Label>
@@ -123,13 +138,7 @@ export default function LoginPage() {
                   className="w-full h-11 bg-gradient-to-r mt-2 from-violet-600 to-blue-600 hover:from-violet-700 hover:to-blue-700"
                   disabled={loading}
                 >
-                  {loading
-                    ? locale === "az"
-                      ? "Gözləyin..."
-                      : locale === "ru"
-                        ? "Подождите..."
-                        : "Loading..."
-                    : t("login")}
+                  {loading ? pick("Gözləyin...", "Loading...", "Подождите...") : t("login")}
                 </Button>
 
                 <p className="text-sm text-muted-foreground text-center">

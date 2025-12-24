@@ -1,5 +1,6 @@
 "use server"
 
+import { refresh } from "next/cache"
 import { cookies } from "next/headers"
 
 export async function setAuthCookie(token: string) {
@@ -21,4 +22,5 @@ export async function getAuthCookie() {
 export async function removeAuthCookie() {
   const cookieStore = await cookies()
   cookieStore.delete("accessToken")
+  refresh()
 }

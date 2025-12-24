@@ -11,7 +11,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { FileText, CheckCircle2, Eye, Trash2, Pencil, Plus } from "lucide-react"
 
@@ -24,9 +23,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
+import { toastConfirm, toastError, toastSuccess } from "@/lib/toast"
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
-type DraftSelectionMap = Record<string, string> 
+type DraftSelectionMap = Record<string, string>
+
 function normText(s: string) {
   return (s || "").trim().replace(/\s+/g, " ")
 }
@@ -40,8 +42,6 @@ export function ExamsTab() {
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [loading, setLoading] = useState(true)
 
-  const [error, setError] = useState("")
-  const [success, setSuccess] = useState("")
   const [busy, setBusy] = useState(false)
 
   const [examForm, setExamForm] = useState({
@@ -58,10 +58,12 @@ export function ExamsTab() {
   const [draft, setDraft] = useState<DraftQuestion[]>([])
   const [selectedCorrect, setSelectedCorrect] = useState<DraftSelectionMap>({})
   const [draftModalOpen, setDraftModalOpen] = useState(false)
+
   const [manageModalOpen, setManageModalOpen] = useState(false)
   const [manageBankId, setManageBankId] = useState<string>("")
   const [bankQuestions, setBankQuestions] = useState<AdminQuestion[]>([])
   const [qBusy, setQBusy] = useState(false)
+
   const [addModalOpen, setAddModalOpen] = useState(false)
   const [newQText, setNewQText] = useState("")
   const [newOptions, setNewOptions] = useState<string[]>(["", "", "", ""])
@@ -83,7 +85,7 @@ export function ExamsTab() {
       setUniversities(universitiesData)
       setSubjects(subjectsData)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load data")
+      toastError(err instanceof Error ? err.message : "Failed to load data")
     } finally {
       setLoading(false)
     }
@@ -129,14 +131,12 @@ export function ExamsTab() {
 
   async function handleCreateExam() {
     if (!canCreateExam) {
-      setError(locale === "az" ? "Bütün xanaları doldurun" : locale === "ru" ? "Заполните все поля" : "Fill all fields")
+      toastError(locale === "az" ? "Bütün xanaları doldurun" : locale === "ru" ? "Заполните все поля" : "Fill all fields")
       return
     }
 
     try {
       setBusy(true)
-      setError("")
-      setSuccess("")
 
       const created = await api.createExam({
         title: examForm.title,
@@ -155,11 +155,10 @@ export function ExamsTab() {
         price: "5.00",
       })
 
-      setSuccess(locale === "az" ? "İmtahan yaradıldı" : locale === "ru" ? "Экзамен создан" : "Exam created")
+      toastSuccess(locale === "az" ? "İmtahan yaradıldı" : locale === "ru" ? "Экзамен создан" : "Exam created")
       await loadData()
-      setTimeout(() => setSuccess(""), 2500)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed")
+      toastError(err instanceof Error ? err.message : "Failed")
     } finally {
       setBusy(false)
     }
@@ -167,23 +166,16 @@ export function ExamsTab() {
 
   async function handleReadPdfFront() {
     if (!canReadPdfFront) {
-      setError(locale === "az" ? "Exam seç və PDF seç" : locale === "ru" ? "Выберите экзамен и PDF" : "Select exam and PDF")
+      toastError(locale === "az" ? "Exam seç və PDF seç" : locale === "ru" ? "Выберите экзамен и PDF" : "Select exam and PDF")
       return
     }
 
     try {
       setBusy(true)
-      setError("")
-      setSuccess("")
       resetDraftState()
 
-      console.log("PDF start:", file!.name, file!.type, file!.size)
-
       const text = await readPdfText(file!)
-      console.log("PDF text length:", text.length)
-
       const parsed = parseQuestionsFromText(text)
-      console.log("Parsed questions:", parsed.length)
 
       if (!parsed.length) {
         throw new Error(locale === "az" ? "PDF-dən sual tapılmadı (format parser-ə uyğun deyil)" : "No questions found")
@@ -192,9 +184,9 @@ export function ExamsTab() {
       setDraft(parsed)
       setSelectedCorrect({})
       setDraftModalOpen(true)
+      toastSuccess(locale === "az" ? "PDF oxundu, draft hazırdır" : locale === "ru" ? "PDF прочитан" : "PDF parsed")
     } catch (err: any) {
-      console.error("PDF error:", err)
-      setError(err?.message || "PDF read failed")
+      toastError(err?.message || "PDF read failed")
     } finally {
       setBusy(false)
     }
@@ -202,14 +194,12 @@ export function ExamsTab() {
 
   async function handleCommit() {
     if (!canCommit) {
-      setError(locale === "az" ? "Ən az 1 sual üçün doğru variant seç" : locale === "ru" ? "Выберите хотя бы 1 ответ" : "Select at least 1")
+      toastError(locale === "az" ? "Ən az 1 sual üçün doğru variant seç" : locale === "ru" ? "Выберите хотя бы 1 ответ" : "Select at least 1")
       return
     }
 
     try {
       setBusy(true)
-      setError("")
-      setSuccess("")
 
       const payload = {
         questions: draft
@@ -229,14 +219,13 @@ export function ExamsTab() {
 
       await api.importQuestionsDirect(selectedExamId, payload)
 
-      setSuccess(locale === "az" ? "Seçilən suallar DB-yə yazıldı" : locale === "ru" ? "Сохранено" : "Saved")
+      toastSuccess(locale === "az" ? "Seçilən suallar DB-yə yazıldı" : locale === "ru" ? "Сохранено" : "Saved")
       resetDraftState()
       setFile(null)
 
       await loadData()
-      setTimeout(() => setSuccess(""), 2500)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Commit failed")
+      toastError(err instanceof Error ? err.message : "Commit failed")
     } finally {
       setBusy(false)
     }
@@ -245,7 +234,6 @@ export function ExamsTab() {
   async function openManageQuestions(bankId: string) {
     try {
       setQBusy(true)
-      setError("")
       setManageBankId(bankId)
 
       const res = await api.listBankQuestions(bankId)
@@ -253,48 +241,52 @@ export function ExamsTab() {
 
       setManageModalOpen(true)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load questions")
+      toastError(err instanceof Error ? err.message : "Failed to load questions")
     } finally {
       setQBusy(false)
     }
   }
 
-  async function handleDeleteExam(bankId: string) {
-    if (!confirm(locale === "az" ? "İmtahan silinsin?" : locale === "ru" ? "Удалить экзамен?" : "Delete exam?")) return
-
-    try {
-      setBusy(true)
-      setError("")
-      await api.deleteBank(bankId)
-      await loadData()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Delete failed")
-    } finally {
-      setBusy(false)
-    }
+  function handleDeleteExam(bankId: string) {
+    toastConfirm(
+      locale === "az" ? "İmtahan silinsin?" : locale === "ru" ? "Удалить экзамен?" : "Delete exam?",
+      async () => {
+        try {
+          setBusy(true)
+          await api.deleteBank(bankId)
+          toastSuccess(locale === "az" ? "Silindi" : locale === "ru" ? "Удалено" : "Deleted")
+          await loadData()
+        } catch (err) {
+          toastError(err instanceof Error ? err.message : "Delete failed")
+        } finally {
+          setBusy(false)
+        }
+      },
+    )
   }
 
-  async function handleDeleteQuestion(questionId: string) {
-    if (!confirm(locale === "az" ? "Sual silinsin?" : locale === "ru" ? "Удалить вопрос?" : "Delete question?")) return
-
-    try {
-      setQBusy(true)
-      setError("")
-      await api.deleteQuestion(questionId)
-
-      setBankQuestions((prev) => prev.filter((x) => x.id !== questionId))
-      await loadData()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Delete failed")
-    } finally {
-      setQBusy(false)
-    }
+  function handleDeleteQuestion(questionId: string) {
+    toastConfirm(
+      locale === "az" ? "Sual silinsin?" : locale === "ru" ? "Удалить вопрос?" : "Delete question?",
+      async () => {
+        try {
+          setQBusy(true)
+          await api.deleteQuestion(questionId)
+          setBankQuestions((prev) => prev.filter((x) => x.id !== questionId))
+          toastSuccess(locale === "az" ? "Sual silindi" : locale === "ru" ? "Вопрос удалён" : "Question deleted")
+          await loadData()
+        } catch (err) {
+          toastError(err instanceof Error ? err.message : "Delete failed")
+        } finally {
+          setQBusy(false)
+        }
+      },
+    )
   }
 
   async function handleSaveQuestion(q: AdminQuestion) {
     try {
       setQBusy(true)
-      setError("")
 
       const payload = {
         text: q.text,
@@ -304,9 +296,10 @@ export function ExamsTab() {
 
       const updated = await api.updateQuestion(q.id, payload)
       setBankQuestions((prev) => prev.map((x) => (x.id === updated.id ? updated : x)))
+      toastSuccess(locale === "az" ? "Yadda saxlandı" : locale === "ru" ? "Сохранено" : "Saved")
       await loadData()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Save failed")
+      toastError(err instanceof Error ? err.message : "Save failed")
     } finally {
       setQBusy(false)
     }
@@ -314,15 +307,15 @@ export function ExamsTab() {
 
   async function handleAddQuestion() {
     if (!API_URL) {
-      setError("NEXT_PUBLIC_API_URL tapılmadı. .env-də set et.")
+      toastError("NEXT_PUBLIC_API_URL tapılmadı. .env-də set et.")
       return
     }
     if (!manageBankId) {
-      setError("Bank seçilməyib")
+      toastError("Bank seçilməyib")
       return
     }
     if (!canAddQuestion) {
-      setError(locale === "az" ? "Sual, ən az 2 unik variant və doğru cavabı seç" : "Fill question, 2 unique options and pick correct")
+      toastError(locale === "az" ? "Sual, ən az 2 unik variant və doğru cavabı seç" : "Fill question, 2 unique options and pick correct")
       return
     }
 
@@ -340,20 +333,18 @@ export function ExamsTab() {
 
     const correctText = normText(newOptions[newCorrectIndex] || "")
     if (!correctText) {
-      setError(locale === "az" ? "Doğru cavabı seç" : "Select correct answer")
+      toastError(locale === "az" ? "Doğru cavabı seç" : "Select correct answer")
       return
     }
 
     const correctIn = finalOpts.find((x) => x.toLowerCase() === correctText.toLowerCase())
     if (!correctIn) {
-      setError(locale === "az" ? "Doğru cavab variantların içində deyil" : "Correct not in options")
+      toastError(locale === "az" ? "Doğru cavab variantların içində deyil" : "Correct not in options")
       return
     }
 
     try {
       setQBusy(true)
-      setError("")
-      setSuccess("")
 
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
@@ -381,12 +372,11 @@ export function ExamsTab() {
       const created = (await res.json()) as AdminQuestion
 
       setBankQuestions((prev) => [created, ...prev])
-      setSuccess(locale === "az" ? "Sual əlavə olundu" : "Question added")
+      toastSuccess(locale === "az" ? "Sual əlavə olundu" : "Question added")
       resetAddState()
       await loadData()
-      setTimeout(() => setSuccess(""), 2500)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Add failed")
+      toastError(err instanceof Error ? err.message : "Add failed")
     } finally {
       setQBusy(false)
     }
@@ -394,18 +384,6 @@ export function ExamsTab() {
 
   return (
     <div className="space-y-6">
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      {success && (
-        <Alert className="border-green-500">
-          <AlertDescription className="text-green-700">{success}</AlertDescription>
-        </Alert>
-      )}
-
       {/* 1) Create exam */}
       <Card>
         <CardHeader>
@@ -707,7 +685,6 @@ export function ExamsTab() {
           </DialogHeader>
 
           <div className="flex items-center justify-between gap-2 pb-2">
-
             <Button variant="outline" onClick={() => setAddModalOpen(true)} disabled={qBusy || !manageBankId}>
               <Plus className="h-4 w-4 mr-2" />
               {locale === "az" ? "Sual əlavə et" : "Add question"}
@@ -736,7 +713,9 @@ export function ExamsTab() {
                         }
                       />
                     </CardTitle>
-                    <CardDescription className="text-sm">{locale === "az" ? "Doğru cavabı seç:" : "Select correct:"}</CardDescription>
+                    <CardDescription className="text-sm">
+                      {locale === "az" ? "Doğru cavabı seç:" : "Select correct:"}
+                    </CardDescription>
                   </CardHeader>
 
                   <CardContent className="space-y-2">
@@ -800,7 +779,7 @@ export function ExamsTab() {
         </DialogContent>
       </Dialog>
 
-      {/* ✅ Add Question Modal (NEW) */}
+      {/* ✅ Add Question Modal */}
       <Dialog open={addModalOpen} onOpenChange={setAddModalOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -837,24 +816,12 @@ export function ExamsTab() {
                       }}
                       placeholder={`${locale === "az" ? "Variant" : "Option"} ${i + 1}`}
                     />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setNewOptions((prev) => [...prev, ""])}
-                      className="hidden"
-                    >
-                      +
-                    </Button>
                   </div>
                 ))}
               </div>
 
               <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setNewOptions((prev) => [...prev, ""])}
-                >
+                <Button type="button" variant="outline" onClick={() => setNewOptions((prev) => [...prev, ""])}>
                   <Plus className="h-4 w-4 mr-2" />
                   {locale === "az" ? "Variant əlavə et" : "Add option"}
                 </Button>
@@ -878,9 +845,7 @@ export function ExamsTab() {
             </div>
 
             <div className="text-sm text-muted-foreground">
-              {locale === "az"
-                ? "Qeyd: minimum 2 fərqli variant olmalıdır."
-                : "Note: at least 2 unique options required."}
+              {locale === "az" ? "Qeyd: minimum 2 fərqli variant olmalıdır." : "Note: at least 2 unique options required."}
             </div>
           </div>
 
@@ -888,6 +853,7 @@ export function ExamsTab() {
             <Button variant="outline" onClick={resetAddState} disabled={qBusy}>
               {locale === "az" ? "Ləğv et" : "Cancel"}
             </Button>
+
             <Button onClick={handleAddQuestion} disabled={qBusy || !canAddQuestion}>
               {qBusy ? (locale === "az" ? "Əlavə olunur..." : "Adding...") : locale === "az" ? "Əlavə et" : "Add"}
             </Button>

@@ -1,6 +1,15 @@
 "use client"
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react"
 import { api, type User } from "@/lib/api"
 
 interface AuthContextType {
@@ -12,45 +21,42 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+function deleteCookie(name: string) {
+  if (typeof document === "undefined") return
+  document.cookie = `${name}=; Max-Age=0; path=/; SameSite=Lax`
+}
+
+const RELOAD_GUARD_KEY = "auth_401_reload_done" 
+
+function hasReloadedOnce(): boolean {
+  if (typeof window === "undefined") return false
+  return window.sessionStorage.getItem(RELOAD_GUARD_KEY) === "1"
+}
+
+function markReloadedOnce() {
+  if (typeof window === "undefined") return
+  window.sessionStorage.setItem(RELOAD_GUARD_KEY, "1")
+}
+
+function clearReloadGuard() {
+  if (typeof window === "undefined") return
+  window.sessionStorage.removeItem(RELOAD_GUARD_KEY)
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+
   const didLogoutRef = useRef(false)
+  const isReloadingRef = useRef(false)
 
-  const checkAuth = useCallback(async () => {
-    if (didLogoutRef.current) {
-      setLoading(false)
-      return
-    }
+  const hardLogoutAndReload = useCallback(async () => {
+    if (isReloadingRef.current) return
+    if (hasReloadedOnce()) return 
 
-    try {
-      const profile = await api.getProfile()
-      setUser(profile)
-    } catch {
-      setUser(null)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+    isReloadingRef.current = true
+    markReloadedOnce()
 
-  useEffect(() => {
-    checkAuth()
-  }, [checkAuth])
-
-  const refreshUser = useCallback(async () => {
-    if (didLogoutRef.current) return null
-
-    try {
-      const profile = await api.getProfile()
-      setUser(profile)
-      return profile
-    } catch {
-      setUser(null)
-      return null
-    }
-  }, [])
-
-  const logout = useCallback(async () => {
     didLogoutRef.current = true
     setUser(null)
     api.clearToken()
@@ -62,6 +68,93 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
     } catch {
     }
+
+    deleteCookie("accessToken")
+
+    if (typeof window !== "undefined") window.location.reload()
+  }, [])
+
+  const checkAuth = useCallback(async () => {
+    if (didLogoutRef.current) {
+      setLoading(false)
+      return
+    }
+
+    try {
+      const profile = await api.getProfile()
+      setUser(profile)
+
+      clearReloadGuard()
+    } catch (e: any) {
+      const msg = String(e?.message || "")
+      const is401 = msg.includes("Status: 401") || msg.includes("(Status: 401)")
+
+      if (is401) {
+        if (!hasReloadedOnce()) {
+          await hardLogoutAndReload()
+          return
+        }
+
+        setUser(null)
+        setLoading(false)
+        return
+      }
+
+      setUser(null)
+    } finally {
+      setLoading(false)
+    }
+  }, [hardLogoutAndReload])
+
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
+
+  const refreshUser = useCallback(async () => {
+    if (didLogoutRef.current) return null
+
+    try {
+      const profile = await api.getProfile()
+      setUser(profile)
+      clearReloadGuard()
+      return profile
+    } catch (e: any) {
+      const msg = String(e?.message || "")
+      const is401 = msg.includes("Status: 401") || msg.includes("(Status: 401)")
+
+      if (is401) {
+        if (!hasReloadedOnce()) {
+          await hardLogoutAndReload()
+          return null
+        }
+        setUser(null)
+        return null
+      }
+
+      setUser(null)
+      return null
+    }
+  }, [hardLogoutAndReload])
+
+  const logout = useCallback(async () => {
+    if (isReloadingRef.current) return
+    isReloadingRef.current = true
+
+    didLogoutRef.current = true
+    setUser(null)
+    api.clearToken()
+
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      })
+    } catch {
+    }
+
+    deleteCookie("accessToken")
+
+    if (typeof window !== "undefined") window.location.reload()
   }, [])
 
   const value = useMemo(() => ({ user, loading, refreshUser, logout }), [user, loading, refreshUser, logout])
