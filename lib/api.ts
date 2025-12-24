@@ -317,6 +317,22 @@ class ApiClient {
   async getAttemptAnswers(attemptId: string) {
     return this.request<{ answers: any[] }>(`/attempts/${encodeURIComponent(attemptId)}/answers`)
   }
+ 
+  async updateSubject(
+    subjectId: string,
+    data: { name?: string; nameAz?: string; nameEn?: string; nameRu?: string },
+  ) {
+    return this.request<Subject>(`/questions/subject/${encodeURIComponent(subjectId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteSubject(subjectId: string) {
+    return this.request<DeleteOkResponse>(`/questions/subject/${encodeURIComponent(subjectId)}`, {
+      method: "DELETE",
+    })
+  }
 }
 
 export const api = new ApiClient()
