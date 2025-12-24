@@ -13,7 +13,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { api } from "@/lib/api"
-import { setAuthCookie } from "@/lib/cookies"
 import { PublicNavbar } from "@/components/public-navbar"
 
 export default function LoginPage() {
@@ -35,11 +34,8 @@ export default function LoginPage() {
     try {
       const result = await api.login(email, password)
 
-      const token = result.accessToken || (result as any).access_token
-      if (!token) throw new Error("Token gəlmədi (accessToken/access_token yoxdur)")
-
-      await setAuthCookie(token)
-      api.setToken(token)
+      const token = (result as any).accessToken || (result as any).access_token
+      if (token) api.setToken(token)
 
       const user = await refreshUser()
 

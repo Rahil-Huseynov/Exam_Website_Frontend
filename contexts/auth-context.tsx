@@ -1,14 +1,13 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState, useCallback, useMemo, type ReactNode, useRef } from "react"
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { api, type User } from "@/lib/api"
-import { removeAuthCookie } from "@/lib/cookies"
 
 interface AuthContextType {
   user: User | null
   loading: boolean
   refreshUser: () => Promise<User | null>
-  logout: () => void
+  logout: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -51,12 +50,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
     didLogoutRef.current = true
     setUser(null)
-    removeAuthCookie()
     api.clearToken()
 
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      })
+    } catch {
+    }
   }, [])
 
   const value = useMemo(() => ({ user, loading, refreshUser, logout }), [user, loading, refreshUser, logout])

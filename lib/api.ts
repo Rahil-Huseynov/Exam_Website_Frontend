@@ -1,5 +1,6 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
+// ================== TYPES ==================
 export interface User {
   id: number
   name: string
@@ -10,9 +11,8 @@ export interface User {
 
 export type LoginResponse = {
   accessToken?: string
-
+  access_token?: string
   user?: User
-
   admin?: {
     id: number
     firstName: string
@@ -23,27 +23,84 @@ export type LoginResponse = {
 }
 
 export interface University {
-  id: number
+  id: string
+  name: string
+  nameAz?: string
+  nameEn?: string
+  nameRu?: string
+  logo?: string | null
+}
+
+export interface Subject {
+  id: string
   name: string
   nameAz?: string
   nameEn?: string
   nameRu?: string
 }
 
-export interface Subject {
-  id: number
-  name: string
-  nameAz?: string
-  nameEn?: string
-  nameRu?: string
+export interface QuestionOption {
+  id: string
+  text: string
 }
+
+export interface Question {
+  id: string
+  text: string
+  options: QuestionOption[]
+}
+
+export interface Exam {
+  id: string
+  title: string
+  subject: Subject
+  university: University
+  year: number
+  price: number
+  questionCount: number
+}
+
+export type DraftOption = { tempOptionId: string; text: string }
+export type DraftQuestion = { tempId: string; text: string; options: DraftOption[] }
+
+export type ImportDirectPayload = {
+  questions: Array<{
+    text: string
+    options: Array<{ text: string }>
+    correctAnswerText?: string
+  }>
+}
+export type AdminQuestion = {
+  id: string
+  text: string
+  correctAnswerText?: string | null
+  correctOptionId?: string | null
+  options: { id: string; text: string }[]
+}
+
+export type ListBankQuestionsResponse = {
+  bankId: string
+  questions: AdminQuestion[]
+}
+
+export type UpdateQuestionPayload = {
+  text?: string
+  options?: Array<{ text: string }>
+  correctAnswerText?: string
+}
+
+export type CreateQuestionPayload = {
+  text: string
+  options: Array<{ text: string }>
+  correctAnswerText?: string
+}
+
+export type DeleteOkResponse = { ok: boolean }
 
 export type CreateAttemptResponse = { attemptId: string }
 export type AnswerResponse = { isCorrect: boolean; answerId: string }
 export type FinishResponse = { attemptId: string; status: string; score: number; total: number }
-export type UserAttemptsResponse = {
-  attempts: any[]
-}
+export type UserAttemptsResponse = { attempts: any[] }
 
 export type AttemptSummary = {
   attemptId: string
@@ -56,50 +113,9 @@ export type AttemptSummary = {
   total?: number
 }
 
-export interface Question {
-  id: number
-  text: string
-  options: string[]
-  correctAnswer: number
-  subject: Subject
-  university: University
-  year: number
-}
-
-export interface Exam {
-  id: number
-  title: string
-  subject: Subject
-  university: University
-  year: number
-  price: number
-  questionCount: number
-}
-
-export interface ExamAttempt {
-  id: number
-  exam: Exam
-  score: number
-  totalQuestions: number
-  startedAt: string
-  completedAt?: string
-}
-
+// ================== API CLIENT ==================
 class ApiClient {
   private token: string | null = null
-
-  constructor() {
-    if (typeof document !== "undefined") {
-      this.token = this.readCookie("accessToken")
-    }
-  }
-
-  private readCookie(name: string): string | null {
-    if (typeof document === "undefined") return null
-    const row = document.cookie.split("; ").find((r) => r.startsWith(`${name}=`))
-    if (!row) return null
-    return decodeURIComponent(row.split("=").slice(1).join("="))
-  }
 
   setToken(token: string) {
     this.token = token
@@ -138,23 +154,34 @@ class ApiClient {
     const res = await fetch(`${API_URL}${endpoint}`, {
       ...options,
       headers,
+      credentials: "include",
     })
 
     if (!res.ok) {
-      const err = await res.json().catch(() => ({ message: "Request failed" }))
+      const contentType = res.headers.get("content-type") || ""
+      const err =
+        contentType.includes("application/json")
+          ? await res.json().catch(() => ({ message: "Request failed" }))
+          : { message: await res.text().catch(() => "Request failed") }
+
       throw new Error(`${err.message || "Request failed"} (Status: ${res.status})`)
     }
 
-    return res.json()
+    const text = await res.text()
+    return (text ? JSON.parse(text) : {}) as T
   }
-
 
   // ================== AUTH ==================
   async login(email: string, password: string) {
-    return this.request<LoginResponse>("/auth/login", {
+    const data = await this.request<LoginResponse>("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
     })
+
+    const token = data.accessToken || (data as any).access_token
+    if (token) this.setToken(token)
+
+    return data
   }
 
   async register(email: string, password: string, firstName: string, lastName?: string) {
@@ -168,92 +195,7 @@ class ApiClient {
     return this.request<User>("/auth/me")
   }
 
-  // ================== EXAMS / QUESTIONS ==================
-  async getExams() {
-    return this.request<Exam[]>("/questions/exams")
-  }
-
-  async getExamsByFilter(universityId?: number, subjectId?: number, year?: number) {
-    const params = new URLSearchParams()
-    if (universityId) params.append("universityId", String(universityId))
-    if (subjectId) params.append("subjectId", String(subjectId))
-    if (year) params.append("year", String(year))
-    return this.request<Exam[]>(`/questions/exams?${params.toString()}`)
-  }
-
-  async getExamQuestions(examId: number) {
-    return this.request<Question[]>(`/questions/exam/${examId}`)
-  }
-
-  async submitExam(examId: number, answers: Record<number, number>) {
-    return this.request<{ score: number; totalQuestions: number }>(`/questions/exam/${examId}/submit`, {
-      method: "POST",
-      body: JSON.stringify({ answers }),
-    })
-  }
-
-  // ================== ATTEMPTS ==================
-  async answerAttempt(attemptId: string, questionId: string, selectedOptionId: string) {
-    return this.request<AnswerResponse>(`/attempts/${encodeURIComponent(attemptId)}/answer`, {
-      method: "POST",
-      body: JSON.stringify({ questionId, selectedOptionId }),
-    })
-  }
-
-  // POST /attempts/:attemptId/finish
-  async finishAttempt(attemptId: string) {
-    return this.request<FinishResponse>(`/attempts/${encodeURIComponent(attemptId)}/finish`, {
-      method: "POST",
-    })
-  }
-
-  // GET /attempts/:attemptId/summary
-  async getAttemptSummary(attemptId: string) {
-    return this.request<AttemptSummary>(`/attempts/${encodeURIComponent(attemptId)}/summary`)
-  }
-
-  // GET /users/:userId/attempts  -> { attempts: [...] }
-  async getUserAttempts(userId: number) {
-    return this.request<UserAttemptsResponse>(`/users/${userId}/attempts`)
-  }
-
-  // GET /attempts/:attemptId/answers -> { answers: [...] }
-  async getAttemptAnswers(attemptId: string) {
-    return this.request<{ answers: any[] }>(`/attempts/${encodeURIComponent(attemptId)}/answers`)
-  }
-
-
-  // ================== ADMIN ==================
-  async uploadPDF(file: File) {
-    const formData = new FormData()
-    formData.append("file", file)
-
-    const headers: HeadersInit = {}
-    if (this.token) headers["Authorization"] = `Bearer ${this.token}`
-
-    const res = await fetch(`${API_URL}/pdf/upload`, {
-      method: "POST",
-      headers,
-      body: formData,
-    })
-
-    if (!res.ok) throw new Error("Failed to upload PDF")
-    return res.json()
-  }
-
-  async createExam(data: {
-    universityId: number
-    subjectId: number
-    year: number
-    price: number
-    questions: Array<{ text: string; options: string[]; correctAnswer: number }>
-  }) {
-    return this.request<Exam>("/questions/exam", {
-      method: "POST",
-      body: JSON.stringify(data),
-    })
-  }
-
+  // ================== UNIVERSITIES ==================
   async getUniversities() {
     return this.request<University[]>("/questions/universities")
   }
@@ -265,6 +207,7 @@ class ApiClient {
     })
   }
 
+  // ================== SUBJECTS ==================
   async getSubjects() {
     return this.request<Subject[]>("/questions/subjects")
   }
@@ -274,6 +217,105 @@ class ApiClient {
       method: "POST",
       body: JSON.stringify({ name, nameAz, nameEn, nameRu }),
     })
+  }
+
+  // ================== EXAMS / QUESTIONS ==================
+  async getExams() {
+    return this.request<Exam[]>("/questions/exams")
+  }
+
+  async getExamsByFilter(universityId?: string, subjectId?: string, year?: number) {
+    const params = new URLSearchParams()
+    if (universityId) params.append("universityId", String(universityId))
+    if (subjectId) params.append("subjectId", String(subjectId))
+    if (year) params.append("year", String(year))
+    const qs = params.toString()
+    return this.request<Exam[]>(`/questions/exams${qs ? `?${qs}` : ""}`)
+  }
+
+  async createExam(data: { title: string; universityId: string; subjectId: string; year: number; price: number }) {
+    return this.request<Exam>("/questions/exam", {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async getExamQuestions(examId: string) {
+    return this.request<Question[]>(`/questions/exam/${encodeURIComponent(examId)}`)
+  }
+
+  async importQuestionsDirect(bankId: string, payload: ImportDirectPayload) {
+    return this.request<{ count: number; questions: { id: string }[] }>(
+      `/banks/${encodeURIComponent(bankId)}/questions/import-direct`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+    )
+  }
+
+  // ================== ADMIN: QUESTIONS CRUD ==================
+  async listBankQuestions(bankId: string) {
+    return this.request<ListBankQuestionsResponse>(`/questions/bank/${encodeURIComponent(bankId)}/questions`)
+  }
+
+  async createQuestion(bankId: string, payload: CreateQuestionPayload) {
+    return this.request<AdminQuestion>(`/questions/bank/${encodeURIComponent(bankId)}/question`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    })
+  }
+
+  async updateQuestion(questionId: string, payload: UpdateQuestionPayload) {
+    return this.request<AdminQuestion>(`/questions/question/${encodeURIComponent(questionId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    })
+  }
+
+  async deleteQuestion(questionId: string) {
+    return this.request<DeleteOkResponse>(`/questions/question/${encodeURIComponent(questionId)}`, {
+      method: "DELETE",
+    })
+  }
+
+  async deleteBank(bankId: string) {
+    return this.request<DeleteOkResponse>(`/questions/bank/${encodeURIComponent(bankId)}`, {
+      method: "DELETE",
+    })
+  }
+
+  // ================== ATTEMPTS (səndə varsa saxla) ==================
+  async createAttempt(bankId: string, userId: number) {
+    return this.request<CreateAttemptResponse>(`/banks/${encodeURIComponent(bankId)}/attempts`, {
+      method: "POST",
+      body: JSON.stringify({ userId }),
+    })
+  }
+
+  async answerAttempt(attemptId: string, questionId: string, selectedOptionId: string) {
+    return this.request<AnswerResponse>(`/attempts/${encodeURIComponent(attemptId)}/answer`, {
+      method: "POST",
+      body: JSON.stringify({ questionId, selectedOptionId }),
+    })
+  }
+
+  async finishAttempt(attemptId: string) {
+    return this.request<FinishResponse>(`/attempts/${encodeURIComponent(attemptId)}/finish`, {
+      method: "POST",
+    })
+  }
+
+  async getAttemptSummary(attemptId: string) {
+    return this.request<AttemptSummary>(`/attempts/${encodeURIComponent(attemptId)}/summary`)
+  }
+
+  async getUserAttempts(userId: number) {
+    return this.request<UserAttemptsResponse>(`/users/${userId}/attempts`)
+  }
+
+  async getAttemptAnswers(attemptId: string) {
+    return this.request<{ answers: any[] }>(`/attempts/${encodeURIComponent(attemptId)}/answers`)
   }
 }
 
