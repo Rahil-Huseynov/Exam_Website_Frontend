@@ -317,7 +317,7 @@ class ApiClient {
   async getAttemptAnswers(attemptId: string) {
     return this.request<{ answers: any[] }>(`/attempts/${encodeURIComponent(attemptId)}/answers`)
   }
- 
+
   async updateSubject(
     subjectId: string,
     data: { name?: string; nameAz?: string; nameEn?: string; nameRu?: string },
@@ -333,6 +333,23 @@ class ApiClient {
       method: "DELETE",
     })
   }
+  
+  async updateUniversity(
+    universityId: string,
+    data: { name?: string; nameAz?: string; nameEn?: string; nameRu?: string; logo?: string | null },
+  ) {
+    return this.request<University>(`/questions/university/${encodeURIComponent(universityId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async deleteUniversity(universityId: string) {
+    return this.request<DeleteOkResponse>(`/questions/university/${encodeURIComponent(universityId)}`, {
+      method: "DELETE",
+    })
+  }
+
 }
 
 export const api = new ApiClient()

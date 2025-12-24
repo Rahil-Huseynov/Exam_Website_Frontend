@@ -9,17 +9,25 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Plus, Trash2 } from "lucide-react"
+import { Plus, Trash2, Edit2, X, Check } from "lucide-react"
 
 export function UniversitiesTab() {
   const { locale } = useLocale()
   const { t } = useTranslation(locale)
+
   const [universities, setUniversities] = useState<University[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+
   const [newUniversity, setNewUniversity] = useState({ az: "", en: "", ru: "" })
   const [adding, setAdding] = useState(false)
+
+  // edit state
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editUniversity, setEditUniversity] = useState({ az: "", en: "", ru: "" })
+  const [saving, setSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   useEffect(() => {
     loadUniversities()
@@ -35,6 +43,11 @@ export function UniversitiesTab() {
     } finally {
       setLoading(false)
     }
+  }
+
+  function showOk(msg: string) {
+    setSuccess(msg)
+    setTimeout(() => setSuccess(""), 3000)
   }
 
   async function handleAdd() {
@@ -53,14 +66,73 @@ export function UniversitiesTab() {
       setAdding(true)
       setError("")
       await api.createUniversity(newUniversity.az, newUniversity.az, newUniversity.en, newUniversity.ru)
-      setSuccess(t("success"))
+      showOk(t("success"))
       setNewUniversity({ az: "", en: "", ru: "" })
       await loadUniversities()
-      setTimeout(() => setSuccess(""), 3000)
     } catch (err) {
       setError(err instanceof Error ? err.message : t("failed"))
     } finally {
       setAdding(false)
+    }
+  }
+
+  function startEdit(uni: University) {
+    setError("")
+    setEditingId(uni.id)
+    setEditUniversity({
+      az: uni.nameAz || "",
+      en: uni.nameEn || "",
+      ru: uni.nameRu || "",
+    })
+  }
+
+  function cancelEdit() {
+    setEditingId(null)
+    setEditUniversity({ az: "", en: "", ru: "" })
+  }
+
+  async function saveEdit(universityId: string) {
+    if (!editUniversity.az || !editUniversity.en || !editUniversity.ru) {
+      setError(
+        locale === "az"
+          ? "Bütün dillərdə ad daxil edin"
+          : locale === "ru"
+            ? "Введите название на всех языках"
+            : "Enter name in all languages",
+      )
+      return
+    }
+
+    try {
+      setSaving(true)
+      setError("")
+      await api.updateUniversity(universityId, {
+        name: editUniversity.az, // əsas name kimi AZ-ni götürürük (səndə create-də də belədir)
+        nameAz: editUniversity.az,
+        nameEn: editUniversity.en,
+        nameRu: editUniversity.ru,
+      })
+      showOk(t("success"))
+      cancelEdit()
+      await loadUniversities()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("failed"))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleDelete(universityId: string) {
+    try {
+      setDeletingId(universityId)
+      setError("")
+      await api.deleteUniversity(universityId)
+      showOk(t("success"))
+      await loadUniversities()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("failed"))
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -78,6 +150,7 @@ export function UniversitiesTab() {
         </Alert>
       )}
 
+      {/* ADD */}
       <Card>
         <CardHeader>
           <CardTitle>{t("addUniversity")}</CardTitle>
@@ -120,6 +193,7 @@ export function UniversitiesTab() {
               />
             </div>
           </div>
+
           <Button onClick={handleAdd} disabled={adding}>
             <Plus className="h-4 w-4 mr-2" />
             {adding ? t("processing") : t("add")}
@@ -127,6 +201,7 @@ export function UniversitiesTab() {
         </CardContent>
       </Card>
 
+      {/* LIST + EDIT/DELETE */}
       <Card>
         <CardHeader>
           <CardTitle>{t("manageUniversities")}</CardTitle>
@@ -136,28 +211,111 @@ export function UniversitiesTab() {
             {locale === "ru" && "Список существующих университетов"}
           </CardDescription>
         </CardHeader>
+
         <CardContent>
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
             </div>
           ) : universities.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">{t("noData")}</p>
           ) : (
             <div className="space-y-2">
-              {universities.map((uni) => (
-                <div key={uni.id} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div>
-                    <p className="font-medium">{uni.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      AZ: {uni.nameAz} | EN: {uni.nameEn} | RU: {uni.nameRu}
-                    </p>
+              {universities.map((uni) => {
+                const isEditing = editingId === uni.id
+
+                return (
+                  <div key={uni.id} className="p-4 border rounded-lg">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
+                        {!isEditing ? (
+                          <>
+                            <p className="font-medium">{uni.name}</p>
+                            <p className="text-sm text-muted-foreground">
+                              AZ: {uni.nameAz} | EN: {uni.nameEn} | RU: {uni.nameRu}
+                            </p>
+                          </>
+                        ) : (
+                          <div className="grid gap-3 md:grid-cols-3">
+                            <div className="space-y-1">
+                              <Label>Azərbaycan</Label>
+                              <Input
+                                value={editUniversity.az}
+                                onChange={(e) => setEditUniversity({ ...editUniversity, az: e.target.value })}
+                                disabled={saving}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label>English</Label>
+                              <Input
+                                value={editUniversity.en}
+                                onChange={(e) => setEditUniversity({ ...editUniversity, en: e.target.value })}
+                                disabled={saving}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label>Русский</Label>
+                              <Input
+                                value={editUniversity.ru}
+                                onChange={(e) => setEditUniversity({ ...editUniversity, ru: e.target.value })}
+                                disabled={saving}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {!isEditing ? (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => startEdit(uni)}
+                              title="Edit"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive"
+                              onClick={() => handleDelete(uni.id)}
+                              disabled={deletingId === uni.id}
+                              title="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => saveEdit(uni.id)}
+                              disabled={saving}
+                              title="Save"
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={cancelEdit}
+                              disabled={saving}
+                              title="Cancel"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <Button variant="ghost" size="icon" className="text-destructive">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </CardContent>
