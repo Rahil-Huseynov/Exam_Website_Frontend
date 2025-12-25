@@ -64,7 +64,7 @@ export default function PdfImportFrontModal({ bankId }: Props) {
           return {
             text: q.text,
             options: q.options.map((o) => ({ text: o.text })),
-            correctAnswerText: correctOpt.text, // ✅ mətni göndəririk
+            correctAnswerText: correctOpt.text,
           }
         }),
       }

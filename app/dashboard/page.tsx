@@ -49,6 +49,19 @@ function tName(obj: any, locale: string) {
   return obj.nameEn || obj.name
 }
 
+/** ==========================
+ * ✅ One-time EXAM URL helper
+ * token -> bankId map (sessionStorage)
+ * ========================== */
+function tokenBankKey(token: string) {
+  return `exam_token_bank_${token}`
+}
+
+function setTokenBank(token: string, bankId: string) {
+  if (typeof window === "undefined") return
+  window.sessionStorage.setItem(tokenBankKey(token), bankId)
+}
+
 export default function DashboardPage() {
   const router = useRouter()
   const { user, loading: authLoading, refreshUser } = useAuth()
@@ -70,7 +83,7 @@ export default function DashboardPage() {
       }
 
       const data = await api.getUserAttempts(profile.id)
-      setAttempts(Array.isArray(data.attempts) ? data.attempts : [])
+      setAttempts(Array.isArray((data as any)?.attempts) ? (data as any).attempts : [])
 
       lastErrorRef.current = ""
     } catch (err: any) {
@@ -132,7 +145,7 @@ export default function DashboardPage() {
 
     try {
       setYearsLoading(true)
-      const ys = await api.getExamYearsByUniversity(u.id) 
+      const ys = await api.getExamYearsByUniversity(u.id)
       setYears(Array.isArray(ys) ? ys : [])
     } catch (e: any) {
       toastError(e?.message || "İllər yüklənmədi")
@@ -151,7 +164,7 @@ export default function DashboardPage() {
 
       try {
         setExamsLoading(true)
-        const list = await api.getExamsByFilter(selectedUni.id, undefined, y) 
+        const list = await api.getExamsByFilter(selectedUni.id, undefined, y)
         setExams(Array.isArray(list) ? list : [])
       } catch (e: any) {
         toastError(e?.message || "İmtahanlar yüklənmədi")
@@ -175,27 +188,45 @@ export default function DashboardPage() {
   const displayName = getDisplayName(user)
   const balance = typeof (user as any)?.balance === "number" ? (user as any).balance : 0
 
-  const completedAttempts = attempts.filter((a) => a?.completedAt)
+  const completedAttempts = attempts.filter((a) => a?.completedAt || a?.finishedAt || a?.status === "FINISHED")
   const averageScore =
     completedAttempts.length > 0
-      ? completedAttempts.reduce((sum, a) => sum + ((a.score || 0) / (a.totalQuestions || 1)) * 100, 0) /
-        completedAttempts.length
+      ? completedAttempts.reduce((sum, a) => {
+          const score = Number(a?.score || 0)
+          const total = Number(a?.totalQuestions || a?.total || 1)
+          return sum + (score / (total || 1)) * 100
+        }, 0) / completedAttempts.length
       : 0
 
-  const totalSpent = useMemo(() => attempts.reduce((sum, a) => sum + (a?.exam?.price || 0), 0), [attempts])
+  const totalSpent = useMemo(() => attempts.reduce((sum, a) => sum + Number(a?.exam?.price || a?.price || 0), 0), [attempts])
 
   async function startExam(exam: Exam) {
     try {
-      const profile = user ?? (await refreshUser())
-      if (!profile) {
-        router.replace("/login")
+      if (!user?.id) {
+        toastError("Login olunmayıb. İmtahana başlamaq üçün giriş edin.")
         return
       }
-      const res = await api.createAttempt(exam.id, Number(profile.id)) 
-      if (!(res as any)?.attemptId) throw new Error("İmtahana başlamaq alınmadı")
-      router.push(`/attempt/${(res as any).attemptId}`)
+
+      const bankId = String((exam as any).bankId ?? (exam as any).id)
+      if (!bankId) {
+        toastError("bankId tapılmadı.")
+        return
+      }
+
+      const tok = await api.createExamToken(bankId, user.id) 
+      const token = String((tok as any)?.token || "")
+      const url = String((tok as any)?.url || `/exam-token/${token}`)
+
+      if (!token) {
+        toastError("Token yaradılmadı.")
+        return
+      }
+
+      setTokenBank(token, bankId)
+
+      router.push(url)
     } catch (e: any) {
-      toastError(e?.message || "İmtahana başlamaq alınmadı")
+      toastError(e?.message || "İmtahana başlamaq mümkün olmadı")
     }
   }
 
@@ -266,9 +297,7 @@ export default function DashboardPage() {
               , {displayName}!
             </h1>
 
-            <p className="text-muted-foreground">
-              Buradan imtahan seç, nəticələrini izləy və balansını idarə et.
-            </p>
+            <p className="text-muted-foreground">Buradan imtahan seç, nəticələrini izləy və balansını idarə et.</p>
           </div>
 
           {/* Stats */}
@@ -279,7 +308,7 @@ export default function DashboardPage() {
                 <Wallet className="h-5 w-5" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">{balance.toFixed(2)} AZN</div>
+                <div className="text-3xl font-bold">{Number(balance).toFixed(2)} AZN</div>
                 <Button asChild variant="link" className="px-0 h-auto mt-3">
                   <Link href="/balance" className="flex items-center gap-1">
                     Balansı artır
@@ -305,7 +334,7 @@ export default function DashboardPage() {
                 <TrendingUp className="h-5 w-5" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">{averageScore.toFixed(1)}%</div>
+                <div className="text-3xl font-bold">{Number(averageScore).toFixed(1)}%</div>
               </CardContent>
             </Card>
 
@@ -315,7 +344,7 @@ export default function DashboardPage() {
                 <FileText className="h-5 w-5" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">{totalSpent.toFixed(2)} AZN</div>
+                <div className="text-3xl font-bold">{Number(totalSpent).toFixed(2)} AZN</div>
               </CardContent>
             </Card>
           </div>
@@ -454,9 +483,7 @@ export default function DashboardPage() {
                     Seçilən universitet üçün illər yüklənir...
                   </div>
                 ) : years.length === 0 ? (
-                  <div className="text-sm text-muted-foreground">
-                    Bu universitet üçün imtahan ili tapılmadı.
-                  </div>
+                  <div className="text-sm text-muted-foreground">Bu universitet üçün imtahan ili tapılmadı.</div>
                 ) : (
                   <div className="space-y-3">
                     <div className="text-sm text-muted-foreground">

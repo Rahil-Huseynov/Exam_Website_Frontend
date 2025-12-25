@@ -48,10 +48,32 @@ export interface QuestionOption {
   text: string
 }
 
+export type ExamQuestion = {
+  id: string
+  text: string
+  options: { id: string; text: string }[]
+}
+
+
 export interface Question {
   id: string
   text: string
   options: QuestionOption[]
+}
+
+export type AttemptAnswer = {
+  id: string
+  questionId: string
+  selectedOptionId: string
+  isCorrect: boolean
+  createdAt: string
+  question: {
+    id: string
+    text: string
+    correctOptionId: string
+    options: { id: string; text: string }[]
+  }
+  selectedOption: { id: string; text: string }
 }
 
 export interface Exam {
@@ -101,7 +123,7 @@ export type CreateQuestionPayload = {
 }
 
 export type DeleteOkResponse = { ok: boolean }
-
+export type CreateExamTokenResponse = { ok: true; token: string; expiresAt: string }
 export type CreateAttemptResponse = { attemptId: string }
 export type AnswerResponse = { isCorrect: boolean; answerId: string }
 export type FinishResponse = { attemptId: string; status: string; score: number; total: number }
@@ -117,6 +139,13 @@ export type AttemptSummary = {
   score?: number
   total?: number
 }
+
+export type AttemptQuestion = {
+  id: string
+  text: string
+  options: { id: string; text: string }[]
+}
+export type AttemptQuestionsResponse = { questions: AttemptQuestion[] }
 
 // ================== API CLIENT ==================
 class ApiClient {
@@ -235,7 +264,7 @@ class ApiClient {
 
   private async request<T>(
     endpoint: string,
-    options: (RequestInit & { skipToast?: boolean }) = {},
+    options: (Omit<RequestInit, "body"> & { body?: BodyInit | null; json?: any; skipToast?: boolean }) = {},
   ): Promise<T> {
     if (!API_URL) {
       const msg = this.pickLang(
@@ -257,6 +286,7 @@ class ApiClient {
     }
 
     const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData
+
     if (!isFormData) headers["Content-Type"] = headers["Content-Type"] ?? "application/json"
 
     if (process.env.NEXT_PUBLIC_API_KEY) headers["x-api-key"] = process.env.NEXT_PUBLIC_API_KEY
@@ -264,11 +294,15 @@ class ApiClient {
 
     const toastId = `reqerr:${endpoint}:${Date.now()}:${Math.random().toString(16).slice(2)}`
 
+    const bodyToSend: BodyInit | null | undefined =
+      options.json !== undefined ? JSON.stringify(options.json) : options.body
+
     let res: Response
     try {
       res = await fetch(`${API_URL}${endpoint}`, {
         ...options,
         headers,
+        body: bodyToSend,
         credentials: "include",
       })
     } catch {
@@ -296,20 +330,13 @@ class ApiClient {
 
       const message = this.getDefaultErrMsg(res.status, serverMsg)
 
-      const publicNoAuthEndpoints = [
-        "/",
-        "/faq",
-        "/contact-us",
-      ]
+      const publicNoAuthEndpoints = ["/", "/faq", "/contact-us"]
 
       const suppress401OnAuth =
         res.status === 401 &&
-        (
-          endpoint.startsWith("/auth/") ||
-          publicNoAuthEndpoints.some((p) => endpoint === p)
-        )
-      const shouldToast = typeof window !== "undefined" && !options.skipToast && !suppress401OnAuth
+        (endpoint.startsWith("/auth/") || publicNoAuthEndpoints.some((p) => endpoint === p))
 
+      const shouldToast = typeof window !== "undefined" && !options.skipToast && !suppress401OnAuth
       if (shouldToast) this.toastRequestError(message, toastId)
 
       throw new Error(`${message} (Status: ${res.status})`)
@@ -415,9 +442,6 @@ class ApiClient {
   }
 
   // ================== EXAMS / QUESTIONS ==================
-  async getExams() {
-    return this.request<Exam[]>("/questions/exams")
-  }
 
   async getExamsByFilter(universityId?: string, subjectId?: string, year?: number) {
     const params = new URLSearchParams()
@@ -434,7 +458,6 @@ class ApiClient {
     return Array.isArray(data?.years) ? data.years : []
   }
 
-
   async createExam(data: { title: string; universityId: string; subjectId: string; year: number; price: number }) {
     return this.request<Exam>("/questions/exam", {
       method: "POST",
@@ -443,7 +466,10 @@ class ApiClient {
   }
 
   async getExamQuestions(examId: string) {
-    return this.request<Question[]>(`/questions/exam/${encodeURIComponent(examId)}`)
+    if (!examId || examId === "NaN" || examId === "undefined" || examId === "null") {
+      throw new Error(`Invalid examId: "${examId}"`)
+    }
+    return this.request<any>(`/questions/exam/${encodeURIComponent(examId)}`)
   }
 
   async importQuestionsDirect(bankId: string, payload: ImportDirectPayload) {
@@ -488,37 +514,83 @@ class ApiClient {
   }
 
   // ================== ATTEMPTS ==================
-  async createAttempt(bankId: string, userId: number) {
+  async createAttempt(bankId: string, userId: number, token: string) {
     return this.request<CreateAttemptResponse>(`/banks/${encodeURIComponent(bankId)}/attempts`, {
       method: "POST",
-      body: JSON.stringify({ userId }),
+      json: { userId, token },
     })
   }
 
-  async answerAttempt(attemptId: string, questionId: string, selectedOptionId: string) {
-    return this.request<AnswerResponse>(`/attempts/${encodeURIComponent(attemptId)}/answer`, {
+  async revokeExamToken(bankId: string, userId: number, token: string) {
+    return this.request<{ ok: true; revoked: boolean }>(`/banks/${encodeURIComponent(bankId)}/exam/revoke`, {
       method: "POST",
-      body: JSON.stringify({ questionId, selectedOptionId }),
+      json: { userId, token },
+    })
+  }
+
+  async getUserAttempts(userId: number) {
+    return this.request<UserAttemptsResponse>(`/users/${userId}/attempts`)
+  }
+  async getExams(params?: { universityId?: string; subjectId?: string; year?: number }) {
+    const sp = new URLSearchParams()
+    if (params?.universityId) sp.set("universityId", params.universityId)
+    if (params?.subjectId) sp.set("subjectId", params.subjectId)
+    if (typeof params?.year === "number") sp.set("year", String(params.year))
+    const q = sp.toString()
+    return this.request<Exam[]>(`/questions/exams${q ? `?${q}` : ""}`)
+  }
+
+  async createExamToken(bankId: string, userId: number) {
+    return this.request<CreateExamTokenResponse>(`/banks/${encodeURIComponent(bankId)}/exam-token`, {
+      method: "POST",
+      json: { userId },
+    })
+  }
+
+  async createAttemptWithToken(bankId: string, userId: number, token: string) {
+    return this.request<CreateAttemptResponse>(`/banks/${encodeURIComponent(bankId)}/attempts`, {
+      method: "POST",
+      json: { userId, token },
+    })
+  }
+
+  async deleteExamToken(bankId: string, userId: number, token: string, keepalive = false) {
+    return this.request<{ ok: true; deleted: boolean }>(`/banks/${encodeURIComponent(bankId)}/exam-token/delete`, {
+      method: "POST",
+      json: { userId, token },
+      keepalive,
+    })
+  }
+
+  async getAttemptQuestions(attemptId: string, userId: number) {
+    return this.request<{ questions: ExamQuestion[] }>(
+      `/attempts/${encodeURIComponent(attemptId)}/questions?userId=${encodeURIComponent(String(userId))}`,
+    )
+  }
+
+  async answerAttempt(attemptId: string, questionId: string, selectedOptionId: string) {
+    return this.request<{ isCorrect: boolean; answerId: string }>(`/attempts/${encodeURIComponent(attemptId)}/answer`, {
+      method: "POST",
+      json: { questionId, selectedOptionId },
     })
   }
 
   async finishAttempt(attemptId: string) {
-    return this.request<FinishResponse>(`/attempts/${encodeURIComponent(attemptId)}/finish`, {
-      method: "POST",
-    })
+    return this.request<{ attemptId: string; status: string; score: number; total: number }>(
+      `/attempts/${encodeURIComponent(attemptId)}/finish`,
+      { method: "POST" },
+    )
   }
 
   async getAttemptSummary(attemptId: string) {
     return this.request<AttemptSummary>(`/attempts/${encodeURIComponent(attemptId)}/summary`)
   }
 
-  async getUserAttempts(userId: number) {
-    return this.request<UserAttemptsResponse>(`/users/${userId}/attempts`)
+  async getAttemptAnswers(attemptId: string) {
+    return this.request<{ answers: AttemptAnswer[] }>(`/attempts/${encodeURIComponent(attemptId)}/answers`)
   }
 
-  async getAttemptAnswers(attemptId: string) {
-    return this.request<{ answers: any[] }>(`/attempts/${encodeURIComponent(attemptId)}/answers`)
-  }
 }
+
 
 export const api = new ApiClient()

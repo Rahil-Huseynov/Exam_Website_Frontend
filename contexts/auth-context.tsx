@@ -26,7 +26,7 @@ function deleteCookie(name: string) {
   document.cookie = `${name}=; Max-Age=0; path=/; SameSite=Lax`
 }
 
-const RELOAD_GUARD_KEY = "auth_401_reload_done" 
+const RELOAD_GUARD_KEY = "auth_401_reload_done"
 
 function hasReloadedOnce(): boolean {
   if (typeof window === "undefined") return false
@@ -43,6 +43,44 @@ function clearReloadGuard() {
   window.sessionStorage.removeItem(RELOAD_GUARD_KEY)
 }
 
+/** ==========================
+ * ✅ EXAM TOKEN HELPERS (sessionStorage)
+ * ========================== */
+function listAllExamTokenPairs(): Array<{ bankId: string; token: string }> {
+  if (typeof window === "undefined") return []
+  const out: Array<{ bankId: string; token: string }> = []
+
+  for (let i = 0; i < window.sessionStorage.length; i++) {
+    const k = window.sessionStorage.key(i)
+    if (!k) continue
+    if (!k.startsWith("exam_token_")) continue
+
+    const token = window.sessionStorage.getItem(k) || ""
+    const bankId = k.replace("exam_token_", "")
+    if (token && bankId) out.push({ bankId, token })
+  }
+
+  return out
+}
+
+function clearExamToken(bankId: string) {
+  if (typeof window === "undefined") return
+  window.sessionStorage.removeItem(`exam_token_${bankId}`)
+}
+
+async function revokeAllExamTokens(userId: number) {
+  const pairs = listAllExamTokenPairs()
+
+  for (const p of pairs) {
+    try {
+      await api.revokeExamToken(p.bankId, userId, p.token)
+    } catch {
+    } finally {
+      clearExamToken(p.bankId)
+    }
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
@@ -52,10 +90,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const hardLogoutAndReload = useCallback(async () => {
     if (isReloadingRef.current) return
-    if (hasReloadedOnce()) return 
+    if (hasReloadedOnce()) return
 
     isReloadingRef.current = true
     markReloadedOnce()
+
+    try {
+      if (user?.id) {
+        await revokeAllExamTokens(user.id)
+      } else {
+        const pairs = listAllExamTokenPairs()
+        for (const p of pairs) clearExamToken(p.bankId)
+      }
+    } catch {
+    }
 
     didLogoutRef.current = true
     setUser(null)
@@ -72,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     deleteCookie("accessToken")
 
     if (typeof window !== "undefined") window.location.reload()
-  }, [])
+  }, [user?.id])
 
   const checkAuth = useCallback(async () => {
     if (didLogoutRef.current) {
@@ -140,6 +188,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (isReloadingRef.current) return
     isReloadingRef.current = true
 
+    try {
+      if (user?.id) {
+        await revokeAllExamTokens(user.id)
+      } else {
+        const pairs = listAllExamTokenPairs()
+        for (const p of pairs) clearExamToken(p.bankId)
+      }
+    } catch {
+    }
+
     didLogoutRef.current = true
     setUser(null)
     api.clearToken()
@@ -155,7 +213,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     deleteCookie("accessToken")
 
     if (typeof window !== "undefined") window.location.reload()
-  }, [])
+  }, [user?.id])
 
   const value = useMemo(() => ({ user, loading, refreshUser, logout }), [user, loading, refreshUser, logout])
 
