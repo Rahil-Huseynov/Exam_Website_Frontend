@@ -428,6 +428,13 @@ class ApiClient {
     return this.request<Exam[]>(`/questions/exams${qs ? `?${qs}` : ""}`)
   }
 
+  async getExamYearsByUniversity(universityId: string) {
+    const qs = new URLSearchParams({ universityId }).toString()
+    const data = await this.request<{ years: number[] }>(`/questions/years?${qs}`)
+    return Array.isArray(data?.years) ? data.years : []
+  }
+
+
   async createExam(data: { title: string; universityId: string; subjectId: string; year: number; price: number }) {
     return this.request<Exam>("/questions/exam", {
       method: "POST",
