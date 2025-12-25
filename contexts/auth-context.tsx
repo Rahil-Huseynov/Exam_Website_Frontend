@@ -81,12 +81,17 @@ async function revokeAllExamTokens(userId: number) {
   }
 }
 
+const PROFILE_POLL_MS = 10_000
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
   const didLogoutRef = useRef(false)
   const isReloadingRef = useRef(false)
+
+  // ✅ poll zamanı paralel request olmasın
+  const pollingRef = useRef(false)
 
   const hardLogoutAndReload = useCallback(async () => {
     if (isReloadingRef.current) return
@@ -122,40 +127,76 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (typeof window !== "undefined") window.location.reload()
   }, [user?.id])
 
-  const checkAuth = useCallback(async () => {
-    if (didLogoutRef.current) {
-      setLoading(false)
-      return
-    }
+  /**
+   * ✅ checkAuth iki rejimdə işləyir:
+   * - Normal (silent=false): loading idarə edir, 401 olsa 1 dəfə hard logout+reload edə bilər
+   * - Background (silent=true): loading dəyişmir, UI-ya toxunmur, 401 olsa sadəcə user=null edir (reload YOX)
+   */
+  const checkAuth = useCallback(
+    async (opts?: { silent?: boolean }) => {
+      const silent = Boolean(opts?.silent)
 
-    try {
-      const profile = await api.getProfile()
-      setUser(profile)
+      if (didLogoutRef.current) return
 
-      clearReloadGuard()
-    } catch (e: any) {
-      const msg = String(e?.message || "")
-      const is401 = msg.includes("Status: 401") || msg.includes("(Status: 401)")
+      // silent poll üst-üstə minməsin
+      if (silent) {
+        if (pollingRef.current) return
+        pollingRef.current = true
+      } else {
+        setLoading(true)
+      }
 
-      if (is401) {
-        if (!hasReloadedOnce()) {
-          await hardLogoutAndReload()
+      try {
+        const profile = await api.getProfile()
+        setUser(profile)
+        clearReloadGuard()
+      } catch (e: any) {
+        const msg = String(e?.message || "")
+        const is401 = msg.includes("Status: 401") || msg.includes("(Status: 401)") || msg.includes("401")
+
+        if (is401) {
+          // ✅ Background poll zamanı: reload YOX, sadəcə sessiya bitibsə user=null
+          if (silent) {
+            setUser(null)
+            return
+          }
+
+          // ✅ Normal check zamanı: 1 dəfə hard logout + reload (səndəki qoruma)
+          if (!hasReloadedOnce()) {
+            await hardLogoutAndReload()
+            return
+          }
+
+          setUser(null)
           return
         }
 
         setUser(null)
-        setLoading(false)
-        return
+      } finally {
+        if (!silent) setLoading(false)
+        if (silent) pollingRef.current = false
       }
+    },
+    [hardLogoutAndReload],
+  )
 
-      setUser(null)
-    } finally {
-      setLoading(false)
-    }
-  }, [hardLogoutAndReload])
-
+  // ✅ ilk dəfə mount olanda normal check
   useEffect(() => {
-    checkAuth()
+    checkAuth({ silent: false })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checkAuth])
+
+  // ✅ hər 10 saniyədən bir background poll (tam arxa planda)
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    const id = window.setInterval(() => {
+      if (didLogoutRef.current) return
+      if (isReloadingRef.current) return
+      void checkAuth({ silent: true })
+    }, PROFILE_POLL_MS)
+
+    return () => window.clearInterval(id)
   }, [checkAuth])
 
   const refreshUser = useCallback(async () => {
@@ -168,13 +209,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return profile
     } catch (e: any) {
       const msg = String(e?.message || "")
-      const is401 = msg.includes("Status: 401") || msg.includes("(Status: 401)")
+      const is401 = msg.includes("Status: 401") || msg.includes("(Status: 401)") || msg.includes("401")
 
       if (is401) {
-        if (!hasReloadedOnce()) {
-          await hardLogoutAndReload()
-          return null
-        }
+        // refreshUser user action kimidir -> burada da reload istəmirsənsə, sadəcə user=null
         setUser(null)
         return null
       }
@@ -182,7 +220,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null)
       return null
     }
-  }, [hardLogoutAndReload])
+  }, [])
 
   const logout = useCallback(async () => {
     if (isReloadingRef.current) return
@@ -215,7 +253,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (typeof window !== "undefined") window.location.reload()
   }, [user?.id])
 
-  const value = useMemo(() => ({ user, loading, refreshUser, logout }), [user, loading, refreshUser, logout])
+  const value = useMemo(
+    () => ({ user, loading, refreshUser, logout }),
+    [user, loading, refreshUser, logout],
+  )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

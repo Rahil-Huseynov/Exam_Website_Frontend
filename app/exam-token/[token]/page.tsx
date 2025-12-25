@@ -1,6 +1,6 @@
 "use client"
 
-import { use, useEffect, useMemo, useRef, useState } from "react"
+import { use, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { api } from "@/lib/api"
 
@@ -24,8 +24,6 @@ export default function ExamTokenPage({ params }: { params: AnyParams }) {
   const [attemptId, setAttemptId] = useState("")
   const [bankId, setBankId] = useState("")
   const [loading, setLoading] = useState(true)
-
-  const deletedRef = useRef(false)
 
   useEffect(() => {
     if (authLoading) return
@@ -57,8 +55,30 @@ export default function ExamTokenPage({ params }: { params: AnyParams }) {
 
         const bank = String(storedBankId)
         setBankId(bank)
+
+        const attemptKey = `exam_attempt_${token}`
+        const existingAttemptId =
+          typeof window !== "undefined" ? window.sessionStorage.getItem(attemptKey) : null
+
+        if (existingAttemptId) {
+          setAttemptId(existingAttemptId)
+          return
+        }
+
         const created = await api.createAttemptWithToken(bank, user.id, token)
-        setAttemptId(created.attemptId)
+
+        const newAttemptId = String(created.attemptId || "")
+        if (!newAttemptId) {
+          toast.error("AttemptId alınmadı.")
+          router.replace("/dashboard")
+          return
+        }
+
+        setAttemptId(newAttemptId)
+
+        if (typeof window !== "undefined") {
+          window.sessionStorage.setItem(attemptKey, newAttemptId)
+        }
       } catch (e: any) {
         toast.error(e?.message || "Bu linklə imtahana başlamaq mümkün olmadı.")
         router.replace("/dashboard")
@@ -67,45 +87,6 @@ export default function ExamTokenPage({ params }: { params: AnyParams }) {
       }
     })()
   }, [authLoading, user?.id, token, router])
-
-  useEffect(() => {
-    if (authLoading) return
-    if (!user?.id) return
-    if (!token) return
-    if (!bankId) return
-
-    const deleteNow = () => {
-      if (deletedRef.current) return
-      deletedRef.current = true
-
-      try {
-        const payload = JSON.stringify({ userId: user.id, token })
-        const url = `${process.env.NEXT_PUBLIC_API_URL}/banks/${encodeURIComponent(bankId)}/exam-token/delete`
-
-        if (typeof navigator !== "undefined" && "sendBeacon" in navigator) {
-          const blob = new Blob([payload], { type: "application/json" })
-          navigator.sendBeacon(url, blob)
-          return
-        }
-      } catch {}
-
-      api.deleteExamToken(bankId, user.id, token, true).catch(() => null)
-    }
-
-    const onBeforeUnload = () => deleteNow()
-    const onVisibility = () => {
-      if (document.visibilityState === "hidden") deleteNow()
-    }
-
-    window.addEventListener("beforeunload", onBeforeUnload)
-    document.addEventListener("visibilitychange", onVisibility)
-
-    return () => {
-      window.removeEventListener("beforeunload", onBeforeUnload)
-      document.removeEventListener("visibilitychange", onVisibility)
-      deleteNow()
-    }
-  }, [authLoading, user?.id, token, bankId])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-50 via-blue-50 to-cyan-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">

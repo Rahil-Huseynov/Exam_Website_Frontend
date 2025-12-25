@@ -54,7 +54,6 @@ export type ExamQuestion = {
   options: { id: string; text: string }[]
 }
 
-
 export interface Question {
   id: string
   text: string
@@ -328,7 +327,21 @@ class ApiClient {
         serverMsg = ""
       }
 
-      const message = this.getDefaultErrMsg(res.status, serverMsg)
+      // ✅ FIX: backend konkret mesaj göndəribsə, onu olduğu kimi göstər
+      let message = serverMsg ? this.pickFrom3Lang(serverMsg) : this.getDefaultErrMsg(res.status)
+
+      // ✅ Xüsusi case: balans xətası
+      if (
+        serverMsg &&
+        serverMsg.toLowerCase().includes("balans") &&
+        (serverMsg.toLowerCase().includes("kifayət") || serverMsg.toLowerCase().includes("kifayet"))
+      ) {
+        message = this.pickLang(
+          "Balansda kifayət qədər vəsait yoxdur",
+          "Insufficient balance",
+          "Недостаточно средств на балансе",
+        )
+      }
 
       const publicNoAuthEndpoints = ["/", "/faq", "/contact-us"]
 
@@ -442,7 +455,6 @@ class ApiClient {
   }
 
   // ================== EXAMS / QUESTIONS ==================
-
   async getExamsByFilter(universityId?: string, subjectId?: string, year?: number) {
     const params = new URLSearchParams()
     if (universityId) params.append("universityId", String(universityId))
@@ -531,6 +543,7 @@ class ApiClient {
   async getUserAttempts(userId: number) {
     return this.request<UserAttemptsResponse>(`/users/${userId}/attempts`)
   }
+
   async getExams(params?: { universityId?: string; subjectId?: string; year?: number }) {
     const sp = new URLSearchParams()
     if (params?.universityId) sp.set("universityId", params.universityId)
@@ -589,8 +602,6 @@ class ApiClient {
   async getAttemptAnswers(attemptId: string) {
     return this.request<{ answers: AttemptAnswer[] }>(`/attempts/${encodeURIComponent(attemptId)}/answers`)
   }
-
 }
-
 
 export const api = new ApiClient()

@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Globe, Menu, Wallet, LogOut, Shield } from "lucide-react"
+import { fromCents, toCents } from "@/lib/utils"
 
 export function Navbar() {
   const { user, logout } = useAuth()
@@ -25,7 +26,7 @@ export function Navbar() {
     "User"
 
   const initial = (displayName.trim()[0] || "U").toUpperCase()
-  const balanceText = typeof user?.balance === "number" ? user.balance.toFixed(2) : "0.00"
+  const balanceCents = toCents((user as any)?.balance) 
 
   return (
     <nav className="sticky top-0 z-50 border-b bg-card/80 backdrop-blur-xl supports-[backdrop-filter]:bg-card/60">
@@ -49,9 +50,6 @@ export function Navbar() {
               <Link href="/exams" className="px-4 py-2 text-sm font-medium rounded-full hover:bg-muted transition-colors">
                 {t("takeExam")}
               </Link>
-              <Link href="/packages" className="px-4 py-2 text-sm font-medium rounded-full hover:bg-muted transition-colors">
-                {t("examPackages")}
-              </Link>
               <Link href="/results" className="px-4 py-2 text-sm font-medium rounded-full hover:bg-muted transition-colors">
                 {t("examResults")}
               </Link>
@@ -74,7 +72,7 @@ export function Navbar() {
                 <div className="flex items-center gap-2">
                   <Wallet className="h-4 w-4 text-accent" />
                   <span className="text-sm font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
-                    {balanceText} AZN
+                    {fromCents(balanceCents)} AZN
                   </span>
                 </div>
               </div>
@@ -123,7 +121,7 @@ export function Navbar() {
                       <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10">
                         <Wallet className="h-4 w-4 text-accent" />
                         <span className="text-sm font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                          {balanceText} AZN
+                          {fromCents(balanceCents)} AZN
                         </span>
                       </div>
                     </div>
@@ -136,9 +134,6 @@ export function Navbar() {
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild className="rounded-xl cursor-pointer">
                       <Link href="/exams">{t("takeExam")}</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild className="rounded-xl cursor-pointer">
-                      <Link href="/packages">{t("examPackages")}</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild className="rounded-xl cursor-pointer">
                       <Link href="/results">{t("examResults")}</Link>

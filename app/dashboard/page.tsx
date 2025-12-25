@@ -21,7 +21,6 @@ import {
   BookOpen,
   TrendingUp,
   Wallet,
-  FileText,
   ArrowRight,
   ArrowLeft,
   GraduationCap,
@@ -32,6 +31,7 @@ import {
 } from "lucide-react"
 
 import { toastError } from "@/lib/toast"
+import { fromCents, toCents } from "@/lib/utils"
 
 type Attempt = any
 type Step = 1 | 2 | 3
@@ -49,10 +49,6 @@ function tName(obj: any, locale: string) {
   return obj.nameEn || obj.name
 }
 
-/** ==========================
- * ✅ One-time EXAM URL helper
- * token -> bankId map (sessionStorage)
- * ========================== */
 function tokenBankKey(token: string) {
   return `exam_token_bank_${token}`
 }
@@ -64,7 +60,7 @@ function setTokenBank(token: string, bankId: string) {
 
 export default function DashboardPage() {
   const router = useRouter()
-  const { user, loading: authLoading, refreshUser } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const { locale } = useLocale()
   const { t } = useTranslation(locale)
 
@@ -72,17 +68,20 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const lastErrorRef = useRef<string>("")
 
+  // ✅ dashboard data yalnız 1 dəfə yüklənsin (auth poll dəyişsə belə)
+  const didLoadRef = useRef(false)
+
   const loadData = useCallback(async () => {
     try {
       setLoading(true)
 
-      const profile = user ?? (await refreshUser())
-      if (!profile) {
+      // ✅ refreshUser() YOX — yalnız auth context-dən gələn user ilə işləyirik
+      if (!user) {
         router.replace("/login")
         return
       }
 
-      const data = await api.getUserAttempts(profile.id)
+      const data = await api.getUserAttempts(user.id)
       setAttempts(Array.isArray((data as any)?.attempts) ? (data as any).attempts : [])
 
       lastErrorRef.current = ""
@@ -95,11 +94,25 @@ export default function DashboardPage() {
     } finally {
       setLoading(false)
     }
-  }, [user, refreshUser, router])
+  }, [user, router])
 
+  // ✅ yalnız 1 dəfə load et
   useEffect(() => {
-    if (!authLoading) loadData()
-  }, [authLoading, loadData])
+    if (authLoading) return
+
+    // auth bitibsə loginə at
+    if (!user) {
+      setLoading(false)
+      router.replace("/login")
+      return
+    }
+
+    // artıq yüklənibsə bir daha yükləmə
+    if (didLoadRef.current) return
+    didLoadRef.current = true
+
+    loadData()
+  }, [authLoading, user, loadData, router])
 
   const [step, setStep] = useState<Step>(1)
 
@@ -186,7 +199,7 @@ export default function DashboardPage() {
   }, [exams, q])
 
   const displayName = getDisplayName(user)
-  const balance = typeof (user as any)?.balance === "number" ? (user as any).balance : 0
+  const balanceCents = toCents((user as any)?.balance)
 
   const completedAttempts = attempts.filter((a) => a?.completedAt || a?.finishedAt || a?.status === "FINISHED")
   const averageScore =
@@ -198,12 +211,23 @@ export default function DashboardPage() {
         }, 0) / completedAttempts.length
       : 0
 
-  const totalSpent = useMemo(() => attempts.reduce((sum, a) => sum + Number(a?.exam?.price || a?.price || 0), 0), [attempts])
+  const totalSpent = useMemo(
+    () => attempts.reduce((sum, a) => sum + Number(a?.exam?.price || a?.price || 0), 0),
+    [attempts],
+  )
 
   async function startExam(exam: Exam) {
     try {
       if (!user?.id) {
         toastError("Login olunmayıb. İmtahana başlamaq üçün giriş edin.")
+        return
+      }
+
+      const priceCents = toCents((exam as any)?.price || 0)
+      const balanceCentsNow = toCents((user as any)?.balance)
+
+      if (balanceCentsNow < priceCents) {
+        toastError("Balansda kifayət qədər vəsait yoxdur")
         return
       }
 
@@ -213,7 +237,7 @@ export default function DashboardPage() {
         return
       }
 
-      const tok = await api.createExamToken(bankId, user.id) 
+      const tok = await api.createExamToken(bankId, user.id)
       const token = String((tok as any)?.token || "")
       const url = String((tok as any)?.url || `/exam-token/${token}`)
 
@@ -223,7 +247,6 @@ export default function DashboardPage() {
       }
 
       setTokenBank(token, bankId)
-
       router.push(url)
     } catch (e: any) {
       toastError(e?.message || "İmtahana başlamaq mümkün olmadı")
@@ -301,14 +324,14 @@ export default function DashboardPage() {
           </div>
 
           {/* Stats */}
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             <Card className="border-2 rounded-3xl">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                 <CardTitle className="text-sm font-medium">Balans</CardTitle>
                 <Wallet className="h-5 w-5" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">{Number(balance).toFixed(2)} AZN</div>
+                <div className="text-3xl font-bold">{fromCents(balanceCents)} AZN</div>
                 <Button asChild variant="link" className="px-0 h-auto mt-3">
                   <Link href="/balance" className="flex items-center gap-1">
                     Balansı artır
@@ -335,16 +358,6 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold">{Number(averageScore).toFixed(1)}%</div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-2 rounded-3xl">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-medium">Ümumi xərclənən</CardTitle>
-                <FileText className="h-5 w-5" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">{Number(totalSpent).toFixed(2)} AZN</div>
               </CardContent>
             </Card>
           </div>
