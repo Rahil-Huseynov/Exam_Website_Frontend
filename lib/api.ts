@@ -75,6 +75,26 @@ export type AttemptAnswer = {
   selectedOption: { id: string; text: string }
 }
 
+export type AdminListItem = {
+  id: number
+  email: string
+  firstName?: string | null
+  lastName?: string | null
+  role?: string | null
+}
+
+export type AdminListResponse = {
+  users: AdminListItem[]
+  totalPages: number
+}
+
+export type UpdateAdminPayload = {
+  firstName?: string
+  lastName?: string
+  role?: string
+  password?: string
+}
+
 export interface Exam {
   id: string
   title: string
@@ -95,6 +115,18 @@ export type ImportDirectPayload = {
     correctAnswerText?: string
   }>
 }
+
+export type AdminTopUpByPublicIdResponse = {
+  ok: true
+  added: string
+  user: { id: number; publicId: string; email: string; firstName?: string | null; lastName?: string | null; balance: string }
+}
+
+export type AdminSignupResponse = {
+  ok: true
+  admin: { id: number; email: string; firstName?: string | null; lastName?: string | null; role: string }
+}
+
 
 export type AdminQuestion = {
   id: string
@@ -121,6 +153,8 @@ export type CreateQuestionPayload = {
   correctAnswerText?: string
 }
 
+
+export type UpdateExamPayload = { title?: string; year?: number; price?: number }
 export type DeleteOkResponse = { ok: boolean }
 export type CreateExamTokenResponse = { ok: true; token: string; expiresAt: string }
 export type CreateAttemptResponse = { attemptId: string }
@@ -327,10 +361,8 @@ class ApiClient {
         serverMsg = ""
       }
 
-      // ✅ FIX: backend konkret mesaj göndəribsə, onu olduğu kimi göstər
       let message = serverMsg ? this.pickFrom3Lang(serverMsg) : this.getDefaultErrMsg(res.status)
 
-      // ✅ Xüsusi case: balans xətası
       if (
         serverMsg &&
         serverMsg.toLowerCase().includes("balans") &&
@@ -371,6 +403,21 @@ class ApiClient {
 
     return data
   }
+
+  async adminTopUpByPublicId(publicId: string, amount: number) {
+    return this.request<AdminTopUpByPublicIdResponse>("/auth/admin/topup-by-publicid", {
+      method: "POST",
+      json: { publicId, amount },
+    })
+  }
+
+  async adminSignup(payload: { email: string; password: string; firstName?: string; lastName?: string; role?: string }) {
+    return this.request<AdminSignupResponse>("/auth/admin/signup", {
+      method: "POST",
+      json: payload,
+    })
+  }
+
 
   async register(email: string, password: string, firstName: string, lastName?: string) {
     return this.request<{ success: boolean; email?: string; error?: string }>("/auth/user/signup", {
@@ -463,6 +510,14 @@ class ApiClient {
     const qs = params.toString()
     return this.request<Exam[]>(`/questions/exams${qs ? `?${qs}` : ""}`)
   }
+
+  async updateExam(bankId: string, payload: UpdateExamPayload) {
+    return this.request<Exam>(`/questions/bank/${encodeURIComponent(bankId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    })
+  }
+
 
   async getExamYearsByUniversity(universityId: string) {
     const qs = new URLSearchParams({ universityId }).toString()
@@ -602,6 +657,31 @@ class ApiClient {
   async getAttemptAnswers(attemptId: string) {
     return this.request<{ answers: AttemptAnswer[] }>(`/attempts/${encodeURIComponent(attemptId)}/answers`)
   }
+
+  async adminGetUserByPublicId(publicId: string) {
+    const qs = new URLSearchParams({ publicId }).toString()
+    return this.request<{ ok: true; user: any }>(`/auth/admin/user-by-publicid?${qs}`)
+  }
+
+
+  async getAdmins(page = 1, limit = 50, search = "") {
+    const qs = new URLSearchParams({ page: String(page), limit: String(limit), search }).toString()
+    return this.request<AdminListResponse>(`/auth/admins?${qs}`)
+  }
+
+  async updateAdmin(id: number, payload: UpdateAdminPayload) {
+    return this.request<AdminListItem>(`/auth/admin/${id}`, {
+      method: "PUT",
+      json: payload,
+    })
+  }
+
+  async deleteAdmin(id: number) {
+    return this.request<{ ok?: boolean; message?: string }>(`/auth/admin/${id}`, {
+      method: "DELETE",
+    })
+  }
+
 }
 
 export const api = new ApiClient()

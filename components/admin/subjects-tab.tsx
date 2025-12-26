@@ -30,11 +30,7 @@ export function SubjectsTab() {
   }, [])
 
   function msgAllLang() {
-    return locale === "az"
-      ? "Bütün dillərdə ad daxil edin"
-      : locale === "ru"
-        ? "Введите название на всех языках"
-        : "Enter name in all languages"
+    return t("subjects.errors.all_languages_required")
   }
 
   async function loadSubjects() {
@@ -43,7 +39,7 @@ export function SubjectsTab() {
       const data = await api.getSubjects()
       setSubjects(data)
     } catch (err) {
-      toastError(err instanceof Error ? err.message : "Failed to load subjects")
+      toastError(err instanceof Error ? err.message : t("subjects.errors.load_failed"))
     } finally {
       setLoading(false)
     }
@@ -107,68 +103,56 @@ export function SubjectsTab() {
   }
 
   function handleDeleteSubject(subjectId: string) {
-    toastConfirm(
-      locale === "az"
-        ? "Bu fənn silinsin?"
-        : locale === "ru"
-          ? "Удалить предмет?"
-          : "Delete subject?",
-      async () => {
-        try {
-          await api.deleteSubject(subjectId)
-          toastSuccess(t("success"))
-          await loadSubjects()
-        } catch (err) {
-          toastError(err instanceof Error ? err.message : t("failed"))
-        }
-      },
-    )
+    toastConfirm(t("subjects.confirm.delete_subject"), async () => {
+      try {
+        await api.deleteSubject(subjectId)
+        toastSuccess(t("success"))
+        await loadSubjects()
+      } catch (err) {
+        toastError(err instanceof Error ? err.message : t("failed"))
+      }
+    })
   }
 
   return (
     <div className="space-y-6">
-      {/* ADD */}
       <Card>
         <CardHeader>
-          <CardTitle>{t("addSubject")}</CardTitle>
-          <CardDescription>
-            {locale === "az" && "Yeni fənn əlavə edin (bütün dillərdə)"}
-            {locale === "en" && "Add a new subject (in all languages)"}
-            {locale === "ru" && "Добавить новый предмет (на всех языках)"}
-          </CardDescription>
+          <CardTitle>{t("subjects.ui.add_title")}</CardTitle>
+          <CardDescription>{t("subjects.ui.add_desc")}</CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-2">
-              <Label htmlFor="subj-az">Azərbaycan</Label>
+              <Label htmlFor="subj-az">{t("subjects.ui.lang_az")}</Label>
               <Input
                 id="subj-az"
                 value={newSubject.az}
                 onChange={(e) => setNewSubject({ ...newSubject, az: e.target.value })}
-                placeholder="Riyaziyyat"
+                placeholder={t("subjects.ui.ph_az")}
                 disabled={adding}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="subj-en">English</Label>
+              <Label htmlFor="subj-en">{t("subjects.ui.lang_en")}</Label>
               <Input
                 id="subj-en"
                 value={newSubject.en}
                 onChange={(e) => setNewSubject({ ...newSubject, en: e.target.value })}
-                placeholder="Mathematics"
+                placeholder={t("subjects.ui.ph_en")}
                 disabled={adding}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="subj-ru">Русский</Label>
+              <Label htmlFor="subj-ru">{t("subjects.ui.lang_ru")}</Label>
               <Input
                 id="subj-ru"
                 value={newSubject.ru}
                 onChange={(e) => setNewSubject({ ...newSubject, ru: e.target.value })}
-                placeholder="Математика"
+                placeholder={t("subjects.ui.ph_ru")}
                 disabled={adding}
               />
             </div>
@@ -181,15 +165,10 @@ export function SubjectsTab() {
         </CardContent>
       </Card>
 
-      {/* LIST + EDIT + DELETE */}
       <Card>
         <CardHeader>
-          <CardTitle>{t("manageSubjects")}</CardTitle>
-          <CardDescription>
-            {locale === "az" && "Mövcud fənnlərin siyahısı"}
-            {locale === "en" && "List of existing subjects"}
-            {locale === "ru" && "Список существующих предметов"}
-          </CardDescription>
+          <CardTitle>{t("subjects.ui.manage_title")}</CardTitle>
+          <CardDescription>{t("subjects.ui.manage_desc")}</CardDescription>
         </CardHeader>
 
         <CardContent>
@@ -234,7 +213,7 @@ export function SubjectsTab() {
                       <>
                         <div className="grid gap-4 md:grid-cols-3">
                           <div className="space-y-2">
-                            <Label>Azərbaycan</Label>
+                            <Label>{t("subjects.ui.lang_az")}</Label>
                             <Input
                               value={editForm.az}
                               onChange={(e) => setEditForm({ ...editForm, az: e.target.value })}
@@ -243,7 +222,7 @@ export function SubjectsTab() {
                           </div>
 
                           <div className="space-y-2">
-                            <Label>English</Label>
+                            <Label>{t("subjects.ui.lang_en")}</Label>
                             <Input
                               value={editForm.en}
                               onChange={(e) => setEditForm({ ...editForm, en: e.target.value })}
@@ -252,7 +231,7 @@ export function SubjectsTab() {
                           </div>
 
                           <div className="space-y-2">
-                            <Label>Русский</Label>
+                            <Label>{t("subjects.ui.lang_ru")}</Label>
                             <Input
                               value={editForm.ru}
                               onChange={(e) => setEditForm({ ...editForm, ru: e.target.value })}
@@ -264,18 +243,12 @@ export function SubjectsTab() {
                         <div className="flex items-center justify-end gap-2">
                           <Button variant="ghost" onClick={cancelEdit} disabled={saving}>
                             <X className="h-4 w-4 mr-2" />
-                            {locale === "az" ? "Ləğv et" : locale === "ru" ? "Отмена" : "Cancel"}
+                            {t("common.cancel")}
                           </Button>
 
                           <Button onClick={() => handleSaveEdit(subj.id)} disabled={saving}>
                             <Save className="h-4 w-4 mr-2" />
-                            {saving
-                              ? t("processing")
-                              : locale === "az"
-                                ? "Yadda saxla"
-                                : locale === "ru"
-                                  ? "Сохранить"
-                                  : "Save"}
+                            {saving ? t("processing") : t("common.save")}
                           </Button>
                         </div>
                       </>

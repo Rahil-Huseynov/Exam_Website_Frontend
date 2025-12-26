@@ -43,9 +43,6 @@ function clearReloadGuard() {
   window.sessionStorage.removeItem(RELOAD_GUARD_KEY)
 }
 
-/** ==========================
- * ✅ EXAM TOKEN HELPERS (sessionStorage)
- * ========================== */
 function listAllExamTokenPairs(): Array<{ bankId: string; token: string }> {
   if (typeof window === "undefined") return []
   const out: Array<{ bankId: string; token: string }> = []
@@ -90,7 +87,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const didLogoutRef = useRef(false)
   const isReloadingRef = useRef(false)
 
-  // ✅ poll zamanı paralel request olmasın
   const pollingRef = useRef(false)
 
   const hardLogoutAndReload = useCallback(async () => {
@@ -127,18 +123,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (typeof window !== "undefined") window.location.reload()
   }, [user?.id])
 
-  /**
-   * ✅ checkAuth iki rejimdə işləyir:
-   * - Normal (silent=false): loading idarə edir, 401 olsa 1 dəfə hard logout+reload edə bilər
-   * - Background (silent=true): loading dəyişmir, UI-ya toxunmur, 401 olsa sadəcə user=null edir (reload YOX)
-   */
+
   const checkAuth = useCallback(
     async (opts?: { silent?: boolean }) => {
       const silent = Boolean(opts?.silent)
 
       if (didLogoutRef.current) return
 
-      // silent poll üst-üstə minməsin
       if (silent) {
         if (pollingRef.current) return
         pollingRef.current = true
@@ -155,13 +146,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const is401 = msg.includes("Status: 401") || msg.includes("(Status: 401)") || msg.includes("401")
 
         if (is401) {
-          // ✅ Background poll zamanı: reload YOX, sadəcə sessiya bitibsə user=null
           if (silent) {
             setUser(null)
             return
           }
 
-          // ✅ Normal check zamanı: 1 dəfə hard logout + reload (səndəki qoruma)
           if (!hasReloadedOnce()) {
             await hardLogoutAndReload()
             return
@@ -180,13 +169,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [hardLogoutAndReload],
   )
 
-  // ✅ ilk dəfə mount olanda normal check
   useEffect(() => {
     checkAuth({ silent: false })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checkAuth])
 
-  // ✅ hər 10 saniyədən bir background poll (tam arxa planda)
   useEffect(() => {
     if (typeof window === "undefined") return
 
@@ -212,7 +198,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const is401 = msg.includes("Status: 401") || msg.includes("(Status: 401)") || msg.includes("401")
 
       if (is401) {
-        // refreshUser user action kimidir -> burada da reload istəmirsənsə, sadəcə user=null
         setUser(null)
         return null
       }

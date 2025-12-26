@@ -41,6 +41,7 @@ export function PublicNavbar() {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Language */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full">
@@ -49,13 +50,13 @@ export function PublicNavbar() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="rounded-2xl">
                 <DropdownMenuItem onClick={() => setLocale("az")} className="rounded-xl cursor-pointer">
-                  Azərbaycan
+                  {t("navbar.lang.az")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setLocale("en")} className="rounded-xl cursor-pointer">
-                  English
+                  {t("navbar.lang.en")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setLocale("ru")} className="rounded-xl cursor-pointer">
-                  Русский
+                  {t("navbar.lang.ru")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

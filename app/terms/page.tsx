@@ -21,7 +21,9 @@ export default function TermsPage() {
             <h1 className="text-5xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
               {t("termsTitle")}
             </h1>
-            <p className="text-lg text-muted-foreground leading-relaxed">{t("termsIntro")}</p>
+            <p className="text-lg text-muted-foreground leading-relaxed">
+              {t("termsIntro")}
+            </p>
           </div>
 
           <div className="space-y-6">
@@ -33,7 +35,9 @@ export default function TermsPage() {
                   </div>
                   <h2 className="text-2xl font-bold">{t("termsSection1")}</h2>
                 </div>
-                <p className="text-muted-foreground leading-relaxed pl-15">{t("termsSection1Text")}</p>
+                <p className="text-muted-foreground leading-relaxed pl-14">
+                  {t("termsSection1Text")}
+                </p>
               </div>
             </Card>
 
@@ -45,7 +49,9 @@ export default function TermsPage() {
                   </div>
                   <h2 className="text-2xl font-bold">{t("termsSection2")}</h2>
                 </div>
-                <p className="text-muted-foreground leading-relaxed pl-15">{t("termsSection2Text")}</p>
+                <p className="text-muted-foreground leading-relaxed pl-14">
+                  {t("termsSection2Text")}
+                </p>
               </div>
             </Card>
 
@@ -57,17 +63,15 @@ export default function TermsPage() {
                   </div>
                   <h2 className="text-2xl font-bold">{t("termsSection3")}</h2>
                 </div>
-                <p className="text-muted-foreground leading-relaxed pl-15">{t("termsSection3Text")}</p>
+                <p className="text-muted-foreground leading-relaxed pl-14">
+                  {t("termsSection3Text")}
+                </p>
               </div>
             </Card>
           </div>
 
           <div className="text-center text-sm text-muted-foreground pt-8">
-            {locale === "az"
-              ? "Son yenilənmə: 23 Dekabr 2024"
-              : locale === "en"
-                ? "Last updated: December 23, 2024"
-                : "Последнее обновление: 23 декабря 2024"}
+            {t("termsLastUpdated")}
           </div>
         </div>
       </main>

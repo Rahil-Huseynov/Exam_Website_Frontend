@@ -5,14 +5,17 @@ import { useAuth } from "@/contexts/auth-context"
 import { useLocale } from "@/contexts/locale-context"
 import { useTranslation } from "@/lib/i18n"
 import { api } from "@/lib/api"
+
 import { Navbar } from "@/components/navbar"
+import { Footer } from "@/components/footer"
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+
 import { Wallet, CreditCard, CheckCircle2, Sparkles } from "lucide-react"
-import { Footer } from "@/components/footer"
 
 const PRESET_AMOUNTS = [5, 10, 20, 50, 100]
 
@@ -41,13 +44,7 @@ export default function BalancePage() {
     const amount = currentAmount
 
     if (!amount || amount <= 0) {
-      setError(
-        locale === "az"
-          ? "Düzgün məbləğ daxil edin"
-          : locale === "ru"
-            ? "Введите правильную сумму"
-            : "Enter a valid amount",
-      )
+      setError(t("balanceInvalidAmount"))
       return
     }
 
@@ -74,17 +71,14 @@ export default function BalancePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/5 to-accent/5 flex flex-col">
       <Navbar />
+
       <main className="container mx-auto px-4 py-8 flex-1">
         <div className="max-w-2xl mx-auto space-y-6">
           <div>
             <h1 className="text-4xl font-bold text-balance bg-gradient-to-r from-violet-600 via-blue-600 to-cyan-600 bg-clip-text text-transparent">
               {t("addBalance")}
             </h1>
-            <p className="text-muted-foreground mt-2 text-lg">
-              {locale === "az" && "Hesabınıza balans əlavə edin"}
-              {locale === "en" && "Add balance to your account"}
-              {locale === "ru" && "Пополните баланс вашего аккаунта"}
-            </p>
+            <p className="text-muted-foreground mt-2 text-lg">{t("balanceSubtitle")}</p>
           </div>
 
           {error && (
@@ -97,9 +91,7 @@ export default function BalancePage() {
             <Alert className="border-green-200 bg-green-50 dark:bg-green-950/20">
               <CheckCircle2 className="h-5 w-5 text-green-600" />
               <AlertDescription className="text-green-700 dark:text-green-400">
-                {locale === "az" && "Balans uğurla əlavə edildi!"}
-                {locale === "en" && "Balance added successfully!"}
-                {locale === "ru" && "Баланс успешно пополнен!"}
+                {t("balanceAddedSuccess")}
               </AlertDescription>
             </Alert>
           )}
@@ -109,11 +101,7 @@ export default function BalancePage() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-2xl">{t("yourBalance")}</CardTitle>
-                  <CardDescription className="text-base">
-                    {locale === "az" && "Cari balansınız"}
-                    {locale === "en" && "Your current balance"}
-                    {locale === "ru" && "Ваш текущий баланс"}
-                  </CardDescription>
+                  <CardDescription className="text-base">{t("balanceCurrentDesc")}</CardDescription>
                 </div>
                 <div className="h-16 w-16 rounded-full bg-gradient-to-br from-violet-500 to-blue-500 flex items-center justify-center">
                   <Wallet className="h-8 w-8 text-white" />
@@ -137,11 +125,7 @@ export default function BalancePage() {
                 <Sparkles className="h-5 w-5 text-violet-600" />
                 {t("selectAmount")}
               </CardTitle>
-              <CardDescription className="text-base">
-                {locale === "az" && "Əlavə etmək istədiyiniz məbləği seçin"}
-                {locale === "en" && "Choose the amount you want to add"}
-                {locale === "ru" && "Выберите сумму, которую хотите добавить"}
-              </CardDescription>
+              <CardDescription className="text-base">{t("balanceSelectDesc")}</CardDescription>
             </CardHeader>
 
             <CardContent className="space-y-6">
@@ -190,11 +174,7 @@ export default function BalancePage() {
                     <span className="font-bold text-lg">{currentAmount.toFixed(2)} AZN</span>
                   </div>
                   <div className="flex items-center justify-between text-lg font-bold">
-                    <span>
-                      {locale === "az" && "Yeni balans:"}
-                      {locale === "en" && "New balance:"}
-                      {locale === "ru" && "Новый баланс:"}
-                    </span>
+                    <span>{t("balanceNewBalanceLabel")}</span>
                     <span className="bg-gradient-to-r from-violet-600 to-blue-600 bg-clip-text text-transparent">
                       {newBalanceText} AZN
                     </span>
@@ -217,21 +197,13 @@ export default function BalancePage() {
           <Card>
             <CardHeader>
               <CardTitle>{t("paymentMethod")}</CardTitle>
-              <CardDescription>
-                {locale === "az" && "Ödəniş üsulları tezliklə əlavə ediləcək"}
-                {locale === "en" && "Payment methods coming soon"}
-                {locale === "ru" && "Способы оплаты скоро будут добавлены"}
-              </CardDescription>
+              <CardDescription>{t("paymentMethodsSoon")}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-3 p-4 border rounded-lg">
                 <CreditCard className="h-8 w-8 text-muted-foreground" />
                 <div>
-                  <p className="font-medium">
-                    {locale === "az" && "Bank kartı"}
-                    {locale === "en" && "Credit/Debit Card"}
-                    {locale === "ru" && "Банковская карта"}
-                  </p>
+                  <p className="font-medium">{t("paymentCardTitle")}</p>
                   <p className="text-sm text-muted-foreground">Visa, Mastercard</p>
                 </div>
               </div>
@@ -239,6 +211,7 @@ export default function BalancePage() {
           </Card>
         </div>
       </main>
+
       <Footer />
     </div>
   )

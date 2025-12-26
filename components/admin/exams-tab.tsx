@@ -14,14 +14,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { FileText, CheckCircle2, Eye, Trash2, Pencil, Plus } from "lucide-react"
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 import { toastConfirm, toastError, toastSuccess } from "@/lib/toast"
 
@@ -69,6 +62,12 @@ export function ExamsTab() {
   const [newOptions, setNewOptions] = useState<string[]>(["", "", "", ""])
   const [newCorrectIndex, setNewCorrectIndex] = useState<number>(0)
 
+  const [editExamOpen, setEditExamOpen] = useState(false)
+  const [editExamId, setEditExamId] = useState<string>("")
+  const [editTitle, setEditTitle] = useState("")
+  const [editYear, setEditYear] = useState("")
+  const [editPrice, setEditPrice] = useState("")
+
   useEffect(() => {
     loadData()
   }, [])
@@ -85,7 +84,7 @@ export function ExamsTab() {
       setUniversities(universitiesData)
       setSubjects(subjectsData)
     } catch (err) {
-      toastError(err instanceof Error ? err.message : "Failed to load data")
+      toastError(err instanceof Error ? err.message : t("exams.errors.load_data_failed"))
     } finally {
       setLoading(false)
     }
@@ -102,6 +101,48 @@ export function ExamsTab() {
     setNewOptions(["", "", "", ""])
     setNewCorrectIndex(0)
     setAddModalOpen(false)
+  }
+
+  function openEditExam(exam: Exam) {
+    setEditExamId(exam.id)
+    setEditTitle(exam.title || "")
+    setEditYear(String(exam.year ?? ""))
+    setEditPrice(String(exam.price ?? ""))
+    setEditExamOpen(true)
+  }
+
+  async function handleSaveExamEdit() {
+    if (!editExamId) return
+
+    const title = (editTitle || "").trim()
+    if (!title) {
+      toastError(t("exams.errors.title_empty"))
+      return
+    }
+
+    const yearNum = Number(editYear)
+    const priceNum = Number(editPrice)
+
+    if (!Number.isInteger(yearNum) || yearNum < 1900 || yearNum > 3000) {
+      toastError(t("exams.errors.year_invalid"))
+      return
+    }
+    if (!Number.isFinite(priceNum) || priceNum < 0) {
+      toastError(t("exams.errors.price_invalid"))
+      return
+    }
+
+    try {
+      setBusy(true)
+      await api.updateExam(editExamId, { title, year: yearNum, price: priceNum })
+      toastSuccess(t("exams.success.exam_updated"))
+      setEditExamOpen(false)
+      await loadData()
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : t("exams.errors.update_failed"))
+    } finally {
+      setBusy(false)
+    }
   }
 
   const canCreateExam = useMemo(() => {
@@ -131,7 +172,7 @@ export function ExamsTab() {
 
   async function handleCreateExam() {
     if (!canCreateExam) {
-      toastError(locale === "az" ? "Bütün xanaları doldurun" : locale === "ru" ? "Заполните все поля" : "Fill all fields")
+      toastError(t("exams.errors.fill_all_fields"))
       return
     }
 
@@ -155,10 +196,10 @@ export function ExamsTab() {
         price: "5.00",
       })
 
-      toastSuccess(locale === "az" ? "İmtahan yaradıldı" : locale === "ru" ? "Экзамен создан" : "Exam created")
+      toastSuccess(t("exams.success.exam_created"))
       await loadData()
     } catch (err) {
-      toastError(err instanceof Error ? err.message : "Failed")
+      toastError(err instanceof Error ? err.message : t("exams.errors.create_failed"))
     } finally {
       setBusy(false)
     }
@@ -166,7 +207,7 @@ export function ExamsTab() {
 
   async function handleReadPdfFront() {
     if (!canReadPdfFront) {
-      toastError(locale === "az" ? "Exam seç və PDF seç" : locale === "ru" ? "Выберите экзамен и PDF" : "Select exam and PDF")
+      toastError(t("exams.errors.select_exam_and_pdf"))
       return
     }
 
@@ -178,15 +219,15 @@ export function ExamsTab() {
       const parsed = parseQuestionsFromText(text)
 
       if (!parsed.length) {
-        throw new Error(locale === "az" ? "PDF-dən sual tapılmadı (format parser-ə uyğun deyil)" : "No questions found")
+        throw new Error(t("exams.errors.pdf_no_questions"))
       }
 
       setDraft(parsed)
       setSelectedCorrect({})
       setDraftModalOpen(true)
-      toastSuccess(locale === "az" ? "PDF oxundu, draft hazırdır" : locale === "ru" ? "PDF прочитан" : "PDF parsed")
+      toastSuccess(t("exams.success.pdf_parsed"))
     } catch (err: any) {
-      toastError(err?.message || "PDF read failed")
+      toastError(err?.message || t("exams.errors.pdf_read_failed"))
     } finally {
       setBusy(false)
     }
@@ -194,7 +235,7 @@ export function ExamsTab() {
 
   async function handleCommit() {
     if (!canCommit) {
-      toastError(locale === "az" ? "Ən az 1 sual üçün doğru variant seç" : locale === "ru" ? "Выберите хотя бы 1 ответ" : "Select at least 1")
+      toastError(t("exams.errors.select_at_least_one"))
       return
     }
 
@@ -207,7 +248,7 @@ export function ExamsTab() {
           .map((q) => {
             const correctTempId = selectedCorrect[q.tempId]
             const correctOpt = q.options.find((o) => o.tempOptionId === correctTempId)
-            if (!correctOpt) throw new Error("Correct option tapılmadı")
+            if (!correctOpt) throw new Error(t("exams.errors.correct_option_missing"))
 
             return {
               text: q.text,
@@ -219,13 +260,13 @@ export function ExamsTab() {
 
       await api.importQuestionsDirect(selectedExamId, payload)
 
-      toastSuccess(locale === "az" ? "Seçilən suallar DB-yə yazıldı" : locale === "ru" ? "Сохранено" : "Saved")
+      toastSuccess(t("exams.success.saved_to_db"))
       resetDraftState()
       setFile(null)
 
       await loadData()
     } catch (err) {
-      toastError(err instanceof Error ? err.message : "Commit failed")
+      toastError(err instanceof Error ? err.message : t("exams.errors.commit_failed"))
     } finally {
       setBusy(false)
     }
@@ -241,47 +282,41 @@ export function ExamsTab() {
 
       setManageModalOpen(true)
     } catch (err) {
-      toastError(err instanceof Error ? err.message : "Failed to load questions")
+      toastError(err instanceof Error ? err.message : t("exams.errors.load_questions_failed"))
     } finally {
       setQBusy(false)
     }
   }
 
   function handleDeleteExam(bankId: string) {
-    toastConfirm(
-      locale === "az" ? "İmtahan silinsin?" : locale === "ru" ? "Удалить экзамен?" : "Delete exam?",
-      async () => {
-        try {
-          setBusy(true)
-          await api.deleteBank(bankId)
-          toastSuccess(locale === "az" ? "Silindi" : locale === "ru" ? "Удалено" : "Deleted")
-          await loadData()
-        } catch (err) {
-          toastError(err instanceof Error ? err.message : "Delete failed")
-        } finally {
-          setBusy(false)
-        }
-      },
-    )
+    toastConfirm(t("exams.confirm.delete_exam"), async () => {
+      try {
+        setBusy(true)
+        await api.deleteBank(bankId)
+        toastSuccess(t("exams.success.deleted"))
+        await loadData()
+      } catch (err) {
+        toastError(err instanceof Error ? err.message : t("exams.errors.delete_failed"))
+      } finally {
+        setBusy(false)
+      }
+    })
   }
 
   function handleDeleteQuestion(questionId: string) {
-    toastConfirm(
-      locale === "az" ? "Sual silinsin?" : locale === "ru" ? "Удалить вопрос?" : "Delete question?",
-      async () => {
-        try {
-          setQBusy(true)
-          await api.deleteQuestion(questionId)
-          setBankQuestions((prev) => prev.filter((x) => x.id !== questionId))
-          toastSuccess(locale === "az" ? "Sual silindi" : locale === "ru" ? "Вопрос удалён" : "Question deleted")
-          await loadData()
-        } catch (err) {
-          toastError(err instanceof Error ? err.message : "Delete failed")
-        } finally {
-          setQBusy(false)
-        }
-      },
-    )
+    toastConfirm(t("exams.confirm.delete_question"), async () => {
+      try {
+        setQBusy(true)
+        await api.deleteQuestion(questionId)
+        setBankQuestions((prev) => prev.filter((x) => x.id !== questionId))
+        toastSuccess(t("exams.success.question_deleted"))
+        await loadData()
+      } catch (err) {
+        toastError(err instanceof Error ? err.message : t("exams.errors.delete_failed"))
+      } finally {
+        setQBusy(false)
+      }
+    })
   }
 
   async function handleSaveQuestion(q: AdminQuestion) {
@@ -296,10 +331,10 @@ export function ExamsTab() {
 
       const updated = await api.updateQuestion(q.id, payload)
       setBankQuestions((prev) => prev.map((x) => (x.id === updated.id ? updated : x)))
-      toastSuccess(locale === "az" ? "Yadda saxlandı" : locale === "ru" ? "Сохранено" : "Saved")
+      toastSuccess(t("exams.success.saved"))
       await loadData()
     } catch (err) {
-      toastError(err instanceof Error ? err.message : "Save failed")
+      toastError(err instanceof Error ? err.message : t("exams.errors.save_failed"))
     } finally {
       setQBusy(false)
     }
@@ -307,15 +342,15 @@ export function ExamsTab() {
 
   async function handleAddQuestion() {
     if (!API_URL) {
-      toastError("NEXT_PUBLIC_API_URL tapılmadı. .env-də set et.")
+      toastError(t("exams.errors.api_url_missing"))
       return
     }
     if (!manageBankId) {
-      toastError("Bank seçilməyib")
+      toastError(t("exams.errors.bank_not_selected"))
       return
     }
     if (!canAddQuestion) {
-      toastError(locale === "az" ? "Sual, ən az 2 unik variant və doğru cavabı seç" : "Fill question, 2 unique options and pick correct")
+      toastError(t("exams.errors.add_question_invalid"))
       return
     }
 
@@ -333,13 +368,13 @@ export function ExamsTab() {
 
     const correctText = normText(newOptions[newCorrectIndex] || "")
     if (!correctText) {
-      toastError(locale === "az" ? "Doğru cavabı seç" : "Select correct answer")
+      toastError(t("exams.errors.select_correct"))
       return
     }
 
     const correctIn = finalOpts.find((x) => x.toLowerCase() === correctText.toLowerCase())
     if (!correctIn) {
-      toastError(locale === "az" ? "Doğru cavab variantların içində deyil" : "Correct not in options")
+      toastError(t("exams.errors.correct_not_in_options"))
       return
     }
 
@@ -365,18 +400,18 @@ export function ExamsTab() {
       })
 
       if (!res.ok) {
-        const msg = await res.text().catch(() => "Failed to add question")
-        throw new Error(msg || "Failed to add question")
+        const msg = await res.text().catch(() => t("exams.errors.add_failed"))
+        throw new Error(msg || t("exams.errors.add_failed"))
       }
 
       const created = (await res.json()) as AdminQuestion
 
       setBankQuestions((prev) => [created, ...prev])
-      toastSuccess(locale === "az" ? "Sual əlavə olundu" : "Question added")
+      toastSuccess(t("exams.success.question_added"))
       resetAddState()
       await loadData()
     } catch (err) {
-      toastError(err instanceof Error ? err.message : "Add failed")
+      toastError(err instanceof Error ? err.message : t("exams.errors.add_failed"))
     } finally {
       setQBusy(false)
     }
@@ -384,27 +419,20 @@ export function ExamsTab() {
 
   return (
     <div className="space-y-6">
-      {/* 1) Create exam */}
       <Card>
         <CardHeader>
-          <CardTitle>{locale === "az" ? "İmtahan yarat" : locale === "ru" ? "Создать экзамен" : "Create exam"}</CardTitle>
-          <CardDescription>
-            {locale === "az"
-              ? "Universitet, fənn, il və qiymət ilə exam yarat"
-              : locale === "ru"
-                ? "Создайте экзамен по университету, предмету, году и цене"
-                : "Create exam with university, subject, year and price"}
-          </CardDescription>
+          <CardTitle>{t("exams.ui.create_exam_title")}</CardTitle>
+          <CardDescription>{t("exams.ui.create_exam_desc")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label>Title</Label>
+              <Label>{t("common.title")}</Label>
               <Input
                 value={examForm.title}
                 onChange={(e) => setExamForm({ ...examForm, title: e.target.value })}
                 disabled={busy}
-                placeholder="MİDTERM - 2025"
+                placeholder={t("exams.ui.title_placeholder")}
               />
             </div>
 
@@ -463,34 +491,21 @@ export function ExamsTab() {
           </div>
 
           <Button onClick={handleCreateExam} disabled={busy || !canCreateExam}>
-            {busy ? t("processing") : locale === "az" ? "Yarat" : locale === "ru" ? "Создать" : "Create"}
+            {busy ? t("processing") : t("common.create")}
           </Button>
         </CardContent>
       </Card>
 
-      {/* 2) Select exam + PDF front read */}
       <Card>
         <CardHeader>
-          <CardTitle>
-            {locale === "az"
-              ? "PDF oxu (FRONT) və correct seç"
-              : locale === "ru"
-                ? "Читать PDF (FRONT) и выбрать ответы"
-                : "Read PDF (FRONT) and select correct answers"}
-          </CardTitle>
-          <CardDescription>
-            {locale === "az"
-              ? "Exam seç → PDF seç → modal açılacaq → correct seç → seçilən suallar DB-yə yazılacaq"
-              : locale === "ru"
-                ? "Экзамен → PDF → модал → выбрать → сохранить выбранные"
-                : "Exam → PDF → modal → choose → save selected"}
-          </CardDescription>
+          <CardTitle>{t("exams.ui.pdf_title")}</CardTitle>
+          <CardDescription>{t("exams.ui.pdf_desc")}</CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <Label>{locale === "az" ? "Exam seç" : locale === "ru" ? "Выберите экзамен" : "Select exam"}</Label>
+              <Label>{t("exams.ui.select_exam")}</Label>
               <Select
                 value={selectedExamId}
                 onValueChange={(v) => {
@@ -499,7 +514,7 @@ export function ExamsTab() {
                 }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Exam..." />
+                  <SelectValue placeholder={t("exams.ui.exam_placeholder")} />
                 </SelectTrigger>
                 <SelectContent>
                   {exams.map((e) => (
@@ -512,7 +527,7 @@ export function ExamsTab() {
             </div>
 
             <div className="space-y-2">
-              <Label>{locale === "az" ? "PDF seç" : locale === "ru" ? "Выберите PDF" : "Select PDF"}</Label>
+              <Label>{t("exams.ui.select_pdf")}</Label>
               <Input
                 type="file"
                 accept=".pdf"
@@ -532,43 +547,30 @@ export function ExamsTab() {
 
           <div className="flex flex-wrap gap-3 items-center">
             <Button onClick={handleReadPdfFront} disabled={busy || !canReadPdfFront}>
-              {busy ? (locale === "az" ? "Oxunur..." : "Reading...") : locale === "az" ? "PDF oxu (Modal aç)" : "Read PDF"}
+              {busy ? t("exams.ui.reading") : t("exams.ui.read_pdf_open_modal")}
             </Button>
 
             <Button variant="outline" onClick={() => setDraftModalOpen(true)} disabled={busy || draft.length === 0}>
               <Eye className="h-4 w-4 mr-2" />
-              {locale === "az" ? "Draft-a bax" : "Open draft"}
+              {t("exams.ui.open_draft")}
             </Button>
 
             <div className="text-sm text-muted-foreground">
-              {draft.length > 0 && (
-                <>
-                  {locale === "az"
-                    ? `Seçilən: ${draftAnsweredCount}/${draft.length}`
-                    : `Selected: ${draftAnsweredCount}/${draft.length}`}
-                </>
-              )}
+              {draft.length > 0 && <>{t("exams.ui.selected_count", { selected: draftAnsweredCount, total: draft.length })}</>}
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* ✅ MODAL: Draft questions */}
       <Dialog open={draftModalOpen} onOpenChange={setDraftModalOpen}>
         <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              {locale === "az" ? "PDF Draft — Doğru cavabları seç" : "PDF Draft — select correct answers"}
-            </DialogTitle>
-            <DialogDescription>
-              {locale === "az"
-                ? "İstədiyin suallara doğru cavab seç, sonra seçilənləri DB-yə yaz."
-                : "Pick correct answers for any questions you want, then save selected to DB."}
-            </DialogDescription>
+            <DialogTitle>{t("exams.ui.draft_modal_title")}</DialogTitle>
+            <DialogDescription>{t("exams.ui.draft_modal_desc")}</DialogDescription>
           </DialogHeader>
 
           {draft.length === 0 ? (
-            <div className="text-sm text-muted-foreground">{locale === "az" ? "Hələ draft yoxdur." : "No draft yet."}</div>
+            <div className="text-sm text-muted-foreground">{t("exams.ui.no_draft_yet")}</div>
           ) : (
             <div className="space-y-4">
               {draft.map((q, idx) => (
@@ -606,31 +608,27 @@ export function ExamsTab() {
 
           <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:justify-between">
             <div className="text-sm text-muted-foreground">
-              {draft.length > 0 &&
-                (locale === "az"
-                  ? `Seçilən: ${draftAnsweredCount}/${draft.length}`
-                  : `Selected: ${draftAnsweredCount}/${draft.length}`)}
+              {draft.length > 0 && <>{t("exams.ui.selected_count", { selected: draftAnsweredCount, total: draft.length })}</>}
             </div>
 
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setDraftModalOpen(false)} disabled={busy}>
-                {locale === "az" ? "Bağla" : "Close"}
+                {t("common.close")}
               </Button>
 
               <Button onClick={handleCommit} disabled={busy || !canCommit}>
                 <CheckCircle2 className="h-4 w-4 mr-2" />
-                {busy ? (locale === "az" ? "Göndərilir..." : "Sending...") : locale === "az" ? "Seçilənləri DB-yə yaz" : "Save selected"}
+                {busy ? t("exams.ui.sending") : t("exams.ui.save_selected")}
               </Button>
             </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* 3) Existing exams list */}
       <Card>
         <CardHeader>
-          <CardTitle>{locale === "az" ? "Mövcud imtahanlar" : "Existing exams"}</CardTitle>
-          <CardDescription>{locale === "az" ? "İmtahanları idarə et (edit/sil)" : "Manage exams (edit/delete)"}</CardDescription>
+          <CardTitle>{t("exams.ui.existing_title")}</CardTitle>
+          <CardDescription>{t("exams.ui.existing_desc")}</CardDescription>
         </CardHeader>
 
         <CardContent>
@@ -639,7 +637,7 @@ export function ExamsTab() {
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
             </div>
           ) : exams.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">{locale === "az" ? "Heç nə yoxdur" : "No data"}</p>
+            <p className="text-center text-muted-foreground py-8">{t("exams.ui.no_data")}</p>
           ) : (
             <div className="space-y-2">
               {exams.map((exam) => (
@@ -650,19 +648,27 @@ export function ExamsTab() {
                       {exam.university.name} • {exam.subject.name} • {exam.year}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {exam.questionCount} sual • {exam.price.toFixed(2)} AZN
+                      {t("exams.ui.question_count_price", {
+                        count: exam.questionCount,
+                        price: exam.price.toFixed(2),
+                      })}
                     </p>
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap justify-end">
+                    <Button variant="outline" onClick={() => openEditExam(exam)} disabled={busy || qBusy}>
+                      <Pencil className="h-4 w-4 mr-2" />
+                      {t("exams.ui.edit_exam")}
+                    </Button>
+
                     <Button variant="outline" onClick={() => openManageQuestions(exam.id)} disabled={busy || qBusy}>
                       <Pencil className="h-4 w-4 mr-2" />
-                      {locale === "az" ? "Sualları idarə et" : "Manage"}
+                      {t("exams.ui.manage_questions")}
                     </Button>
 
                     <Button variant="destructive" onClick={() => handleDeleteExam(exam.id)} disabled={busy || qBusy}>
                       <Trash2 className="h-4 w-4 mr-2" />
-                      {locale === "az" ? "Sil" : "Delete"}
+                      {t("common.delete")}
                     </Button>
                   </div>
                 </div>
@@ -672,22 +678,53 @@ export function ExamsTab() {
         </CardContent>
       </Card>
 
-      {/* ✅ Manage Questions Modal */}
+      <Dialog open={editExamOpen} onOpenChange={setEditExamOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("exams.ui.edit_exam_modal_title")}</DialogTitle>
+            <DialogDescription>{t("exams.ui.edit_exam_modal_desc")}</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>{t("exams.ui.exam_title_label")}</Label>
+              <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} disabled={busy} />
+            </div>
+
+            <div className="space-y-2">
+              <Label>{t("common.year")}</Label>
+              <Input type="number" value={editYear} onChange={(e) => setEditYear(e.target.value)} disabled={busy} />
+            </div>
+
+            <div className="space-y-2">
+              <Label>{t("exams.ui.price_label")} (AZN)</Label>
+              <Input type="number" step="0.01" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} disabled={busy} />
+            </div>
+          </div>
+
+          <DialogFooter className="flex gap-2">
+            <Button variant="outline" onClick={() => setEditExamOpen(false)} disabled={busy}>
+              {t("common.close")}
+            </Button>
+
+            <Button onClick={handleSaveExamEdit} disabled={busy}>
+              {busy ? t("exams.ui.saving") : t("common.save")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={manageModalOpen} onOpenChange={setManageModalOpen}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{locale === "az" ? "Sualları idarə et" : "Manage questions"}</DialogTitle>
-            <DialogDescription>
-              {locale === "az"
-                ? "Sualı və variantları edit et, doğru cavabı seç və yadda saxla."
-                : "Edit question/options, choose correct answer and save."}
-            </DialogDescription>
+            <DialogTitle>{t("exams.ui.manage_modal_title")}</DialogTitle>
+            <DialogDescription>{t("exams.ui.manage_modal_desc")}</DialogDescription>
           </DialogHeader>
 
           <div className="flex items-center justify-between gap-2 pb-2">
             <Button variant="outline" onClick={() => setAddModalOpen(true)} disabled={qBusy || !manageBankId}>
               <Plus className="h-4 w-4 mr-2" />
-              {locale === "az" ? "Sual əlavə et" : "Add question"}
+              {t("exams.ui.add_question")}
             </Button>
           </div>
 
@@ -697,7 +734,7 @@ export function ExamsTab() {
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
               </div>
             ) : bankQuestions.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{locale === "az" ? "Sual yoxdur" : "No questions"}</p>
+              <p className="text-sm text-muted-foreground">{t("exams.ui.no_questions")}</p>
             ) : (
               bankQuestions.map((q, idx) => (
                 <Card key={q.id}>
@@ -713,9 +750,7 @@ export function ExamsTab() {
                         }
                       />
                     </CardTitle>
-                    <CardDescription className="text-sm">
-                      {locale === "az" ? "Doğru cavabı seç:" : "Select correct:"}
-                    </CardDescription>
+                    <CardDescription className="text-sm">{t("exams.ui.select_correct")}</CardDescription>
                   </CardHeader>
 
                   <CardContent className="space-y-2">
@@ -758,11 +793,11 @@ export function ExamsTab() {
 
                     <div className="flex gap-2 pt-2">
                       <Button variant="outline" onClick={() => handleSaveQuestion(q)} disabled={qBusy}>
-                        {locale === "az" ? "Yadda saxla" : "Save"}
+                        {t("common.save")}
                       </Button>
 
                       <Button variant="destructive" onClick={() => handleDeleteQuestion(q.id)} disabled={qBusy}>
-                        {locale === "az" ? "Sualı sil" : "Delete question"}
+                        {t("exams.ui.delete_question")}
                       </Button>
                     </div>
                   </CardContent>
@@ -773,32 +808,27 @@ export function ExamsTab() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setManageModalOpen(false)} disabled={qBusy}>
-              {locale === "az" ? "Bağla" : "Close"}
+              {t("common.close")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* ✅ Add Question Modal */}
       <Dialog open={addModalOpen} onOpenChange={setAddModalOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{locale === "az" ? "Sual əlavə et" : "Add question"}</DialogTitle>
-            <DialogDescription>
-              {locale === "az"
-                ? "Sualı yaz, variantları doldur, doğru cavabı seç və əlavə et."
-                : "Write question, fill options, pick correct and add."}
-            </DialogDescription>
+            <DialogTitle>{t("exams.ui.add_question_modal_title")}</DialogTitle>
+            <DialogDescription>{t("exams.ui.add_question_modal_desc")}</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>{locale === "az" ? "Sual mətni" : "Question text"}</Label>
-              <Input value={newQText} onChange={(e) => setNewQText(e.target.value)} placeholder="Sual..." />
+              <Label>{t("exams.ui.question_text")}</Label>
+              <Input value={newQText} onChange={(e) => setNewQText(e.target.value)} placeholder={t("exams.ui.question_placeholder")} />
             </div>
 
             <div className="space-y-2">
-              <Label>{locale === "az" ? "Variantlar" : "Options"}</Label>
+              <Label>{t("exams.ui.options")}</Label>
               <div className="space-y-2">
                 {newOptions.map((opt, i) => (
                   <div key={i} className="flex items-center gap-2">
@@ -806,7 +836,7 @@ export function ExamsTab() {
                       type="radio"
                       checked={newCorrectIndex === i}
                       onChange={() => setNewCorrectIndex(i)}
-                      title={locale === "az" ? "Doğru cavab" : "Correct"}
+                      title={t("exams.ui.correct_answer")}
                     />
                     <Input
                       value={opt}
@@ -814,7 +844,7 @@ export function ExamsTab() {
                         const v = e.target.value
                         setNewOptions((prev) => prev.map((x, idx) => (idx === i ? v : x)))
                       }}
-                      placeholder={`${locale === "az" ? "Variant" : "Option"} ${i + 1}`}
+                      placeholder={t("exams.ui.option_n", { n: i + 1 })}
                     />
                   </div>
                 ))}
@@ -823,7 +853,7 @@ export function ExamsTab() {
               <div className="flex gap-2">
                 <Button type="button" variant="outline" onClick={() => setNewOptions((prev) => [...prev, ""])}>
                   <Plus className="h-4 w-4 mr-2" />
-                  {locale === "az" ? "Variant əlavə et" : "Add option"}
+                  {t("exams.ui.add_option")}
                 </Button>
 
                 <Button
@@ -839,23 +869,21 @@ export function ExamsTab() {
                   }}
                   disabled={newOptions.length <= 2}
                 >
-                  {locale === "az" ? "Son variantı sil" : "Remove last"}
+                  {t("exams.ui.remove_last_option")}
                 </Button>
               </div>
             </div>
 
-            <div className="text-sm text-muted-foreground">
-              {locale === "az" ? "Qeyd: minimum 2 fərqli variant olmalıdır." : "Note: at least 2 unique options required."}
-            </div>
+            <div className="text-sm text-muted-foreground">{t("exams.ui.note_min_2_unique")}</div>
           </div>
 
           <DialogFooter className="flex gap-2">
             <Button variant="outline" onClick={resetAddState} disabled={qBusy}>
-              {locale === "az" ? "Ləğv et" : "Cancel"}
+              {t("common.cancel")}
             </Button>
 
             <Button onClick={handleAddQuestion} disabled={qBusy || !canAddQuestion}>
-              {qBusy ? (locale === "az" ? "Əlavə olunur..." : "Adding...") : locale === "az" ? "Əlavə et" : "Add"}
+              {qBusy ? t("exams.ui.adding") : t("exams.ui.add")}
             </Button>
           </DialogFooter>
         </DialogContent>

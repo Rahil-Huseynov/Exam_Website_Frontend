@@ -1,15 +1,19 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
+
 import { useLocale } from "@/contexts/locale-context"
+import { useTranslation } from "@/lib/i18n"
+
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Sparkles } from "lucide-react"
+
 import { api } from "@/lib/api"
 import { toast } from "react-toastify"
 import { PublicNavbar } from "@/components/public-navbar"
@@ -22,11 +26,13 @@ export default function VerifyPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const { locale } = useLocale()
+  const { t } = useTranslation(locale)
+
   const email = searchParams.get("email")
 
   const lastToastRef = useRef<string>("")
 
-  const pickLang = (az: string, en: string, ru: string) => (locale === "az" ? az : locale === "ru" ? ru : en)
+  const emailText = useMemo(() => email || "", [email])
 
   function toastOnce(type: "success" | "error" | "info", msg: string) {
     if (!msg) return
@@ -49,7 +55,7 @@ export default function VerifyPage() {
     if (!email) return
 
     if (code.trim().length !== 6) {
-      toastOnce("error", pickLang("6 rəqəmli kodu daxil edin", "Enter the 6-digit code", "Введите 6-значный код"))
+      toastOnce("error", t("errVerifyCode6Digits"))
       return
     }
 
@@ -60,26 +66,17 @@ export default function VerifyPage() {
 
       if (result?.success) {
         setStatus("success")
-
-        toastOnce(
-          "success",
-          pickLang(
-            "E-poçtunuz uğurla doğrulandı!",
-            "Your email has been verified successfully!",
-            "Ваша электронная почта успешно подтверждена!",
-          ),
-        )
+        toastOnce("success", t("verifySuccess"))
 
         setTimeout(() => router.push("/dashboard"), 1200)
       } else {
         setStatus("error")
-        const msg =
-          result?.error ||
-          pickLang("Doğrulama uğursuz oldu", "Verification failed", "Не удалось подтвердить")
+        const msg = result?.error || t("verifyFailed")
         toastOnce("error", msg)
       }
     } catch {
       setStatus("error")
+      toastOnce("error", t("verifyFailed"))
     }
   }
 
@@ -91,13 +88,11 @@ export default function VerifyPage() {
       const result = await api.resendVerificationCode(email)
 
       if (result?.success) {
-        toastOnce("success", pickLang("Yeni kod göndərildi", "New code sent", "Новый код отправлен"))
+        toastOnce("success", t("verifyResentSuccess"))
       } else {
-        const msg =
-          result?.error || pickLang("Yenidən göndərmək alınmadı", "Failed to resend", "Не удалось отправить снова")
+        const msg = result?.error || t("verifyResentFailed")
         toastOnce("error", msg)
       }
-    } catch {
     } finally {
       setResending(false)
     }
@@ -110,6 +105,7 @@ export default function VerifyPage() {
       <div className="absolute top-0 left-0 right-0 z-50">
         <PublicNavbar />
       </div>
+
       <div className="absolute inset-0 bg-gradient-to-br from-violet-50 via-blue-50 to-cyan-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950" />
       <div className="absolute inset-0 bg-grid-slate-200 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] dark:bg-grid-slate-700/25" />
       <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-violet-400/20 to-blue-400/20 rounded-full blur-3xl" />
@@ -126,26 +122,14 @@ export default function VerifyPage() {
 
           <Card className="backdrop-blur-xl bg-white/80 dark:bg-gray-950/80 border-white/20 shadow-2xl">
             <CardHeader className="text-center">
-              <CardTitle className="text-2xl">
-                {locale === "az" && "E-poçt Doğrulama"}
-                {locale === "en" && "Email Verification"}
-                {locale === "ru" && "Подтверждение электронной почты"}
-              </CardTitle>
-              <CardDescription>
-                {locale === "az" && `${email} ünvanına göndərilən 6 rəqəmli kodu daxil edin`}
-                {locale === "en" && `Enter the 6-digit code sent to ${email}`}
-                {locale === "ru" && `Введите 6-значный код, отправленный на ${email}`}
-              </CardDescription>
+              <CardTitle className="text-2xl">{t("verifyTitle")}</CardTitle>
+              <CardDescription>{t("verifySubtitleWithEmail", { email: emailText })}</CardDescription>
             </CardHeader>
 
             <form onSubmit={handleVerify}>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="code">
-                    {locale === "az" && "Doğrulama Kodu"}
-                    {locale === "en" && "Verification Code"}
-                    {locale === "ru" && "Код подтверждения"}
-                  </Label>
+                  <Label htmlFor="code">{t("verifyCodeLabel")}</Label>
                   <Input
                     id="code"
                     type="text"
@@ -166,17 +150,7 @@ export default function VerifyPage() {
                   className="w-full mt-2 h-11 bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-700 hover:to-blue-700"
                   disabled={status === "loading" || status === "success"}
                 >
-                  {status === "loading"
-                    ? locale === "az"
-                      ? "Doğrulanır..."
-                      : locale === "ru"
-                        ? "Проверка..."
-                        : "Verifying..."
-                    : locale === "az"
-                      ? "Doğrula"
-                      : locale === "ru"
-                        ? "Подтвердить"
-                        : "Verify"}
+                  {status === "loading" ? t("verifying") : t("verifyBtn")}
                 </Button>
 
                 <Button
@@ -186,17 +160,7 @@ export default function VerifyPage() {
                   onClick={handleResend}
                   disabled={resending || status === "success"}
                 >
-                  {resending
-                    ? locale === "az"
-                      ? "Göndərilir..."
-                      : locale === "ru"
-                        ? "Отправка..."
-                        : "Sending..."
-                    : locale === "az"
-                      ? "Yenidən göndər"
-                      : locale === "ru"
-                        ? "Отправить снова"
-                        : "Resend Code"}
+                  {resending ? t("sending") : t("resendCode")}
                 </Button>
               </CardFooter>
             </form>

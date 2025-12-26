@@ -30,7 +30,7 @@ function Alert({ className, variant, ...props }: AlertProps) {
 
   const v = (variant ?? "default") as "default" | "destructive"
 
-  return <AlertVariantContext.Provider value={v}>{/* UI yoxdur */}</AlertVariantContext.Provider>
+  return <AlertVariantContext.Provider value={v}></AlertVariantContext.Provider>
 }
 
 function AlertTitle({ className, ...props }: React.ComponentProps<"div">) {

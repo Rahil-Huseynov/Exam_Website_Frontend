@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState, useCallback } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
@@ -36,10 +36,15 @@ import { fromCents, toCents } from "@/lib/utils"
 type Attempt = any
 type Step = 1 | 2 | 3
 
-function getDisplayName(user: any) {
-  if (!user) return "İstifadəçi"
+function getDisplayName(user: any, locale: string) {
+  if (!user) return locale === "ru" ? "Пользователь" : locale === "en" ? "User" : "İstifadəçi"
   const full = [user.firstName, user.lastName].filter(Boolean).join(" ").trim()
-  return full || user.name || user.email || "İstifadəçi"
+  return (
+    full ||
+    user.name ||
+    user.email ||
+    (locale === "ru" ? "Пользователь" : locale === "en" ? "User" : "İstifadəçi")
+  )
 }
 
 function tName(obj: any, locale: string) {
@@ -68,51 +73,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const lastErrorRef = useRef<string>("")
 
-  // ✅ dashboard data yalnız 1 dəfə yüklənsin (auth poll dəyişsə belə)
   const didLoadRef = useRef(false)
-
-  const loadData = useCallback(async () => {
-    try {
-      setLoading(true)
-
-      // ✅ refreshUser() YOX — yalnız auth context-dən gələn user ilə işləyirik
-      if (!user) {
-        router.replace("/login")
-        return
-      }
-
-      const data = await api.getUserAttempts(user.id)
-      setAttempts(Array.isArray((data as any)?.attempts) ? (data as any).attempts : [])
-
-      lastErrorRef.current = ""
-    } catch (err: any) {
-      const msg = err instanceof Error ? err.message : "Məlumatlar yüklənmədi"
-      if (lastErrorRef.current !== msg) {
-        lastErrorRef.current = msg
-        toastError(msg)
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [user, router])
-
-  // ✅ yalnız 1 dəfə load et
-  useEffect(() => {
-    if (authLoading) return
-
-    // auth bitibsə loginə at
-    if (!user) {
-      setLoading(false)
-      router.replace("/login")
-      return
-    }
-
-    // artıq yüklənibsə bir daha yükləmə
-    if (didLoadRef.current) return
-    didLoadRef.current = true
-
-    loadData()
-  }, [authLoading, user, loadData, router])
 
   const [step, setStep] = useState<Step>(1)
 
@@ -135,20 +96,58 @@ export default function DashboardPage() {
   const hiddenRight = "opacity-0 translate-x-6 pointer-events-none absolute inset-0"
 
   useEffect(() => {
+    let cancelled = false
+
     ;(async () => {
       try {
         setUniLoading(true)
         const list = await api.getUniversities()
-        setUniversities(Array.isArray(list) ? list : [])
+        if (!cancelled) setUniversities(Array.isArray(list) ? list : [])
       } catch (e: any) {
-        toastError(e?.message || "Universitet siyahısı yüklənmədi")
+        toastError(e?.message || t("errUniversitiesLoad"))
       } finally {
-        setUniLoading(false)
+        if (!cancelled) setUniLoading(false)
       }
     })()
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
-  const onSelectUniversity = useCallback(async (u: University) => {
+  useEffect(() => {
+    if (authLoading) return
+
+    if (!user) {
+      setLoading(false)
+      router.replace("/login")
+      return
+    }
+
+    if (didLoadRef.current) return
+    didLoadRef.current = true
+
+    ;(async () => {
+      try {
+        setLoading(true)
+
+        const data = await api.getUserAttempts(user.id)
+        setAttempts(Array.isArray((data as any)?.attempts) ? (data as any).attempts : [])
+
+        lastErrorRef.current = ""
+      } catch (err: any) {
+        const msg = err instanceof Error ? err.message : t("errDataLoad")
+        if (lastErrorRef.current !== msg) {
+          lastErrorRef.current = msg
+          toastError(msg)
+        }
+      } finally {
+        setLoading(false)
+      }
+    })()
+  }, [authLoading, user, router])
+
+  async function onSelectUniversity(u: University) {
     setSelectedUni(u)
     setSelectedYear(null)
     setYears([])
@@ -161,32 +160,30 @@ export default function DashboardPage() {
       const ys = await api.getExamYearsByUniversity(u.id)
       setYears(Array.isArray(ys) ? ys : [])
     } catch (e: any) {
-      toastError(e?.message || "İllər yüklənmədi")
+      toastError(e?.message || t("errYearsLoad"))
     } finally {
       setYearsLoading(false)
     }
-  }, [])
+  }
 
-  const onSelectYear = useCallback(
-    async (y: number) => {
-      if (!selectedUni) return
-      setSelectedYear(y)
-      setExams([])
-      setQ("")
-      setStep(3)
+  async function onSelectYear(y: number) {
+    if (!selectedUni) return
 
-      try {
-        setExamsLoading(true)
-        const list = await api.getExamsByFilter(selectedUni.id, undefined, y)
-        setExams(Array.isArray(list) ? list : [])
-      } catch (e: any) {
-        toastError(e?.message || "İmtahanlar yüklənmədi")
-      } finally {
-        setExamsLoading(false)
-      }
-    },
-    [selectedUni],
-  )
+    setSelectedYear(y)
+    setExams([])
+    setQ("")
+    setStep(3)
+
+    try {
+      setExamsLoading(true)
+      const list = await api.getExamsByFilter(selectedUni.id, undefined, y)
+      setExams(Array.isArray(list) ? list : [])
+    } catch (e: any) {
+      toastError(e?.message || t("errExamsLoad"))
+    } finally {
+      setExamsLoading(false)
+    }
+  }
 
   const filteredExams = useMemo(() => {
     const s = q.trim().toLowerCase()
@@ -198,7 +195,7 @@ export default function DashboardPage() {
     })
   }, [exams, q])
 
-  const displayName = getDisplayName(user)
+  const displayName = getDisplayName(user, locale)
   const balanceCents = toCents((user as any)?.balance)
 
   const completedAttempts = attempts.filter((a) => a?.completedAt || a?.finishedAt || a?.status === "FINISHED")
@@ -219,7 +216,7 @@ export default function DashboardPage() {
   async function startExam(exam: Exam) {
     try {
       if (!user?.id) {
-        toastError("Login olunmayıb. İmtahana başlamaq üçün giriş edin.")
+        toastError(t("errNotLoggedIn"))
         return
       }
 
@@ -227,13 +224,13 @@ export default function DashboardPage() {
       const balanceCentsNow = toCents((user as any)?.balance)
 
       if (balanceCentsNow < priceCents) {
-        toastError("Balansda kifayət qədər vəsait yoxdur")
+        toastError(t("errNoBalance"))
         return
       }
 
       const bankId = String((exam as any).bankId ?? (exam as any).id)
       if (!bankId) {
-        toastError("bankId tapılmadı.")
+        toastError(t("errBankNotFound"))
         return
       }
 
@@ -242,14 +239,14 @@ export default function DashboardPage() {
       const url = String((tok as any)?.url || `/exam-token/${token}`)
 
       if (!token) {
-        toastError("Token yaradılmadı.")
+        toastError(t("errTokenFail"))
         return
       }
 
       setTokenBank(token, bankId)
       router.push(url)
     } catch (e: any) {
-      toastError(e?.message || "İmtahana başlamaq mümkün olmadı")
+      toastError(e?.message || t("errStartExam"))
     }
   }
 
@@ -292,7 +289,7 @@ export default function DashboardPage() {
         <Navbar />
         <main className="container mx-auto px-4 py-8 flex-1">
           <div className="flex items-center justify-center py-12">
-            <p className="text-muted-foreground">Hesab yoxlanılır...</p>
+            <p className="text-muted-foreground">{t("checkingAccount")}</p>
           </div>
         </main>
         <Footer />
@@ -306,11 +303,10 @@ export default function DashboardPage() {
 
       <main className="container mx-auto px-4 py-8 flex-1">
         <div className="space-y-10">
-          {/* Header */}
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
               <Sparkles className="h-4 w-4" />
-              Panel
+              {t("dashboardPanel")}
             </div>
 
             <h1 className="text-4xl md:text-5xl font-bold text-balance">
@@ -320,21 +316,20 @@ export default function DashboardPage() {
               , {displayName}!
             </h1>
 
-            <p className="text-muted-foreground">Buradan imtahan seç, nəticələrini izləy və balansını idarə et.</p>
+            <p className="text-muted-foreground">{t("dashboardSubtitle")}</p>
           </div>
 
-          {/* Stats */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             <Card className="border-2 rounded-3xl">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-medium">Balans</CardTitle>
+                <CardTitle className="text-sm font-medium">{t("dashboardBalance")}</CardTitle>
                 <Wallet className="h-5 w-5" />
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold">{fromCents(balanceCents)} AZN</div>
                 <Button asChild variant="link" className="px-0 h-auto mt-3">
                   <Link href="/balance" className="flex items-center gap-1">
-                    Balansı artır
+                    {t("dashboardIncreaseBalance")}
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
@@ -343,7 +338,7 @@ export default function DashboardPage() {
 
             <Card className="border-2 rounded-3xl">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-medium">Tamamlanan imtahanlar</CardTitle>
+                <CardTitle className="text-sm font-medium">{t("dashboardCompletedExams")}</CardTitle>
                 <BookOpen className="h-5 w-5" />
               </CardHeader>
               <CardContent>
@@ -353,7 +348,7 @@ export default function DashboardPage() {
 
             <Card className="border-2 rounded-3xl">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-medium">Orta nəticə</CardTitle>
+                <CardTitle className="text-sm font-medium">{t("dashboardAverageScore")}</CardTitle>
                 <TrendingUp className="h-5 w-5" />
               </CardHeader>
               <CardContent>
@@ -362,80 +357,74 @@ export default function DashboardPage() {
             </Card>
           </div>
 
-          {/* Exam Wizard */}
           <Card className="border-2 rounded-3xl overflow-hidden">
             <CardHeader className="pb-4">
               <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                 <div className="space-y-1">
                   <CardTitle className="text-xl flex items-center gap-2">
                     <GraduationCap className="h-5 w-5" />
-                    İmtahanı seç və başla
+                    {t("dashboardWizardTitle")}
                   </CardTitle>
-                  <CardDescription>
-                    2 addımda bitir: əvvəl universiteti seç, sonra ili seç — sistem uyğun imtahanları göstərəcək.
-                  </CardDescription>
+                  <CardDescription>{t("dashboardWizardDesc")}</CardDescription>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary" className="rounded-full">
-                    Addım {step}/3
+                    {t("step")} {step}/3
                   </Badge>
 
                   {step > 1 && (
                     <Button variant="outline" className="rounded-2xl" onClick={goBack}>
                       <ArrowLeft className="h-4 w-4 mr-2" />
-                      Geri
+                      {t("goBack")}
                     </Button>
                   )}
                 </div>
               </div>
 
-              {/* progress pills */}
               <div className="mt-4 flex flex-wrap gap-2 text-xs">
                 <span className="px-3 py-1 rounded-full border flex items-center gap-1">
                   <CheckCircle2 className={`h-4 w-4 ${step >= 1 ? "opacity-100" : "opacity-30"}`} />
-                  Universitet
+                  {t("stepUniversity")}
                 </span>
                 <span className="px-3 py-1 rounded-full border flex items-center gap-1">
                   <CheckCircle2 className={`h-4 w-4 ${step >= 2 ? "opacity-100" : "opacity-30"}`} />
-                  İl
+                  {t("stepYear")}
                 </span>
                 <span className="px-3 py-1 rounded-full border flex items-center gap-1">
                   <CheckCircle2 className={`h-4 w-4 ${step >= 3 ? "opacity-100" : "opacity-30"}`} />
-                  İmtahanlar
+                  {t("stepExams")}
                 </span>
 
                 {selectedUni && (
                   <span className="px-3 py-1 rounded-full border text-muted-foreground">
-                    Seçilən universitet: <span className="font-medium">{tName(selectedUni, locale)}</span>
+                    {t("selectedUniversity")}:{" "}
+                    <span className="font-medium">{tName(selectedUni, locale)}</span>
                   </span>
                 )}
                 {selectedYear && (
                   <span className="px-3 py-1 rounded-full border text-muted-foreground">
-                    Seçilən il: <span className="font-medium">{selectedYear}</span>
+                    {t("selectedYear")}: <span className="font-medium">{selectedYear}</span>
                   </span>
                 )}
               </div>
             </CardHeader>
 
             <CardContent className="relative min-h-[320px]">
-              {/* STEP 1: Universities */}
               <div className={[base, step === 1 ? active : hiddenLeft].join(" ")}>
                 <div className="flex items-center justify-between gap-3 mb-4">
-                  <div className="font-medium">Universitet seç</div>
+                  <div className="font-medium">{t("chooseUniversity")}</div>
 
                   {uniLoading && (
                     <div className="text-sm text-muted-foreground flex items-center gap-2">
                       <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
-                      Yüklənir...
+                      {t("loading")}
                     </div>
                   )}
                 </div>
 
                 {universities.length === 0 && !uniLoading ? (
-                  <div className="text-sm text-muted-foreground">
-                    Hazırda universitet tapılmadı. Bir az sonra yenidən yoxla.
-                  </div>
+                  <div className="text-sm text-muted-foreground">{t("noUniversities")}</div>
                 ) : (
                   <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
                     {universities.map((u) => {
@@ -471,7 +460,7 @@ export default function DashboardPage() {
                           </div>
 
                           <div className="flex items-center justify-between">
-                            <span className="text-xs text-muted-foreground">Davam et</span>
+                            <span className="text-xs text-muted-foreground">{t("continue")}</span>
                             <ArrowRight className="h-4 w-4 opacity-60 group-hover:opacity-90 transition-opacity" />
                           </div>
                         </button>
@@ -481,27 +470,24 @@ export default function DashboardPage() {
                 )}
               </div>
 
-              {/* STEP 2: Years */}
               <div className={[base, step === 2 ? active : step < 2 ? hiddenRight : hiddenLeft].join(" ")}>
                 <div className="flex items-center justify-between gap-3 mb-4">
                   <div className="font-medium flex items-center gap-2">
                     <CalendarDays className="h-4 w-4" />
-                    İl seç
+                    {t("chooseYear")}
                   </div>
                 </div>
 
                 {yearsLoading ? (
                   <div className="text-sm text-muted-foreground flex items-center gap-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
-                    Seçilən universitet üçün illər yüklənir...
+                    {t("yearsLoading")}
                   </div>
                 ) : years.length === 0 ? (
-                  <div className="text-sm text-muted-foreground">Bu universitet üçün imtahan ili tapılmadı.</div>
+                  <div className="text-sm text-muted-foreground">{t("noYears")}</div>
                 ) : (
                   <div className="space-y-3">
-                    <div className="text-sm text-muted-foreground">
-                      İmtahan ili seçdikdən sonra uyğun imtahanlar siyahısı açılacaq.
-                    </div>
+                    <div className="text-sm text-muted-foreground">{t("yearHint")}</div>
 
                     <div className="flex flex-wrap gap-2">
                       {years.map((y) => (
@@ -521,12 +507,11 @@ export default function DashboardPage() {
                 )}
               </div>
 
-              {/* STEP 3: Exams */}
               <div className={[base, step === 3 ? active : hiddenRight].join(" ")}>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                   <div className="font-medium flex items-center gap-2">
                     <BookOpen className="h-4 w-4" />
-                    Uygun imtahanlar
+                    {t("stepExams")}
                   </div>
 
                   <div className="w-full sm:max-w-xs relative">
@@ -534,7 +519,7 @@ export default function DashboardPage() {
                     <Input
                       value={q}
                       onChange={(e) => setQ(e.target.value)}
-                      placeholder="Axtar: imtahan adı / fənn..."
+                      placeholder={t("searchExamPlaceholder")}
                       className="pl-9 rounded-2xl"
                     />
                   </div>
@@ -546,19 +531,17 @@ export default function DashboardPage() {
                   </Badge>
 
                   <span className="text-xs text-muted-foreground">
-                    Tapılan: <span className="font-medium">{filteredExams.length}</span>
+                    {t("found")}: <span className="font-medium">{filteredExams.length}</span>
                   </span>
                 </div>
 
                 {examsLoading ? (
                   <div className="text-sm text-muted-foreground flex items-center gap-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
-                    İmtahanlar yüklənir...
+                    {t("examsLoading")}
                   </div>
                 ) : filteredExams.length === 0 ? (
-                  <div className="text-sm text-muted-foreground">
-                    Bu seçimə uyğun imtahan tapılmadı. Başqa il seçə bilərsən.
-                  </div>
+                  <div className="text-sm text-muted-foreground">{t("noExamsFound")}</div>
                 ) : (
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {filteredExams.map((e: any) => (
@@ -568,7 +551,7 @@ export default function DashboardPage() {
                             <div className="min-w-0">
                               <CardTitle className="text-base truncate">{e.title}</CardTitle>
                               <CardDescription className="mt-1">
-                                {e.subject?.name || "Fənn göstərilməyib"} • {e.year || "—"}
+                                {e.subject?.name || t("subjectNotProvided")} • {e.year || "—"}
                               </CardDescription>
                             </div>
                             <Badge className="rounded-full">{Number(e.price || 0).toFixed(2)} AZN</Badge>
@@ -577,7 +560,7 @@ export default function DashboardPage() {
 
                         <CardContent className="flex items-center justify-end">
                           <Button className="rounded-2xl" onClick={() => startExam(e)}>
-                            İmtahana başla
+                            {t("startExam")}
                             <ArrowRight className="h-4 w-4 ml-2" />
                           </Button>
                         </CardContent>

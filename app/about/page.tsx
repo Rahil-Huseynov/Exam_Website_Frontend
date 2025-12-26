@@ -21,7 +21,9 @@ export default function AboutPage() {
             <h1 className="text-5xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
               {t("aboutTitle")}
             </h1>
-            <p className="text-xl text-muted-foreground leading-relaxed">{t("aboutDescription")}</p>
+            <p className="text-xl text-muted-foreground leading-relaxed">
+              {t("aboutDescription")}
+            </p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
@@ -52,57 +54,37 @@ export default function AboutPage() {
                 <div className="text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                   10K+
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  {locale === "az" ? "Tələbə" : locale === "en" ? "Students" : "Студенты"}
-                </div>
+                <div className="text-sm text-muted-foreground">{t("aboutStatStudents")}</div>
               </div>
+
               <div className="text-center space-y-2">
                 <div className="text-4xl font-bold bg-gradient-to-r from-secondary to-accent bg-clip-text text-transparent">
                   500+
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  {locale === "az" ? "İmtahan" : locale === "en" ? "Exams" : "Экзамены"}
-                </div>
+                <div className="text-sm text-muted-foreground">{t("aboutStatExams")}</div>
               </div>
+
               <div className="text-center space-y-2">
                 <div className="text-4xl font-bold bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
                   50+
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  {locale === "az" ? "Universitet" : locale === "en" ? "Universities" : "Университеты"}
-                </div>
+                <div className="text-sm text-muted-foreground">{t("aboutStatUniversities")}</div>
               </div>
+
               <div className="text-center space-y-2">
                 <div className="text-4xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
                   95%
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  {locale === "az" ? "Məmnuniyyət" : locale === "en" ? "Satisfaction" : "Удовлетворенность"}
-                </div>
+                <div className="text-sm text-muted-foreground">{t("aboutStatSatisfaction")}</div>
               </div>
             </div>
           </Card>
 
           <div className="grid md:grid-cols-3 gap-6">
             {[
-              {
-                icon: GraduationCap,
-                title:
-                  locale === "az"
-                    ? "Peşəkar İmtahanlar"
-                    : locale === "en"
-                      ? "Professional Exams"
-                      : "Профессиональные экзамены",
-              },
-              {
-                icon: Users,
-                title:
-                  locale === "az" ? "İstifadəçi Dəstəyi" : locale === "en" ? "User Support" : "Поддержка пользователей",
-              },
-              {
-                icon: Target,
-                title: locale === "az" ? "Dəqiq Nəticələr" : locale === "en" ? "Accurate Results" : "Точные результаты",
-              },
+              { icon: GraduationCap, title: t("aboutFeature1") },
+              { icon: Users, title: t("aboutFeature2") },
+              { icon: Target, title: t("aboutFeature3") },
             ].map((feature, idx) => (
               <Card
                 key={idx}

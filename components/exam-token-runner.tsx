@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { useLocale } from "@/contexts/locale-context"
+import { useTranslation } from "@/lib/i18n"
 import { api, type ExamQuestion, type AttemptAnswer, type AttemptSummary } from "@/lib/api"
 import { toast } from "react-toastify"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,6 +12,9 @@ import { cn } from "@/lib/utils"
 import { CheckCircle2, ChevronLeft, ChevronRight, Flag, Loader2, XCircle } from "lucide-react"
 
 export default function ExamTokenRunner({ attemptId, userId }: { attemptId: string; userId: number }) {
+  const { locale } = useLocale()
+  const { t } = useTranslation(locale)
+
   const [loading, setLoading] = useState(true)
   const [questions, setQuestions] = useState<ExamQuestion[]>([])
   const [activeIndex, setActiveIndex] = useState(0)
@@ -51,9 +56,9 @@ export default function ExamTokenRunner({ attemptId, userId }: { attemptId: stri
       const list = Array.isArray(res?.questions) ? res.questions : []
       setQuestions(list)
 
-      if (!list.length) toast.info("Bu imtahanda sual tapılmadı.")
+      if (!list.length) toast.info(t("examRunner.toast.no_questions"))
     } catch (e: any) {
-      toast.error(e?.message || "Sual yüklənmədi")
+      toast.error(e?.message || t("examRunner.toast.load_failed"))
     } finally {
       setLoading(false)
     }
@@ -74,7 +79,7 @@ export default function ExamTokenRunner({ attemptId, userId }: { attemptId: stri
         delete copy[questionId]
         return copy
       })
-      toast.error(e?.message || "Cavab yazılmadı")
+      toast.error(e?.message || t("examRunner.toast.answer_failed"))
     } finally {
       setSavingAnswer(false)
     }
@@ -82,7 +87,7 @@ export default function ExamTokenRunner({ attemptId, userId }: { attemptId: stri
 
   async function finishExam() {
     if (!attemptId) {
-      toast.error("Attempt yoxdur.")
+      toast.error(t("examRunner.toast.no_attempt"))
       return
     }
     if (summary?.status === "FINISHED") return
@@ -105,9 +110,9 @@ export default function ExamTokenRunner({ attemptId, userId }: { attemptId: stri
       setReviewMode(true)
       setActiveIndex(0)
 
-      toast.success("İmtahan bitdi ✅ Nəticələr göstərilir.")
+      toast.success(t("examRunner.toast.finished_showing_results"))
     } catch (e: any) {
-      toast.error(e?.message || "İmtahan bitmədi")
+      toast.error(e?.message || t("examRunner.toast.finish_failed"))
     } finally {
       setFinishing(false)
     }
@@ -155,7 +160,7 @@ export default function ExamTokenRunner({ attemptId, userId }: { attemptId: stri
           <div className="flex justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
           </div>
-          <p className="mt-4">Yüklənir...</p>
+          <p className="mt-4">{t("examRunner.ui.loading")}</p>
         </CardContent>
       </Card>
     )
@@ -163,11 +168,10 @@ export default function ExamTokenRunner({ attemptId, userId }: { attemptId: stri
 
   return (
     <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-      {/* LEFT */}
       <Card className="backdrop-blur-xl bg-white/85 dark:bg-gray-950/80 border-white/20 shadow-xl h-fit lg:sticky lg:top-24">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center justify-between">
-            <span>Sual siyahısı</span>
+            <span>{t("examRunner.ui.question_list")}</span>
           </CardTitle>
         </CardHeader>
 
@@ -197,26 +201,26 @@ export default function ExamTokenRunner({ attemptId, userId }: { attemptId: stri
               <>
                 <div className="flex items-center gap-2">
                   <span className="inline-block h-3 w-3 rounded bg-emerald-600" />
-                  <span>Seçilmiş</span>
+                  <span>{t("examRunner.legend.selected")}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="inline-block h-3 w-3 rounded bg-black dark:bg-white" />
-                  <span>Seçilməmiş</span>
+                  <span>{t("examRunner.legend.not_selected")}</span>
                 </div>
               </>
             ) : (
               <>
                 <div className="flex items-center gap-2">
                   <span className="inline-block h-3 w-3 rounded bg-emerald-600" />
-                  <span>Düz</span>
+                  <span>{t("examRunner.legend.correct")}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="inline-block h-3 w-3 rounded bg-red-600" />
-                  <span>Səhv</span>
+                  <span>{t("examRunner.legend.wrong")}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="inline-block h-3 w-3 rounded bg-black dark:bg-white" />
-                  <span>Boş</span>
+                  <span>{t("examRunner.legend.empty")}</span>
                 </div>
               </>
             )}
@@ -224,27 +228,26 @@ export default function ExamTokenRunner({ attemptId, userId }: { attemptId: stri
         </CardContent>
       </Card>
 
-      {/* RIGHT */}
       <div className="space-y-6">
         {titleStats && (
           <Card className="backdrop-blur-xl bg-white/90 dark:bg-gray-950/85 border-white/20 shadow-xl">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <CheckCircle2 className="h-5 w-5" />
-                Nəticə
+                {t("examRunner.result.title")}
               </CardTitle>
             </CardHeader>
             <CardContent className="grid gap-3 sm:grid-cols-3">
               <div className="rounded-xl border p-4">
-                <div className="text-xs text-muted-foreground">Doğru</div>
+                <div className="text-xs text-muted-foreground">{t("examRunner.result.correct")}</div>
                 <div className="text-2xl font-bold">{titleStats.correct}</div>
               </div>
               <div className="rounded-xl border p-4">
-                <div className="text-xs text-muted-foreground">Səhv</div>
+                <div className="text-xs text-muted-foreground">{t("examRunner.result.wrong")}</div>
                 <div className="text-2xl font-bold">{titleStats.wrong}</div>
               </div>
               <div className="rounded-xl border p-4">
-                <div className="text-xs text-muted-foreground">Cəmi</div>
+                <div className="text-xs text-muted-foreground">{t("examRunner.result.total")}</div>
                 <div className="text-2xl font-bold">{titleStats.total}</div>
               </div>
             </CardContent>
@@ -262,24 +265,26 @@ export default function ExamTokenRunner({ attemptId, userId }: { attemptId: stri
                 {savingAnswer ? (
                   <span className="inline-flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    cavab yazılır...
+                    {t("examRunner.ui.answer_saving")}
                   </span>
                 ) : isFinished ? (
                   reviewAnswers[currentQ.id]?.isCorrect ? (
                     <span className="inline-flex items-center gap-2 text-emerald-600">
                       <CheckCircle2 className="h-4 w-4" />
-                      Düz cavab
+                      {t("examRunner.ui.correct_answer")}
                     </span>
                   ) : reviewAnswers[currentQ.id] ? (
                     <span className="inline-flex items-center gap-2 text-red-600">
                       <XCircle className="h-4 w-4" />
-                      Səhv cavab
+                      {t("examRunner.ui.wrong_answer")}
                     </span>
                   ) : (
-                    <span>Boş buraxılıb</span>
+                    <span>{t("examRunner.ui.empty_left")}</span>
                   )
                 ) : (
-                  <span>{selectedByQ[currentQ.id] ? "Cavab seçilib" : "Cavab seçilməyib"}</span>
+                  <span>
+                    {selectedByQ[currentQ.id] ? t("examRunner.ui.answer_selected") : t("examRunner.ui.answer_not_selected")}
+                  </span>
                 )}
               </div>
             </CardHeader>
@@ -317,11 +322,15 @@ export default function ExamTokenRunner({ attemptId, userId }: { attemptId: stri
 
                       {isFinished ? (
                         <>
-                          {isCorrectOption && <span className="text-emerald-600 text-xs font-semibold">Doğru</span>}
-                          {isWrongSelected && <span className="text-red-600 text-xs font-semibold">Sənin seçimin</span>}
+                          {isCorrectOption && (
+                            <span className="text-emerald-600 text-xs font-semibold">{t("examRunner.badge.correct")}</span>
+                          )}
+                          {isWrongSelected && (
+                            <span className="text-red-600 text-xs font-semibold">{t("examRunner.badge.your_choice")}</span>
+                          )}
                         </>
                       ) : (
-                        selected && <span className="text-emerald-600 text-xs font-semibold">Seçildi</span>
+                        selected && <span className="text-emerald-600 text-xs font-semibold">{t("examRunner.badge.selected")}</span>
                       )}
                     </div>
                   </button>
@@ -336,7 +345,7 @@ export default function ExamTokenRunner({ attemptId, userId }: { attemptId: stri
                   className="rounded-xl"
                 >
                   <ChevronLeft className="h-4 w-4 mr-2" />
-                  Previous
+                  {t("examRunner.ui.prev")}
                 </Button>
 
                 {!isLast ? (
@@ -345,7 +354,7 @@ export default function ExamTokenRunner({ attemptId, userId }: { attemptId: stri
                     disabled={finishing}
                     className="rounded-xl"
                   >
-                    Next
+                    {t("examRunner.ui.next")}
                     <ChevronRight className="h-4 w-4 ml-2" />
                   </Button>
                 ) : (
@@ -357,12 +366,12 @@ export default function ExamTokenRunner({ attemptId, userId }: { attemptId: stri
                     {finishing ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Bitirilir...
+                        {t("examRunner.ui.finishing")}
                       </>
                     ) : (
                       <>
                         <Flag className="h-4 w-4 mr-2" />
-                        İmtahanı bitir
+                        {t("examRunner.ui.finish_exam")}
                       </>
                     )}
                   </Button>
@@ -371,10 +380,8 @@ export default function ExamTokenRunner({ attemptId, userId }: { attemptId: stri
 
               <div className="pt-2">
                 <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-                  <span>Proqres</span>
-                  <span>
-                    {answeredCount}/{total} ({progress}%)
-                  </span>
+                  <span>{t("examRunner.ui.progress")}</span>
+                  <span>{t("examRunner.ui.progress_stats", { answered: answeredCount, total, percent: progress })}</span>
                 </div>
                 <Progress value={progress} />
               </div>
@@ -382,7 +389,9 @@ export default function ExamTokenRunner({ attemptId, userId }: { attemptId: stri
           </Card>
         ) : (
           <Card className="backdrop-blur-xl bg-white/90 dark:bg-gray-950/85 border-white/20 shadow-xl">
-            <CardContent className="py-10 text-center text-sm text-muted-foreground">Sual tapılmadı.</CardContent>
+            <CardContent className="py-10 text-center text-sm text-muted-foreground">
+              {t("examRunner.ui.no_question")}
+            </CardContent>
           </Card>
         )}
       </div>

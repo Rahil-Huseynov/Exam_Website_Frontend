@@ -1,3 +1,5 @@
+"use client"
+
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -5,7 +7,13 @@ import { PublicNavbar } from "@/components/public-navbar"
 import { Footer } from "@/components/footer"
 import { BookOpen, TrendingUp, Award, Clock, Users, Shield } from "lucide-react"
 
+import { useLocale } from "@/contexts/locale-context"
+import { useTranslation } from "@/lib/i18n"
+
 export default function HomePage() {
+  const { locale } = useLocale()
+  const { t } = useTranslation(locale)
+
   return (
     <div className="min-h-screen flex flex-col">
       <PublicNavbar />
@@ -16,19 +24,19 @@ export default function HomePage() {
           <div className="max-w-4xl mx-auto text-center space-y-8">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 backdrop-blur-sm">
               <Award className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium text-primary">Universitetlər üçün onlayn imtahan platforması</span>
+              <span className="text-sm font-medium text-primary">{t("homeBadge")}</span>
             </div>
 
             <h1 className="text-5xl md:text-7xl font-bold text-balance leading-tight">
               <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent animate-gradient">
-                İmtahana hazırlaşın,
+                {t("homeHeroTitle1")}
               </span>
               <br />
-              <span className="text-foreground">uğur qazanın</span>
+              <span className="text-foreground">{t("homeHeroTitle2")}</span>
             </h1>
 
             <p className="text-xl md:text-2xl text-muted-foreground text-pretty max-w-2xl mx-auto leading-relaxed">
-              Universitetlərin real imtahan sualları ilə məşq edin. Nəticələrinizi izləyin və imtahana tam hazır olun.
+              {t("homeHeroDesc")}
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-6">
@@ -37,10 +45,11 @@ export default function HomePage() {
                 size="lg"
                 className="rounded-full px-8 py-6 text-lg bg-gradient-to-r from-primary via-secondary to-accent hover:opacity-90 transition-opacity shadow-lg shadow-primary/25"
               >
-                <Link href="/register">İndi başla</Link>
+                <Link href="/register">{t("homeCtaStart")}</Link>
               </Button>
+
               <Button asChild variant="outline" size="lg" className="rounded-full px-8 py-6 text-lg bg-transparent">
-                <Link href="/login">Daxil ol</Link>
+                <Link href="/login">{t("homeCtaLogin")}</Link>
               </Button>
             </div>
 
@@ -49,19 +58,21 @@ export default function HomePage() {
                 <div className="text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                   500+
                 </div>
-                <div className="text-sm text-muted-foreground">İmtahan sualı</div>
+                <div className="text-sm text-muted-foreground">{t("homeStatQuestions")}</div>
               </div>
+
               <div className="space-y-2">
                 <div className="text-4xl font-bold bg-gradient-to-r from-secondary to-accent bg-clip-text text-transparent">
                   50+
                 </div>
-                <div className="text-sm text-muted-foreground">Universitet</div>
+                <div className="text-sm text-muted-foreground">{t("homeStatUniversities")}</div>
               </div>
+
               <div className="space-y-2">
                 <div className="text-4xl font-bold bg-gradient-to-r from-accent to-primary bg-clip-text text-transparent">
                   1000+
                 </div>
-                <div className="text-sm text-muted-foreground">Aktiv tələbə</div>
+                <div className="text-sm text-muted-foreground">{t("homeStatStudents")}</div>
               </div>
             </div>
           </div>
@@ -74,12 +85,10 @@ export default function HomePage() {
           <div className="text-center mb-16 space-y-4">
             <h2 className="text-4xl md:text-5xl font-bold text-balance">
               <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
-                Niyə ExamPro?
+                {t("homeWhyTitle")}
               </span>
             </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-pretty">
-              Müasir texnologiya ilə təhsil alanının ən yaxşı imtahan hazırlıq platforması
-            </p>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-pretty">{t("homeWhyDesc")}</p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -87,58 +96,48 @@ export default function HomePage() {
               <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/25">
                 <BookOpen className="h-7 w-7 text-primary-foreground" />
               </div>
-              <h3 className="text-2xl font-semibold">Real İmtahan Sualları</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                Ölkə universitetlərinin orijinal imtahan sualları ilə məşq edin və özünüzü yoxlayın
-              </p>
+              <h3 className="text-2xl font-semibold">{t("homeFeature1Title")}</h3>
+              <p className="text-muted-foreground leading-relaxed">{t("homeFeature1Desc")}</p>
             </Card>
 
             <Card className="p-8 space-y-4 border-2 hover:border-secondary/50 transition-all duration-300 hover:shadow-lg hover:shadow-secondary/10 rounded-3xl bg-gradient-to-br from-card to-secondary/5">
               <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-secondary to-accent flex items-center justify-center shadow-lg shadow-secondary/25">
                 <TrendingUp className="h-7 w-7 text-secondary-foreground" />
               </div>
-              <h3 className="text-2xl font-semibold">Təfsilatı İzləmə</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                Performansınızı izləyin və nəticələrinizin təfsilatlı analitikasını görün
-              </p>
+              <h3 className="text-2xl font-semibold">{t("homeFeature2Title")}</h3>
+              <p className="text-muted-foreground leading-relaxed">{t("homeFeature2Desc")}</p>
             </Card>
 
             <Card className="p-8 space-y-4 border-2 hover:border-accent/50 transition-all duration-300 hover:shadow-lg hover:shadow-accent/10 rounded-3xl bg-gradient-to-br from-card to-accent/5">
               <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-accent to-success flex items-center justify-center shadow-lg shadow-accent/25">
                 <Clock className="h-7 w-7 text-accent-foreground" />
               </div>
-              <h3 className="text-2xl font-semibold">Çevik Öyrənmə</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                İstədiyiniz vaxt və tempodə öyrənin, limitsiz giriş imkanı
-              </p>
+              <h3 className="text-2xl font-semibold">{t("homeFeature3Title")}</h3>
+              <p className="text-muted-foreground leading-relaxed">{t("homeFeature3Desc")}</p>
             </Card>
 
             <Card className="p-8 space-y-4 border-2 hover:border-success/50 transition-all duration-300 hover:shadow-lg hover:shadow-success/10 rounded-3xl bg-gradient-to-br from-card to-success/5">
               <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-success to-primary flex items-center justify-center shadow-lg shadow-success/25">
                 <Award className="h-7 w-7 text-success-foreground" />
               </div>
-              <h3 className="text-2xl font-semibold">Sertifikatlar</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                Uğurlu imtahanlardan sonra rəsmi sertifikat əldə edin
-              </p>
+              <h3 className="text-2xl font-semibold">{t("homeFeature4Title")}</h3>
+              <p className="text-muted-foreground leading-relaxed">{t("homeFeature4Desc")}</p>
             </Card>
 
             <Card className="p-8 space-y-4 border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 rounded-3xl bg-gradient-to-br from-card to-primary/5">
               <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/25">
                 <Users className="h-7 w-7 text-primary-foreground" />
               </div>
-              <h3 className="text-2xl font-semibold">Canlı Dəstək</h3>
-              <p className="text-muted-foreground leading-relaxed">Hər zaman komandamızdan kömək və məsləhət alın</p>
+              <h3 className="text-2xl font-semibold">{t("homeFeature5Title")}</h3>
+              <p className="text-muted-foreground leading-relaxed">{t("homeFeature5Desc")}</p>
             </Card>
 
             <Card className="p-8 space-y-4 border-2 hover:border-secondary/50 transition-all duration-300 hover:shadow-lg hover:shadow-secondary/10 rounded-3xl bg-gradient-to-br from-card to-secondary/5">
               <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-secondary to-accent flex items-center justify-center shadow-lg shadow-secondary/25">
                 <Shield className="h-7 w-7 text-secondary-foreground" />
               </div>
-              <h3 className="text-2xl font-semibold">Təhlükəsiz Platform</h3>
-              <p className="text-muted-foreground leading-relaxed">
-                Məlumatlarınızın təhlükəsizliyi bizim üçün prioritetdir
-              </p>
+              <h3 className="text-2xl font-semibold">{t("homeFeature6Title")}</h3>
+              <p className="text-muted-foreground leading-relaxed">{t("homeFeature6Desc")}</p>
             </Card>
           </div>
         </div>
@@ -148,17 +147,15 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-grid-slate-900/[0.04] bg-[size:40px_40px]" />
         <div className="container mx-auto px-4 relative">
           <Card className="max-w-4xl mx-auto p-12 md:p-16 text-center space-y-8 border-2 rounded-3xl bg-gradient-to-br from-card to-primary/5 shadow-2xl">
-            <h2 className="text-4xl md:text-5xl font-bold text-balance">İmtahana hazırsınız?</h2>
-            <p className="text-xl text-muted-foreground text-pretty max-w-2xl mx-auto">
-              İndi qoşulun və minlərlə tələbə ilə birlikdə öyrənin
-            </p>
+            <h2 className="text-4xl md:text-5xl font-bold text-balance">{t("homeReadyTitle")}</h2>
+            <p className="text-xl text-muted-foreground text-pretty max-w-2xl mx-auto">{t("homeReadyDesc")}</p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
               <Button
                 asChild
                 size="lg"
                 className="rounded-full px-8 py-6 text-lg bg-gradient-to-r from-primary via-secondary to-accent hover:opacity-90 transition-opacity shadow-lg shadow-primary/25"
               >
-                <Link href="/register">Pulsuz başla</Link>
+                <Link href="/register">{t("homeReadyCta")}</Link>
               </Button>
             </div>
           </Card>

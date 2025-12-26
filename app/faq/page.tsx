@@ -28,14 +28,9 @@ export default function FAQPage() {
             <h1 className="text-5xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
               {t("faqTitle")}
             </h1>
-            <p className="text-lg text-muted-foreground">
-              {locale === "az"
-                ? "Ən çox verilən sualların cavabları"
-                : locale === "en"
-                  ? "Answers to the most common questions"
-                  : "Ответы на самые частые вопросы"}
-            </p>
+            <p className="text-lg text-muted-foreground">{t("faqSubtitle")}</p>
           </div>
+
           <div className="space-y-4">
             {faqs.map((faq, idx) => (
               <Card
@@ -59,20 +54,8 @@ export default function FAQPage() {
 
           <Card className="p-8 rounded-3xl border-2 bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 backdrop-blur-sm">
             <div className="text-center space-y-3">
-              <h3 className="text-2xl font-bold">
-                {locale === "az"
-                  ? "Hələ də sualınız var?"
-                  : locale === "en"
-                    ? "Still have questions?"
-                    : "Всё ещё есть вопросы?"}
-              </h3>
-              <p className="text-muted-foreground">
-                {locale === "az"
-                  ? "Bizimlə əlaqə saxlayın və sizə kömək edək!"
-                  : locale === "en"
-                    ? "Contact us and we'll help you!"
-                    : "Свяжитесь с нами, и мы поможем!"}
-              </p>
+              <h3 className="text-2xl font-bold">{t("faqStillTitle")}</h3>
+              <p className="text-muted-foreground">{t("faqStillDesc")}</p>
               <a
                 href="/contact"
                 className="inline-block mt-4 px-8 py-3 rounded-full bg-gradient-to-r from-primary via-secondary to-accent text-white font-semibold hover:opacity-90 transition-opacity"

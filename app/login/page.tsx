@@ -25,8 +25,6 @@ export default function LoginPage() {
   const { t } = useTranslation(locale)
   const router = useRouter()
 
-  const pick = (az: string, en: string, ru: string) => (locale === "az" ? az : locale === "ru" ? ru : en)
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 
@@ -34,14 +32,12 @@ export default function LoginPage() {
     const pw = password
 
     if (!em) {
-      toast.error(pick("Email daxil edin", "Enter email", "Введите email"), { toastId: `login:email:${Date.now()}` })
+      toast.error(t("loginEnterEmail"), { toastId: `login:email:${Date.now()}` })
       return
     }
 
     if (!pw) {
-      toast.error(pick("Şifrə daxil edin", "Enter password", "Введите пароль"), {
-        toastId: `login:pw:${Date.now()}`,
-      })
+      toast.error(t("loginEnterPassword"), { toastId: `login:pw:${Date.now()}` })
       return
     }
 
@@ -55,9 +51,7 @@ export default function LoginPage() {
 
       const user = await refreshUser()
 
-      toast.success(pick("Uğurla daxil oldunuz", "Logged in successfully", "Вы успешно вошли"), {
-        toastId: `login:ok:${Date.now()}`,
-      })
+      toast.success(t("loginSuccess"), { toastId: `login:ok:${Date.now()}` })
 
       if (user && (user.role === "admin" || user.role === "superadmin")) {
         router.replace("/admin")
@@ -86,16 +80,11 @@ export default function LoginPage() {
           <Card className="backdrop-blur-xl bg-white/80 dark:bg-gray-950/80 border-white/20 shadow-2xl">
             <CardHeader>
               <CardTitle className="text-2xl">{t("login")}</CardTitle>
-              <CardDescription>
-                {locale === "az" && "Hesabınıza daxil olun"}
-                {locale === "en" && "Sign in to your account"}
-                {locale === "ru" && "Войдите в свой аккаунт"}
-              </CardDescription>
+              <CardDescription>{t("loginSubtitle")}</CardDescription>
             </CardHeader>
 
             <form onSubmit={handleSubmit}>
               <CardContent className="space-y-4">
-                {/* ❌ Alert YOX — error yalnız toast ilə */}
 
                 <div className="space-y-2">
                   <Label htmlFor="email">{t("email")}</Label>
@@ -114,9 +103,7 @@ export default function LoginPage() {
                   <div className="flex items-center justify-between">
                     <Label htmlFor="password">{t("password")}</Label>
                     <Link href="/forgot-password" className="text-sm text-violet-600 hover:underline">
-                      {locale === "az" && "Unutmusunuz?"}
-                      {locale === "en" && "Forgot?"}
-                      {locale === "ru" && "Забыли?"}
+                      {t("forgot")}
                     </Link>
                   </div>
 
@@ -138,13 +125,11 @@ export default function LoginPage() {
                   className="w-full h-11 bg-gradient-to-r mt-2 from-violet-600 to-blue-600 hover:from-violet-700 hover:to-blue-700"
                   disabled={loading}
                 >
-                  {loading ? pick("Gözləyin...", "Loading...", "Подождите...") : t("login")}
+                  {loading ? t("loadingText") : t("login")}
                 </Button>
 
                 <p className="text-sm text-muted-foreground text-center">
-                  {locale === "az" && "Hesabınız yoxdur? "}
-                  {locale === "en" && "Don't have an account? "}
-                  {locale === "ru" && "Нет аккаунта? "}
+                  {t("noAccount")}{" "}
                   <Link href="/register" className="text-violet-600 hover:underline font-medium">
                     {t("register")}
                   </Link>

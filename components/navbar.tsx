@@ -23,10 +23,10 @@ export function Navbar() {
   const displayName =
     (typeof user?.name === "string" && user.name.trim()) ||
     (typeof user?.email === "string" && user.email.trim()) ||
-    "User"
+    t("navbar.guest")
 
   const initial = (displayName.trim()[0] || "U").toUpperCase()
-  const balanceCents = toCents((user as any)?.balance) 
+  const balanceCents = toCents((user as any)?.balance)
 
   return (
     <nav className="sticky top-0 z-50 border-b bg-card/80 backdrop-blur-xl supports-[backdrop-filter]:bg-card/60">
@@ -87,13 +87,13 @@ export function Navbar() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="rounded-2xl">
                 <DropdownMenuItem onClick={() => setLocale("az")} className="rounded-xl cursor-pointer">
-                  Azərbaycan
+                  {t("navbar.lang.az")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setLocale("en")} className="rounded-xl cursor-pointer">
-                  English
+                  {t("navbar.lang.en")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setLocale("ru")} className="rounded-xl cursor-pointer">
-                  Русский
+                  {t("navbar.lang.ru")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

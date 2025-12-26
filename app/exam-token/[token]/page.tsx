@@ -11,6 +11,8 @@ import { Navbar } from "@/components/navbar"
 import ExamTokenRunner from "@/components/exam-token-runner"
 import { Card, CardContent } from "@/components/ui/card"
 import { useAuth } from "@/contexts/auth-context"
+import { useLocale } from "@/contexts/locale-context"
+import { useTranslation } from "@/lib/i18n"
 
 type AnyParams = Promise<Record<string, string | undefined>>
 
@@ -20,6 +22,8 @@ export default function ExamTokenPage({ params }: { params: AnyParams }) {
 
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
+  const { locale } = useLocale()
+  const { t } = useTranslation(locale)
 
   const [attemptId, setAttemptId] = useState("")
   const [bankId, setBankId] = useState("")
@@ -29,13 +33,13 @@ export default function ExamTokenPage({ params }: { params: AnyParams }) {
     if (authLoading) return
 
     if (!user?.id) {
-      toast.error("Login olunmayıb.")
+      toast.error(t("examTokenNotLoggedIn"))
       router.replace("/login")
       return
     }
 
     if (!token) {
-      toast.error("Token tapılmadı.")
+      toast.error(t("examTokenMissing"))
       router.replace("/dashboard")
       return
     }
@@ -48,7 +52,7 @@ export default function ExamTokenPage({ params }: { params: AnyParams }) {
           typeof window !== "undefined" ? window.sessionStorage.getItem(`exam_token_bank_${token}`) : null
 
         if (!storedBankId) {
-          toast.error("bankId tapılmadı (session). Yenidən Dashboard-dan start et.")
+          toast.error(t("examTokenBankMissingSession"))
           router.replace("/dashboard")
           return
         }
@@ -67,9 +71,9 @@ export default function ExamTokenPage({ params }: { params: AnyParams }) {
 
         const created = await api.createAttemptWithToken(bank, user.id, token)
 
-        const newAttemptId = String(created.attemptId || "")
+        const newAttemptId = String((created as any).attemptId || "")
         if (!newAttemptId) {
-          toast.error("AttemptId alınmadı.")
+          toast.error(t("examTokenAttemptIdMissing"))
           router.replace("/dashboard")
           return
         }
@@ -80,13 +84,13 @@ export default function ExamTokenPage({ params }: { params: AnyParams }) {
           window.sessionStorage.setItem(attemptKey, newAttemptId)
         }
       } catch (e: any) {
-        toast.error(e?.message || "Bu linklə imtahana başlamaq mümkün olmadı.")
+        toast.error(e?.message || t("examTokenStartFail"))
         router.replace("/dashboard")
       } finally {
         setLoading(false)
       }
     })()
-  }, [authLoading, user?.id, token, router])
+  }, [authLoading, user?.id, token, router, t])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-50 via-blue-50 to-cyan-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
@@ -96,12 +100,12 @@ export default function ExamTokenPage({ params }: { params: AnyParams }) {
       <main className="container mx-auto px-4 py-8">
         {loading ? (
           <Card className="backdrop-blur-xl bg-white/85 dark:bg-gray-950/80 border-white/20 shadow-2xl">
-            <CardContent className="py-12 text-center text-sm text-muted-foreground">Yüklənir...</CardContent>
+            <CardContent className="py-12 text-center text-sm text-muted-foreground">{t("loadingText")}</CardContent>
           </Card>
         ) : !attemptId ? (
           <Card className="backdrop-blur-xl bg-white/85 dark:bg-gray-950/80 border-white/20 shadow-2xl">
             <CardContent className="py-12 text-center text-sm text-muted-foreground">
-              Attempt yaradılmadı.
+              {t("attemptNotCreated")}
             </CardContent>
           </Card>
         ) : (

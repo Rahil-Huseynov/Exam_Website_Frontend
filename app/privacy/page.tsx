@@ -33,7 +33,7 @@ export default function PrivacyPage() {
                   </div>
                   <h2 className="text-2xl font-bold">{t("dataCollection")}</h2>
                 </div>
-                <p className="text-muted-foreground leading-relaxed pl-15">{t("dataCollectionText")}</p>
+                <p className="text-muted-foreground leading-relaxed pl-14">{t("dataCollectionText")}</p>
               </div>
             </Card>
 
@@ -45,7 +45,7 @@ export default function PrivacyPage() {
                   </div>
                   <h2 className="text-2xl font-bold">{t("dataUsage")}</h2>
                 </div>
-                <p className="text-muted-foreground leading-relaxed pl-15">{t("dataUsageText")}</p>
+                <p className="text-muted-foreground leading-relaxed pl-14">{t("dataUsageText")}</p>
               </div>
             </Card>
 
@@ -57,22 +57,17 @@ export default function PrivacyPage() {
                   </div>
                   <h2 className="text-2xl font-bold">{t("dataSecurity")}</h2>
                 </div>
-                <p className="text-muted-foreground leading-relaxed pl-15">{t("dataSecurityText")}</p>
+                <p className="text-muted-foreground leading-relaxed pl-14">{t("dataSecurityText")}</p>
               </div>
             </Card>
           </div>
 
           <Card className="p-8 rounded-3xl border-2 bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 backdrop-blur-sm">
             <div className="text-center space-y-2">
-              <h3 className="text-xl font-bold">
-                {locale === "az" ? "Suallarınız var?" : locale === "en" ? "Have questions?" : "Есть вопросы?"}
-              </h3>
+              <h3 className="text-xl font-bold">{t("privacyQuestionsTitle")}</h3>
+
               <p className="text-muted-foreground">
-                {locale === "az"
-                  ? "Bizə e-poçt göndərin: "
-                  : locale === "en"
-                    ? "Send us an email: "
-                    : "Отправьте нам письмо: "}
+                {t("privacyQuestionsEmailPrefix")}{" "}
                 <a href="mailto:privacy@exampro.com" className="text-primary font-semibold hover:underline">
                   privacy@exampro.com
                 </a>
@@ -81,11 +76,7 @@ export default function PrivacyPage() {
           </Card>
 
           <div className="text-center text-sm text-muted-foreground pt-8">
-            {locale === "az"
-              ? "Son yenilənmə: 23 Dekabr 2024"
-              : locale === "en"
-                ? "Last updated: December 23, 2024"
-                : "Последнее обновление: 23 декабря 2024"}
+            {t("privacyLastUpdated")}
           </div>
         </div>
       </main>

@@ -17,15 +17,11 @@ export function Footer() {
               ExamPro
             </h3>
             <p className="text-sm text-muted-foreground">
-              {locale === "az"
-                ? "Müasir onlayn imtahan platforması"
-                : locale === "en"
-                  ? "Modern online exam platform"
-                  : "Современная онлайн-платформа экзаменов"}
+              {t("footer.tagline")}
             </p>
           </div>
           <div className="space-y-3">
-            <h4 className="font-semibold">{locale === "az" ? "Səhifələr" : locale === "en" ? "Pages" : "Страницы"}</h4>
+            <h4 className="font-semibold">{t("footer.pages")}</h4>
             <div className="flex flex-col gap-2 text-sm">
               <Link href="/about" className="text-muted-foreground hover:text-primary transition-colors">
                 {t("about")}
@@ -38,11 +34,8 @@ export function Footer() {
               </Link>
             </div>
           </div>
-
           <div className="space-y-3">
-            <h4 className="font-semibold">
-              {locale === "az" ? "Hüquqi" : locale === "en" ? "Legal" : "Юридическая информация"}
-            </h4>
+            <h4 className="font-semibold">{t("footer.legal")}</h4>
             <div className="flex flex-col gap-2 text-sm">
               <Link href="/terms" className="text-muted-foreground hover:text-primary transition-colors">
                 {t("terms")}
@@ -53,7 +46,7 @@ export function Footer() {
             </div>
           </div>
           <div className="space-y-3">
-            <h4 className="font-semibold">{locale === "az" ? "Əlaqə" : locale === "en" ? "Contact" : "Контакт"}</h4>
+            <h4 className="font-semibold">{t("footer.contact")}</h4>
             <div className="flex flex-col gap-2 text-sm text-muted-foreground">
               <a href="mailto:info@exampro.com" className="hover:text-primary transition-colors">
                 info@exampro.com
@@ -66,12 +59,7 @@ export function Footer() {
         </div>
 
         <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
-          © 2025 ExamPro.{" "}
-          {locale === "az"
-            ? "Bütün hüquqlar qorunur."
-            : locale === "en"
-              ? "All rights reserved."
-              : "Все права защищены."}
+          © 2025 ExamPro. {t("footer.rights")}
         </div>
       </div>
     </footer>

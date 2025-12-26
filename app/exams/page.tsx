@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { api, type Exam, type University, type Subject } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
+import { useLocale } from "@/contexts/locale-context"
+import { useTranslation } from "@/lib/i18n"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -23,9 +25,24 @@ function setTokenBank(token: string, bankId: string) {
   window.sessionStorage.setItem(tokenBankKey(token), bankId)
 }
 
+function tUniName(u: any, locale: string) {
+  if (!u) return ""
+  if (locale === "az") return u.nameAz || u.name
+  if (locale === "ru") return u.nameRu || u.name
+  return u.nameEn || u.name
+}
+function tSubjName(s: any, locale: string) {
+  if (!s) return ""
+  if (locale === "az") return s.nameAz || s.name
+  if (locale === "ru") return s.nameRu || s.name
+  return s.nameEn || s.name
+}
+
 export default function ExamsPage() {
   const router = useRouter()
   const { user } = useAuth()
+  const { locale } = useLocale()
+  const { t } = useTranslation(locale)
 
   const [exams, setExams] = useState<Exam[]>([])
   const [universities, setUniversities] = useState<University[]>([])
@@ -41,26 +58,34 @@ export default function ExamsPage() {
   const [startingId, setStartingId] = useState<string>("")
 
   useEffect(() => {
-    ;(async () => {
-      try {
-        setLoading(true)
-        setError("")
-        const [examsData, universitiesData, subjectsData] = await Promise.all([
-          api.getExams(),
-          api.getUniversities(),
-          api.getSubjects(),
-        ])
-        setExams(Array.isArray(examsData) ? examsData : [])
-        setUniversities(Array.isArray(universitiesData) ? universitiesData : [])
-        setSubjects(Array.isArray(subjectsData) ? subjectsData : [])
-      } catch (err: any) {
-        const msg = err?.message || "Failed to load exams"
-        setError(msg)
-        toast.error(msg)
-      } finally {
-        setLoading(false)
-      }
-    })()
+    let cancelled = false
+
+      ; (async () => {
+        try {
+          setLoading(true)
+          setError("")
+          const [examsData, universitiesData, subjectsData] = await Promise.all([
+            api.getExams(),
+            api.getUniversities(),
+            api.getSubjects(),
+          ])
+          if (cancelled) return
+          setExams(Array.isArray(examsData) ? examsData : [])
+          setUniversities(Array.isArray(universitiesData) ? universitiesData : [])
+          setSubjects(Array.isArray(subjectsData) ? subjectsData : [])
+        } catch (err: any) {
+          const msg = err?.message || t("errLoadExams")
+          if (cancelled) return
+          setError(msg)
+          toast.error(msg)
+        } finally {
+          if (!cancelled) setLoading(false)
+        }
+      })()
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const years = useMemo(() => Array.from(new Set(exams.map((e) => e.year))).sort((a, b) => b - a), [exams])
@@ -84,7 +109,7 @@ export default function ExamsPage() {
   async function startExam(exam: Exam) {
     try {
       if (!user?.id) {
-        toast.error("İmtahana başlamaq üçün giriş edin.")
+        toast.error(t("errLoginRequired"))
         router.push("/login")
         return
       }
@@ -93,22 +118,22 @@ export default function ExamsPage() {
 
       const bankId = String((exam as any).bankId ?? exam.id ?? "")
       if (!bankId) {
-        toast.error("bankId tapılmadı.")
+        toast.error(t("errBankNotFound"))
         return
       }
 
       const tok = await api.createExamToken(bankId, user.id)
-      const token = String(tok?.token || "")
+      const token = String((tok as any)?.token || "")
 
       if (!token) {
-        toast.error("Token yaradılmadı.")
+        toast.error(t("errTokenNotCreated"))
         return
       }
-      setTokenBank(token, bankId)
 
+      setTokenBank(token, bankId)
       router.push(`/exam-token/${token}`)
     } catch (e: any) {
-      toast.error(e?.message || "İmtahana başlamaq olmadı.")
+      toast.error(e?.message || t("errStartExam"))
     } finally {
       setStartingId("")
     }
@@ -123,9 +148,9 @@ export default function ExamsPage() {
         <div className="space-y-6">
           <div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-violet-600 via-blue-600 to-cyan-600 bg-clip-text text-transparent">
-              İmtahanlar
+              {t("examsTitle")}
             </h1>
-            <p className="text-muted-foreground mt-2 text-lg">İmtahan seçin və başlayın</p>
+            <p className="text-muted-foreground mt-2 text-lg">{t("examsSubtitle")}</p>
           </div>
 
           {error && (
@@ -134,29 +159,30 @@ export default function ExamsPage() {
             </Alert>
           )}
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-4 md:grid-cols-2">
             <div className="lg:col-span-5 md:col-span-2">
               <div className="relative">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
-                  placeholder="Axtar..."
+                  placeholder={t("searchPlaceholder")}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-12 h-12 bg-white/80 backdrop-blur-sm border-white/20 shadow-md"
                 />
               </div>
             </div>
-
+          </div>
+          <div className="grid grid-cols-2 gap-6 w-full sm:flex sm:justify-between sm:items-center">
             <Select value={selectedUniversity} onValueChange={setSelectedUniversity}>
               <SelectTrigger className="h-12 bg-white/80 backdrop-blur-sm border-white/20 shadow-md">
                 <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Universitet" />
+                <SelectValue placeholder={t("filterUniversity")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Hamısı</SelectItem>
+                <SelectItem value="all">{t("filterAll")}</SelectItem>
                 {universities.map((uni) => (
                   <SelectItem key={uni.id} value={String(uni.id)}>
-                    {uni.name}
+                    {tUniName(uni, locale)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -165,13 +191,13 @@ export default function ExamsPage() {
             <Select value={selectedSubject} onValueChange={setSelectedSubject}>
               <SelectTrigger className="h-12 bg-white/80 backdrop-blur-sm border-white/20 shadow-md">
                 <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Fənn" />
+                <SelectValue placeholder={t("filterSubject")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Hamısı</SelectItem>
+                <SelectItem value="all">{t("filterAll")}</SelectItem>
                 {subjects.map((subj) => (
                   <SelectItem key={subj.id} value={String(subj.id)}>
-                    {subj.name}
+                    {tSubjName(subj, locale)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -180,10 +206,10 @@ export default function ExamsPage() {
             <Select value={selectedYear} onValueChange={setSelectedYear}>
               <SelectTrigger className="h-12 bg-white/80 backdrop-blur-sm border-white/20 shadow-md">
                 <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="İl" />
+                <SelectValue placeholder={t("filterYear")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Hamısı</SelectItem>
+                <SelectItem value="all">{t("filterAll")}</SelectItem>
                 {years.map((year) => (
                   <SelectItem key={year} value={String(year)}>
                     {year}
@@ -191,8 +217,9 @@ export default function ExamsPage() {
                 ))}
               </SelectContent>
             </Select>
-          </div>
 
+          </div>
+          
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-16 w-16 border-4 border-violet-200 dark:border-violet-900 border-t-violet-600" />
@@ -200,7 +227,7 @@ export default function ExamsPage() {
           ) : filteredExams.length === 0 ? (
             <div className="text-center py-12">
               <BookOpen className="h-16 w-16 text-violet-400 mx-auto mb-4" />
-              <p className="text-muted-foreground text-lg">Heç bir imtahan tapılmadı</p>
+              <p className="text-muted-foreground text-lg">{t("noExamsFound")}</p>
             </div>
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -220,19 +247,19 @@ export default function ExamsPage() {
                       </div>
                       <CardTitle className="text-balance">{exam.title}</CardTitle>
                       <CardDescription className="space-y-1">
-                        <div>{exam.university.name}</div>
-                        <div className="font-medium text-violet-600">{exam.subject.name}</div>
+                        <div>{tUniName(exam.university, locale)}</div>
+                        <div className="font-medium text-violet-600">{tSubjName(exam.subject, locale)}</div>
                       </CardDescription>
                     </CardHeader>
 
                     <CardContent className="flex-1">
                       <div className="space-y-3">
                         <div className="flex items-center justify-between text-sm p-3 rounded-lg bg-gradient-to-r from-violet-50 to-blue-50 dark:from-violet-950/20 dark:to-blue-950/20">
-                          <span className="text-muted-foreground">Sual:</span>
+                          <span className="text-muted-foreground">{t("questionsLabel")}:</span>
                           <span className="font-bold text-violet-600">{(exam as any).questionCount ?? "-"}</span>
                         </div>
                         <div className="flex items-center justify-between text-sm p-3 rounded-lg bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20">
-                          <span className="text-muted-foreground">Qiymət:</span>
+                          <span className="text-muted-foreground">{t("priceLabel")}:</span>
                           <span className="font-bold text-blue-600">{Number(exam.price).toFixed(2)} AZN</span>
                         </div>
                       </div>
@@ -244,7 +271,7 @@ export default function ExamsPage() {
                         disabled={isStarting}
                         onClick={() => void startExam(exam)}
                       >
-                        {isStarting ? "Token yaradılır..." : "İmtahana başla"}
+                        {isStarting ? t("creatingToken") : t("startExam")}
                       </Button>
                     </CardFooter>
                   </Card>
