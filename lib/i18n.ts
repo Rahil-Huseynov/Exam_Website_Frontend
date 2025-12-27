@@ -649,7 +649,32 @@ export const translations = {
     adminNewsApiEmpty: "(NEXT_PUBLIC_API_URL boşdur)",
     adminNewsDraft: "Qaralama",
     adminNewsPublished: "Dərc olunub",
+    forgotPasswordTitle: "Şifrəni unutmusunuz?",
+    forgotPasswordDesc: "Şifrənizi sıfırlamaq üçün e-poçt ünvanınızı daxil edin",
+    forgotPasswordSuccessInline: "Şifrə sıfırlama linki e-poçtunuza göndərildi",
+    forgotPasswordEmailPlaceholder: "E-poçt ünvanı",
+    forgotPasswordSubmit: "Şifrəni sıfırla",
+    forgotPasswordBackToLogin: "Girişə qayıt",
+    forgotPasswordToastSuccess: "Şifrə sıfırlama linki e-poçtunuza göndərildi",
+    forgotPasswordToastNetwork: "Şəbəkə xətası baş verdi",
+    resetPasswordTitle: "Yeni şifrə təyin et",
+    resetPasswordDesc: "Yeni şifrənizi daxil edin və təsdiqləyin",
+    resetPasswordCheckingToken: "Token yoxlanılır...",
+    resetPasswordTokenInvalidInline: "Token etibarsızdır və ya vaxtı bitib",
+    resetPasswordSuccessInline: "Şifrə uğurla dəyişdirildi. Login səhifəsinə yönləndirilirsiniz...",
+    resetPasswordPlaceholder: "Minimum 6 simvol",
+    resetPasswordConfirmLabel: "Şifrəni təsdiqlə",
+    resetPasswordSubmit: "Şifrəni yenilə",
 
+    resetPasswordErrMissingToken: "Token tapılmadı",
+    resetPasswordErrInvalidToken: "Token etibarsızdır",
+    resetPasswordErrTooShort: "Şifrə ən az 6 simvol olmalıdır",
+    resetPasswordErrMismatch: "Şifrələr uyğun gəlmir",
+
+    resetPasswordToastSuccess: "Şifrə uğurla dəyişdirildi",
+    resetPasswordToastFail: "Sorğu uğursuz oldu",
+
+    backToLogin: "Girişə qayıt",
 
   },
   en: {
@@ -1298,6 +1323,34 @@ export const translations = {
     adminNewsApiEmpty: "(NEXT_PUBLIC_API_URL is empty)",
     adminNewsDraft: "Draft",
     adminNewsPublished: "Published",
+    forgotPasswordTitle: "Forgot Password?",
+    forgotPasswordDesc: "Enter your email to reset your password",
+    forgotPasswordSuccessInline: "Password reset link sent to your email",
+    forgotPasswordEmailPlaceholder: "Email address",
+    forgotPasswordSubmit: "Reset Password",
+    forgotPasswordBackToLogin: "Back to Login",
+    forgotPasswordToastSuccess: "Password reset link sent to your email",
+    forgotPasswordToastNetwork: "Network error occurred",
+
+    resetPasswordTitle: "Set New Password",
+    resetPasswordDesc: "Enter and confirm your new password",
+    resetPasswordCheckingToken: "Checking token...",
+    resetPasswordTokenInvalidInline: "Token is invalid or expired",
+    resetPasswordSuccessInline: "Password updated. Redirecting to login...",
+    resetPasswordPlaceholder: "At least 6 characters",
+    resetPasswordConfirmLabel: "Confirm password",
+    resetPasswordSubmit: "Update Password",
+
+    resetPasswordErrMissingToken: "Missing token",
+    resetPasswordErrInvalidToken: "Invalid token",
+    resetPasswordErrTooShort: "Password must be at least 6 characters",
+    resetPasswordErrMismatch: "Passwords do not match",
+
+    resetPasswordToastSuccess: "Password updated",
+    resetPasswordToastFail: "Request failed",
+
+    backToLogin: "Back to Login",
+
 
 
 
@@ -1964,6 +2017,34 @@ export const translations = {
     adminNewsApiEmpty: "(NEXT_PUBLIC_API_URL пустой)",
     adminNewsDraft: "Черновик",
     adminNewsPublished: "Опубликовано",
+    forgotPasswordTitle: "Забыли пароль?",
+    forgotPasswordDesc: "Введите свой email для сброса пароля",
+    forgotPasswordSuccessInline: "Ссылка для сброса пароля отправлена на ваш email",
+    forgotPasswordEmailPlaceholder: "Email",
+    forgotPasswordSubmit: "Сбросить пароль",
+    forgotPasswordBackToLogin: "Назад к входу",
+    forgotPasswordToastSuccess: "Ссылка для сброса пароля отправлена на ваш email",
+    forgotPasswordToastNetwork: "Ошибка сети",
+    resetPasswordTitle: "Установить новый пароль",
+    resetPasswordDesc: "Введите и подтвердите новый пароль",
+    resetPasswordCheckingToken: "Проверка токена...",
+    resetPasswordTokenInvalidInline: "Токен недействителен или истек",
+    resetPasswordSuccessInline: "Пароль обновлен. Переход на вход...",
+    resetPasswordPlaceholder: "Минимум 6 символов",
+    resetPasswordConfirmLabel: "Подтвердить пароль",
+    resetPasswordSubmit: "Обновить пароль",
+
+    resetPasswordErrMissingToken: "Токен отсутствует",
+    resetPasswordErrInvalidToken: "Токен недействителен",
+    resetPasswordErrTooShort: "Пароль минимум 6 символов",
+    resetPasswordErrMismatch: "Пароли не совпадают",
+
+    resetPasswordToastSuccess: "Пароль обновлен",
+    resetPasswordToastFail: "Запрос не удался",
+
+    backToLogin: "Назад к входу",
+
+
 
 
 

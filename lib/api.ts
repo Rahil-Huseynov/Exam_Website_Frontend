@@ -558,6 +558,25 @@ class ApiClient {
     return this.request<User>("/auth/me")
   }
 
+  async forgotPassword(email: string) {
+    return this.request<{ message?: string }>(`/auth/forgot-password`, {
+      method: "POST",
+      json: { email },
+    })
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    return this.request<{ message?: string }>(`/auth/reset-password`, {
+      method: "POST",
+      json: { token, newPassword },
+    })
+  }
+
+  async checkResetToken(token: string) {
+    const qs = new URLSearchParams({ token }).toString()
+    return this.request<{ valid: boolean }>(`/auth/check-token?${qs}`, { method: "GET" })
+  }
+
   // ================== EMAIL VERIFY ==================
   async verifyEmail(email: string, code: string) {
     return this.request<{ success: boolean; error?: string }>("/auth/user/verify-email", {

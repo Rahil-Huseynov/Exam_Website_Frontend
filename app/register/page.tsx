@@ -182,7 +182,7 @@ export default function RegisterPage() {
               <CardFooter className="flex flex-col gap-4">
                 <Button
                   type="submit"
-                  className="w-full h-11 bg-gradient-to-r from-violet-600 to-blue-600"
+                  className="w-full h-11 mt-2 bg-gradient-to-r from-violet-600 to-blue-600"
                   disabled={loading}
                 >
                   {loading ? t("loading") : t("register")}

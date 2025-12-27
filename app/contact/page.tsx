@@ -60,7 +60,7 @@ export default function ContactPage() {
                   <Label htmlFor="message">{t("contactMessageLabel")}</Label>
                   <Textarea
                     id="message"
-                    className="rounded-2xl min-h-32"
+                    className="rounded-2xl min-h-32 resize-none"
                     placeholder={t("contactMessagePlaceholder")}
                   />
                 </div>

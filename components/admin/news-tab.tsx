@@ -513,7 +513,7 @@ export default function AdminNewsPage() {
                   value={currentContent}
                   onChange={(e) => setCurrentContent(e.target.value)}
                   placeholder={`${t("adminNewsContentPlaceholder")} ${tab.toUpperCase()}...`}
-                  className="min-h-[320px]"
+                  className="min-h-[320px] resize-none"
                 />
               </div>
 
