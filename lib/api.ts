@@ -10,6 +10,7 @@ export interface User {
   name: string
   email: string
   balance: number
+  publicId: string
   role: "user" | "admin" | "superadmin"
 }
 
@@ -41,6 +42,53 @@ export interface Subject {
   nameAz?: string
   nameEn?: string
   nameRu?: string
+}
+
+export type AttemptReviewItem = {
+  answerId: string
+  createdAt: string
+  isCorrect: boolean
+  question: {
+    id: string
+    text: string
+    options: { id: string; text: string }[]
+    correctOptionId: string | null
+    correctOptionText: string | null
+  }
+  selected: { id: string; text: string }
+}
+
+export type ExamAttempt = {
+  id: string
+  status: "IN_PROGRESS" | "FINISHED"
+  startedAt: string
+  finishedAt?: string | null
+  score: number
+  total: number
+  bank: {
+    id: string
+    title: string
+    year: number
+    price: number
+    university: { id: string; name: string; nameAz?: string; nameEn?: string; nameRu?: string; logo?: string | null }
+    subject: { id: string; name: string; nameAz?: string; nameEn?: string; nameRu?: string }
+    topic?: any
+  }
+}
+
+
+export type AttemptReviewResponse = {
+  attempt: {
+    id: string
+    status: string
+    startedAt: string
+    finishedAt?: string | null
+    score: number
+    total: number
+  }
+  exam: any
+  stats: { answered: number; correct: number; wrong: number }
+  items: AttemptReviewItem[]
 }
 
 export interface QuestionOption {
@@ -518,7 +566,17 @@ class ApiClient {
     })
   }
 
+  async getUserExamAttempts(userId: number, status?: "FINISHED" | "IN_PROGRESS") {
+    const qs = status ? `?status=${encodeURIComponent(status)}` : ""
+    return this.request<{ attempts: any[] }>(`/users/${encodeURIComponent(String(userId))}/attempts${qs}`)
+  }
 
+
+  async getAttemptReview(attemptId: string, userId: number) {
+    return this.request<AttemptReviewResponse>(
+      `/attempts/${encodeURIComponent(attemptId)}/review?userId=${encodeURIComponent(String(userId))}`,
+    )
+  }
   async getExamYearsByUniversity(universityId: string) {
     const qs = new URLSearchParams({ universityId }).toString()
     const data = await this.request<{ years: number[] }>(`/questions/years?${qs}`)

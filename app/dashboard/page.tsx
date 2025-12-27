@@ -28,6 +28,7 @@ import {
   Search,
   CheckCircle2,
   Sparkles,
+  User,
 } from "lucide-react"
 
 import { toastError } from "@/lib/toast"
@@ -98,17 +99,17 @@ export default function DashboardPage() {
   useEffect(() => {
     let cancelled = false
 
-    ;(async () => {
-      try {
-        setUniLoading(true)
-        const list = await api.getUniversities()
-        if (!cancelled) setUniversities(Array.isArray(list) ? list : [])
-      } catch (e: any) {
-        toastError(e?.message || t("errUniversitiesLoad"))
-      } finally {
-        if (!cancelled) setUniLoading(false)
-      }
-    })()
+      ; (async () => {
+        try {
+          setUniLoading(true)
+          const list = await api.getUniversities()
+          if (!cancelled) setUniversities(Array.isArray(list) ? list : [])
+        } catch (e: any) {
+          toastError(e?.message || t("errUniversitiesLoad"))
+        } finally {
+          if (!cancelled) setUniLoading(false)
+        }
+      })()
 
     return () => {
       cancelled = true
@@ -127,24 +128,24 @@ export default function DashboardPage() {
     if (didLoadRef.current) return
     didLoadRef.current = true
 
-    ;(async () => {
-      try {
-        setLoading(true)
+      ; (async () => {
+        try {
+          setLoading(true)
 
-        const data = await api.getUserAttempts(user.id)
-        setAttempts(Array.isArray((data as any)?.attempts) ? (data as any).attempts : [])
+          const data = await api.getUserAttempts(user.id)
+          setAttempts(Array.isArray((data as any)?.attempts) ? (data as any).attempts : [])
 
-        lastErrorRef.current = ""
-      } catch (err: any) {
-        const msg = err instanceof Error ? err.message : t("errDataLoad")
-        if (lastErrorRef.current !== msg) {
-          lastErrorRef.current = msg
-          toastError(msg)
+          lastErrorRef.current = ""
+        } catch (err: any) {
+          const msg = err instanceof Error ? err.message : t("errDataLoad")
+          if (lastErrorRef.current !== msg) {
+            lastErrorRef.current = msg
+            toastError(msg)
+          }
+        } finally {
+          setLoading(false)
         }
-      } finally {
-        setLoading(false)
-      }
-    })()
+      })()
   }, [authLoading, user, router])
 
   async function onSelectUniversity(u: University) {
@@ -202,10 +203,10 @@ export default function DashboardPage() {
   const averageScore =
     completedAttempts.length > 0
       ? completedAttempts.reduce((sum, a) => {
-          const score = Number(a?.score || 0)
-          const total = Number(a?.totalQuestions || a?.total || 1)
-          return sum + (score / (total || 1)) * 100
-        }, 0) / completedAttempts.length
+        const score = Number(a?.score || 0)
+        const total = Number(a?.totalQuestions || a?.total || 1)
+        return sum + (score / (total || 1)) * 100
+      }, 0) / completedAttempts.length
       : 0
 
   const totalSpent = useMemo(
@@ -319,7 +320,7 @@ export default function DashboardPage() {
             <p className="text-muted-foreground">{t("dashboardSubtitle")}</p>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             <Card className="border-2 rounded-3xl">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                 <CardTitle className="text-sm font-medium">{t("dashboardBalance")}</CardTitle>
@@ -333,6 +334,16 @@ export default function DashboardPage() {
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 rounded-3xl">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                <CardTitle className="text-sm font-medium">{t("userId")}</CardTitle>
+                <User className="h-5 w-5" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold break-all">{user.publicId}</div>
               </CardContent>
             </Card>
 

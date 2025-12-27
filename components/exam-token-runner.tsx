@@ -10,11 +10,12 @@ import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { CheckCircle2, ChevronLeft, ChevronRight, Flag, Loader2, XCircle } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 export default function ExamTokenRunner({ attemptId, userId }: { attemptId: string; userId: number }) {
   const { locale } = useLocale()
   const { t } = useTranslation(locale)
-
+  const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [questions, setQuestions] = useState<ExamQuestion[]>([])
   const [activeIndex, setActiveIndex] = useState(0)
@@ -34,8 +35,23 @@ export default function ExamTokenRunner({ attemptId, userId }: { attemptId: stri
   const isFirst = activeIndex === 0
   const isLast = activeIndex === total - 1
 
-  const isFinished = reviewMode && summary?.status === "FINISHED"
-  const wrongCount = summary ? Math.max(0, summary.answered - summary.correct) : 0
+  const isFinished = summary?.status === "FINISHED"
+
+  useEffect(() => {
+    if (!attemptId) return
+
+      ; (async () => {
+        try {
+          const summary = await api.getAttemptSummary(attemptId)
+
+          if (summary?.status === "FINISHED") {
+            router.replace(`/results/${attemptId}`)
+          }
+        } catch {
+        }
+      })()
+  }, [attemptId, router])
+
 
   useEffect(() => {
     if (!attemptId) return
@@ -150,8 +166,18 @@ export default function ExamTokenRunner({ attemptId, userId }: { attemptId: stri
 
   const titleStats = useMemo(() => {
     if (!isFinished || !summary) return null
-    return { correct: summary.correct, wrong: wrongCount, total: summary.total ?? total }
-  }, [isFinished, summary, wrongCount, total])
+
+    const stats = (summary as any).stats as
+      | { answered?: number; correct?: number; wrong?: number; unanswered?: number }
+      | undefined
+
+    return {
+      correct: stats?.correct ?? 0,
+      wrong: stats?.wrong ?? 0,
+      empty: stats?.unanswered ?? 0,
+      total: (summary as any).total ?? total,
+    }
+  }, [isFinished, summary, total])
 
   if (loading) {
     return (
@@ -237,6 +263,7 @@ export default function ExamTokenRunner({ attemptId, userId }: { attemptId: stri
                 {t("examRunner.result.title")}
               </CardTitle>
             </CardHeader>
+
             <CardContent className="grid gap-3 sm:grid-cols-3">
               <div className="rounded-xl border p-4">
                 <div className="text-xs text-muted-foreground">{t("examRunner.result.correct")}</div>
@@ -310,7 +337,7 @@ export default function ExamTokenRunner({ attemptId, userId }: { attemptId: stri
                     className={cn(
                       "w-full text-left rounded-2xl border p-4 transition-all",
                       !isFinished &&
-                        "hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 hover:bg-gradient-to-r hover:from-violet-50 hover:to-blue-50 dark:hover:from-violet-950/20 dark:hover:to-blue-950/20",
+                      "hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 hover:bg-gradient-to-r hover:from-violet-50 hover:to-blue-50 dark:hover:from-violet-950/20 dark:hover:to-blue-950/20",
                       selected && !isFinished && "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/20",
                       isCorrectOption && "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/20",
                       isWrongSelected && "border-red-600 bg-red-50 dark:bg-red-950/20",
