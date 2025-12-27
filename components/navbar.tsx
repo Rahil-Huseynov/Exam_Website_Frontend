@@ -53,6 +53,9 @@ export function Navbar() {
               <Link href="/results" className="px-4 py-2 text-sm font-medium rounded-full hover:bg-muted transition-colors">
                 {t("examResults")}
               </Link>
+              <Link href="/payments" className="px-4 py-2 text-sm font-medium rounded-full hover:bg-muted transition-colors">
+                {t("payments")}
+              </Link>
               <Link href="/news" className="px-4 py-2 text-sm font-medium rounded-full hover:bg-muted transition-colors">
                 {t("news")}
               </Link>
@@ -66,7 +69,7 @@ export function Navbar() {
                   <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-primary-foreground font-semibold text-sm">
                     {initial}
                   </div>
-                  <span className="text-sm font-medium">{displayName}</span>
+                  <Link href="/profile" className="text-sm font-medium">{displayName}</Link>
                 </div>
                 <div className="h-6 w-px bg-border" />
                 <div className="flex items-center gap-2">

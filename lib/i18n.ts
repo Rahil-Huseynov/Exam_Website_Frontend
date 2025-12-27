@@ -545,8 +545,32 @@ export const translations = {
     "results.details": "Detallar",
     "userId": "İstifadəçi ID",
 
+    "profileTitle": "Profil",
+    "profileSubtitle": "Hesab məlumatlarını yenilə və şifrəni dəyiş",
 
+    "profileOverview": "Ümumi məlumat",
+    "profileEdit": "Profil məlumatlarını dəyiş",
 
+    "firstNameLabel": "Ad",
+    "lastNameLabel": "Soyad",
+    "roleLabel": "Rol",
+    "publicIdLabel": "Public ID",
+    "changePasswordTitle": "Şifrəni dəyiş",
+    "currentPasswordLabel": "Cari şifrə",
+    "newPasswordLabel": "Yeni şifrə",
+    "confirmNewPasswordLabel": "Yeni şifrə (təkrar)",
+
+    "updateProfileBtn": "Profil məlumatlarını yadda saxla",
+    "updatePasswordBtn": "Şifrəni yenilə",
+
+    "passwordHint": "Ən az 6 simvol, böyük/kiçik hərf və rəqəm tövsiyə olunur",
+
+    "profileNotFound": "Profil tapılmadı",
+    "profileUpdated": "Profil uğurla yeniləndi",
+    "passwordUpdated": "Şifrə uğurla dəyişdirildi",
+    "saving": "Yadda saxlanır...",
+    "profileErrCurrentPasswordRequired": "Cari şifrəni yaz",
+    "profileErrPasswordUpdateFailed": "Şifrə yenilənmədi"
 
   },
   en: {
@@ -1092,8 +1116,34 @@ export const translations = {
     "results.subtitle": "View your exam results and history",
     "results.details": "Details",
     "userId": "User ID",
-  },
+    "profileTitle": "Profile",
+    "profileSubtitle": "Update your account information and change your password",
 
+    "profileOverview": "Overview",
+    "profileEdit": "Edit profile information",
+
+    "firstNameLabel": "First name",
+    "lastNameLabel": "Last name",
+    "roleLabel": "Role",
+    "publicIdLabel": "Public ID",
+    "changePasswordTitle": "Change password",
+    "currentPasswordLabel": "Current password",
+    "newPasswordLabel": "New password",
+    "confirmNewPasswordLabel": "Confirm new password",
+    "updateProfileBtn": "Save profile changes",
+    "updatePasswordBtn": "Update password",
+
+    "passwordHint": "At least 6 characters, including letters and numbers is recommended",
+
+    "profileNotFound": "Profile not found",
+    "profileUpdated": "Profile updated successfully",
+    "passwordUpdated": "Password changed successfully",
+    "saving": "Saving...",
+    "profileErrCurrentPasswordRequired": "Enter your current password",
+    "profileErrPasswordUpdateFailed": "Failed to update password"
+
+  
+  },
   ru: {
     login: "Войти",
     logout: "Выйти",
@@ -1651,11 +1701,32 @@ export const translations = {
     "results.details": "Детали",
 
     "userId": "ID пользователя",
+    "profileTitle": "Профиль",
+    "profileSubtitle": "Обновите данные аккаунта и измените пароль",
 
+    "profileOverview": "Общая информация",
+    "profileEdit": "Редактировать профиль",
+    "firstNameLabel": "Имя",
+    "lastNameLabel": "Фамилия",
+    "roleLabel": "Роль",
+    "publicIdLabel": "Public ID",
+    "changePasswordTitle": "Сменить пароль",
+    "currentPasswordLabel": "Текущий пароль",
+    "newPasswordLabel": "Новый пароль",
+    "confirmNewPasswordLabel": "Подтвердите новый пароль",
 
+    "updateProfileBtn": "Сохранить изменения профиля",
+    "updatePasswordBtn": "Обновить пароль",
 
+    "passwordHint": "Рекомендуется минимум 6 символов, включая буквы и цифры",
 
-
+    "profileNotFound": "Профиль не найден",
+    "profileUpdated": "Профиль успешно обновлён",
+    "passwordUpdated": "Пароль успешно изменён",
+    "saving": "Сохранение...",
+    "profileErrCurrentPasswordRequired": "Введите текущий пароль",
+    "profileErrPasswordUpdateFailed": "Не удалось обновить пароль"
+ 
   },
 }
 

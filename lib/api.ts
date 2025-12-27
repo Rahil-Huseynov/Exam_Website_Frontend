@@ -770,6 +770,22 @@ class ApiClient {
     return this.request<BalanceHistoryResponse>(`/auth/users/${encodeURIComponent(String(userId))}/balance-history?${qs}`)
   }
 
+  // ================== PROFILE ==================
+  async updateUser(userId: number, payload: { firstName?: string; lastName?: string; email?: string }) {
+    return this.request<any>(`/auth/users/${encodeURIComponent(String(userId))}`, {
+      method: "PUT",
+      json: payload,
+    })
+  }
+
+  async changePassword(currentPassword: string, newPassword: string) {
+    // backend req.body-dən oxuyur (AnyFilesInterceptor var), json göndərmək olar
+    return this.request<{ message: string }>(`/auth/users/password`, {
+      method: "PATCH",
+      json: { currentPassword, newPassword },
+    })
+  }
+
 }
 
 export const api = new ApiClient()
