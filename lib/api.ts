@@ -153,6 +153,31 @@ export interface Exam {
   questionCount: number
 }
 
+export type BalanceTxnType = "EXAM_PURCHASE" | "ADMIN_TOPUP"
+
+export type BalanceTransactionItem = {
+  id: string
+  userId: number
+  adminId?: number | null
+  amount: string // backend Decimal -> string gələcək
+  currency: string
+  type: BalanceTxnType
+  note?: string | null
+  createdAt: string
+
+  bank?: { id: string; title: string; year: number; price: any } | null
+  attempt?: { id: string; startedAt: string; finishedAt?: string | null; status: "IN_PROGRESS" | "FINISHED" } | null
+  admin?: { id: number; email: string; firstName?: string | null; lastName?: string | null; role?: string | null } | null
+}
+
+export type BalanceHistoryResponse = {
+  page: number
+  limit: number
+  total: number
+  items: BalanceTransactionItem[]
+}
+
+
 export type DraftOption = { tempOptionId: string; text: string }
 export type DraftQuestion = { tempId: string; text: string; options: DraftOption[] }
 
@@ -738,6 +763,11 @@ class ApiClient {
     return this.request<{ ok?: boolean; message?: string }>(`/auth/admin/${id}`, {
       method: "DELETE",
     })
+  }
+
+  async getBalanceHistory(userId: number, page = 1, limit = 50) {
+    const qs = new URLSearchParams({ page: String(page), limit: String(limit) }).toString()
+    return this.request<BalanceHistoryResponse>(`/auth/users/${encodeURIComponent(String(userId))}/balance-history?${qs}`)
   }
 
 }

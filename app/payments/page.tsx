@@ -1,54 +1,103 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { useLocale } from "@/contexts/locale-context"
 import { useTranslation } from "@/lib/i18n"
-import { api } from "@/lib/api"
+import { api, type BalanceHistoryResponse, type BalanceTransactionItem } from "@/lib/api"
 import { Navbar } from "@/components/navbar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { CreditCard, Download, Receipt } from "lucide-react"
 
+type UiTxType = "deposit" | "purchase" | "refund"
+type UiTxStatus = "completed" | "pending" | "failed"
+
 interface Transaction {
-  id: number
-  type: "deposit" | "purchase" | "refund"
+  id: string
+  type: UiTxType
   amount: number
   description: string
   date: string
-  status: "completed" | "pending" | "failed"
+  status: UiTxStatus
+}
+
+function num(v: any) {
+  const n = Number(v)
+  return Number.isFinite(n) ? n : 0
+}
+
+function fmtMoneyAZN(v: number) {
+  return `${v.toFixed(2)} AZN`
+}
+
+function buildDescription(tx: BalanceTransactionItem) {
+  if (tx.type === "ADMIN_TOPUP") {
+    const who = tx.admin
+      ? `${tx.admin.firstName ?? ""} ${tx.admin.lastName ?? ""}`.trim() || tx.admin.email
+      : ""
+    return who ? `Admin: ${who}` : "Admin"
+  }
+
+  if (tx.bank) {
+    return `${tx.bank.title} (${tx.bank.year})`
+  }
+  return tx.note || "Exam purchase"
+}
+
+function mapTx(tx: BalanceTransactionItem): Transaction {
+  const amount = num(tx.amount) 
+  const type: UiTxType = tx.type === "ADMIN_TOPUP" ? "deposit" : "purchase"
+
+  return {
+    id: tx.id,
+    type,
+    amount,
+    description: buildDescription(tx),
+    date: tx.createdAt,
+    status: "completed",
+  }
 }
 
 export default function PaymentsPage() {
   const { user } = useAuth()
   const { locale } = useLocale()
   const { t } = useTranslation(locale)
+
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
+  const [page, setPage] = useState(1)
+  const [limit] = useState(50)
+  const [total, setTotal] = useState(0)
+
+  const canLoadMore = useMemo(() => page * limit < total, [page, limit, total])
+
   useEffect(() => {
-    loadTransactions()
-  }, [])
+    if (!user?.id) return
+    loadTransactions(1, true)
+  }, [user?.id])
 
-  async function loadTransactions() {
+  async function loadTransactions(nextPage = 1, reset = false) {
     try {
+      if (!user?.id) return
+      setError("")
       setLoading(true)
-      const attempts = await api.getAttempts()
 
-      const txs: Transaction[] = attempts
-        .filter((a) => a.completedAt)
-        .map((a) => ({
-          id: a.id,
-          type: "purchase" as const,
-          amount: a.exam.price,
-          description: `${a.exam.subject.name} - ${a.exam.university.name} (${a.exam.year})`,
-          date: a.completedAt!,
-          status: "completed" as const,
-        }))
+      const res: BalanceHistoryResponse = await api.getBalanceHistory(user.id, nextPage, limit)
 
-      setTransactions(txs)
+      const mapped = (res.items || []).map(mapTx)
+
+      setTotal(res.total || 0)
+      setPage(res.page || nextPage)
+
+      if (reset) {
+        setTransactions(mapped)
+      } else {
+        setTransactions((prev) => [...prev, ...mapped])
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load transactions")
     } finally {
@@ -77,6 +126,18 @@ export default function PaymentsPage() {
         return "bg-red-500/10 text-red-700 hover:bg-red-500/20"
     }
   }
+
+  const balance = num((user as any)?.balance)
+
+  const totalSpent = useMemo(() => {
+    return transactions.reduce((sum, tx) => {
+      if (tx.type !== "purchase") return sum
+      const a = tx.amount
+      return a < 0 ? sum + Math.abs(a) : sum + a
+    }, 0)
+  }, [transactions])
+
+  const txCount = transactions.length
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cyan-50">
@@ -108,7 +169,7 @@ export default function PaymentsPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-cyan-600 bg-clip-text text-transparent">
-                  {user?.balance.toFixed(2)} AZN
+                  {fmtMoneyAZN(balance)}
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
                   {locale === "az" && "Mövcud balans"}
@@ -125,7 +186,7 @@ export default function PaymentsPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-cyan-600 bg-clip-text text-transparent">
-                  {transactions.reduce((sum, tx) => (tx.type === "purchase" ? sum + tx.amount : sum), 0).toFixed(2)} AZN
+                  {fmtMoneyAZN(totalSpent)}
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
                   {locale === "az" && "Ümumi xərc"}
@@ -146,7 +207,7 @@ export default function PaymentsPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-cyan-600 bg-clip-text text-transparent">
-                  {transactions.length}
+                  {txCount}
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
                   {locale === "az" && "Ümumi əməliyyat"}
@@ -167,7 +228,7 @@ export default function PaymentsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {loading ? (
+              {loading && transactions.length === 0 ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
                 </div>
@@ -190,16 +251,33 @@ export default function PaymentsPage() {
                           <p className="text-sm text-muted-foreground">{new Date(tx.date).toLocaleString()}</p>
                         </div>
                       </div>
+
                       <div className="text-right flex items-center gap-3">
                         <Badge variant="secondary" className={getStatusColor(tx.status)}>
                           {t(tx.status)}
                         </Badge>
+
                         <p className="font-bold text-lg bg-gradient-to-r from-purple-600 to-cyan-600 bg-clip-text text-transparent">
                           {tx.amount.toFixed(2)} AZN
                         </p>
                       </div>
                     </div>
                   ))}
+
+                  <div className="pt-4 flex justify-center">
+                    <button
+                      type="button"
+                      disabled={loading || !canLoadMore}
+                      onClick={() => loadTransactions(page + 1, false)}
+                      className="px-4 py-2 rounded-xl border border-purple-200 bg-white hover:bg-purple-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {loading
+                        ? (locale === "az" ? "Yüklənir..." : locale === "ru" ? "Загрузка..." : "Loading...")
+                        : canLoadMore
+                          ? (locale === "az" ? "Daha çox yüklə" : locale === "ru" ? "Загрузить ещё" : "Load more")
+                          : (locale === "az" ? "Hamısı yükləndi" : locale === "ru" ? "Всё загружено" : "All loaded")}
+                    </button>
+                  </div>
                 </div>
               )}
             </CardContent>
