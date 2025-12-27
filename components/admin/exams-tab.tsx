@@ -563,7 +563,16 @@ export function ExamsTab() {
       </Card>
 
       <Dialog open={draftModalOpen} onOpenChange={setDraftModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+        <DialogContent
+          className="
+    !w-[98vw]
+    !h-[96vh]
+    max-w-none
+    max-h-none
+    overflow-y-auto
+    rounded-2xl
+  "
+        >
           <DialogHeader>
             <DialogTitle>{t("exams.ui.draft_modal_title")}</DialogTitle>
             <DialogDescription>{t("exams.ui.draft_modal_desc")}</DialogDescription>
@@ -586,9 +595,8 @@ export function ExamsTab() {
                       return (
                         <label
                           key={opt.tempOptionId}
-                          className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer ${
-                            checked ? "border-primary" : "border-muted"
-                          }`}
+                          className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer ${checked ? "border-primary" : "border-muted"
+                            }`}
                         >
                           <input
                             type="radio"
@@ -679,7 +687,16 @@ export function ExamsTab() {
       </Card>
 
       <Dialog open={editExamOpen} onOpenChange={setEditExamOpen}>
-        <DialogContent className="max-w-md">
+<DialogContent
+  className="
+    !w-[98vw]
+    !h-[96vh]
+    max-w-none
+    max-h-none
+    overflow-y-auto
+    rounded-2xl
+  "
+>
           <DialogHeader>
             <DialogTitle>{t("exams.ui.edit_exam_modal_title")}</DialogTitle>
             <DialogDescription>{t("exams.ui.edit_exam_modal_desc")}</DialogDescription>
@@ -715,7 +732,16 @@ export function ExamsTab() {
       </Dialog>
 
       <Dialog open={manageModalOpen} onOpenChange={setManageModalOpen}>
-        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+<DialogContent
+  className="
+    !w-[98vw]
+    !h-[96vh]
+    max-w-none
+    max-h-none
+    overflow-y-auto
+    rounded-2xl
+  "
+>
           <DialogHeader>
             <DialogTitle>{t("exams.ui.manage_modal_title")}</DialogTitle>
             <DialogDescription>{t("exams.ui.manage_modal_desc")}</DialogDescription>
@@ -815,7 +841,16 @@ export function ExamsTab() {
       </Dialog>
 
       <Dialog open={addModalOpen} onOpenChange={setAddModalOpen}>
-        <DialogContent className="max-w-2xl">
+<DialogContent
+  className="
+    !w-[98vw]
+    !h-[96vh]
+    max-w-none
+    max-h-none
+    overflow-y-auto
+    rounded-2xl
+  "
+>
           <DialogHeader>
             <DialogTitle>{t("exams.ui.add_question_modal_title")}</DialogTitle>
             <DialogDescription>{t("exams.ui.add_question_modal_desc")}</DialogDescription>

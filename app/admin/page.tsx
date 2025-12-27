@@ -24,6 +24,7 @@ import { AdminsTab } from "@/components/admin/admins-tab"
 
 import { Users, BookOpen, DollarSign, FileText, LogOut, Globe } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import AdminNewsPage from "@/components/admin/news-tab"
 
 export default function AdminPage() {
   const { user, loading, logout } = useAuth()
@@ -157,6 +158,7 @@ export default function AdminPage() {
               <TabsTrigger value="subjects">{t("manageSubjects")}</TabsTrigger>
               <TabsTrigger value="balance">{t("balance")}</TabsTrigger>
               <TabsTrigger value="admin">{t("admin")}</TabsTrigger>
+              <TabsTrigger value="news">{t("news")}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="exams">
@@ -177,6 +179,10 @@ export default function AdminPage() {
 
             <TabsContent value="admin">
               <AdminsTab />
+            </TabsContent>
+
+             <TabsContent value="news">
+              <AdminNewsPage />
             </TabsContent>
           </Tabs>
         </div>

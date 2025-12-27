@@ -34,12 +34,10 @@ export default function ProfilePage() {
 
   const [me, setMe] = useState<ProfileResp | null>(null)
 
-  // profile form
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
   const [email, setEmail] = useState("")
 
-  // password form
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmNewPassword, setConfirmNewPassword] = useState("")
@@ -74,7 +72,6 @@ export default function ProfilePage() {
 
   useEffect(() => {
     load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const saveProfile = async () => {
@@ -158,7 +155,6 @@ export default function ProfilePage() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Summary */}
             <Card className="lg:col-span-2">
               <CardHeader>
                 <CardTitle>{t("profileOverview") || "Ümumi məlumat"}</CardTitle>
@@ -189,7 +185,6 @@ export default function ProfilePage() {
               </CardContent>
             </Card>
 
-            {/* Update profile */}
             <Card>
               <CardHeader>
                 <CardTitle>{t("profileEdit") || "Profil məlumatlarını dəyiş"}</CardTitle>
@@ -219,7 +214,6 @@ export default function ProfilePage() {
               </CardContent>
             </Card>
 
-            {/* Change password */}
             <Card>
               <CardHeader>
                 <CardTitle>{t("changePasswordTitle") || "Şifrəni dəyiş"}</CardTitle>

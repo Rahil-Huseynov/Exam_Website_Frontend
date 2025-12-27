@@ -153,13 +153,51 @@ export interface Exam {
   questionCount: number
 }
 
+
+export type NewsAdminItem = {
+  id: string
+  titleAz: string
+  titleEn?: string | null
+  titleRu?: string | null
+
+  contentAz: string
+  contentEn?: string | null
+  contentRu?: string | null
+
+  imageUrl?: string | null
+  isPublished: boolean
+  publishedAt?: string | null
+  createdAt: string
+  updatedAt: string
+  admin?: { id: number; email: string; firstName?: string | null; lastName?: string | null } | null
+}
+
+export type NewsAdminListResponse = {
+  items: NewsAdminItem[]
+  meta: { page: number; limit: number; total: number; pages: number }
+}
+
+export type CreateNewsPayload = {
+  titleAz: string
+  titleEn?: string | null
+  titleRu?: string | null
+  contentAz: string
+  contentEn?: string | null
+  contentRu?: string | null
+  imageUrl?: string | null
+  isPublished?: boolean
+}
+
+export type UpdateNewsPayload = Partial<CreateNewsPayload>
+
+
 export type BalanceTxnType = "EXAM_PURCHASE" | "ADMIN_TOPUP"
 
 export type BalanceTransactionItem = {
   id: string
   userId: number
   adminId?: number | null
-  amount: string // backend Decimal -> string gələcək
+  amount: string
   currency: string
   type: BalanceTxnType
   note?: string | null
@@ -198,6 +236,23 @@ export type AdminTopUpByPublicIdResponse = {
 export type AdminSignupResponse = {
   ok: true
   admin: { id: number; email: string; firstName?: string | null; lastName?: string | null; role: string }
+}
+
+export type PublicNewsItem = {
+  id: string
+  title: string
+  content: string
+  imageUrl?: string | null
+  isPublished: boolean
+  publishedAt?: string | null
+  createdAt: string
+  updatedAt: string
+  lang: "az" | "en" | "ru"
+}
+
+export type PublicNewsListResponse = {
+  items: PublicNewsItem[]
+  meta: { page: number; limit: number; total: number; pages: number }
 }
 
 
@@ -779,10 +834,55 @@ class ApiClient {
   }
 
   async changePassword(currentPassword: string, newPassword: string) {
-    // backend req.body-dən oxuyur (AnyFilesInterceptor var), json göndərmək olar
     return this.request<{ message: string }>(`/auth/users/password`, {
       method: "PATCH",
       json: { currentPassword, newPassword },
+    })
+  }
+
+
+  // ================== NEWS ==================
+  async adminListNews(page = 1, limit = 20) {
+    const qs = new URLSearchParams({ page: String(page), limit: String(limit) }).toString()
+    return this.request<NewsAdminListResponse>(`/news/admin/all?${qs}`)
+  }
+
+  async listNews(lang: "az" | "en" | "ru", page = 1, limit = 20) {
+    const qs = new URLSearchParams({
+      lang,
+      page: String(page),
+      limit: String(limit),
+    }).toString()
+
+    return this.request<PublicNewsListResponse>(`/news?${qs}`)
+  }
+
+
+  async adminCreateNews(payload: CreateNewsPayload) {
+    return this.request<NewsAdminItem>(`/news/admin`, { method: "POST", json: payload })
+  }
+
+  async adminUpdateNews(id: string, payload: UpdateNewsPayload) {
+    return this.request<NewsAdminItem>(`/news/admin/${encodeURIComponent(id)}`, { method: "PATCH", json: payload })
+  }
+
+  async adminPublishNews(id: string) {
+    return this.request<NewsAdminItem>(`/news/admin/${encodeURIComponent(id)}/publish`, { method: "PATCH" })
+  }
+
+  async adminUploadNewsImage(file: File) {
+    const fd = new FormData()
+    fd.append("file", file)
+
+    return this.request<{ url: string }>(`/news/admin/upload-image`, {
+      method: "POST",
+      body: fd,
+    })
+  }
+
+  async adminDeleteNews(id: string) {
+    return this.request<{ ok: true }>(`/news/admin/${encodeURIComponent(id)}`, {
+      method: "DELETE",
     })
   }
 
