@@ -8,6 +8,8 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL
 export interface User {
   id: number
   name: string
+  firstName: string
+  lastName: string
   email: string
   balance: number
   publicId: string
@@ -601,6 +603,16 @@ class ApiClient {
     return this.request<University>("/questions/university", {
       method: "POST",
       body: JSON.stringify({ name, nameAz, nameEn, nameRu }),
+    })
+  }
+
+  async uploadUniversityLogo(universityId: string, file: File) {
+    const fd = new FormData()
+    fd.append("file", file)
+
+    return this.request<University>(`/questions/university/${encodeURIComponent(universityId)}/logo`, {
+      method: "POST",
+      body: fd,
     })
   }
 

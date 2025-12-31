@@ -52,7 +52,6 @@ export function ExamsTab() {
   const [selectedCorrect, setSelectedCorrect] = useState<DraftSelectionMap>({})
   const [draftModalOpen, setDraftModalOpen] = useState(false)
 
-  // ✅ NEW: bulk input state
   const [bulkPickText, setBulkPickText] = useState("")
 
   const [manageModalOpen, setManageModalOpen] = useState(false)
@@ -421,10 +420,6 @@ export function ExamsTab() {
       setQBusy(false)
     }
   }
-
-  // ==========================
-  // DRAFT EDIT HELPERS (PDF modal)
-  // ==========================
   function updateDraftQuestion(tempId: string, patch: Partial<any>) {
     setDraft((prev: any) => prev.map((q: any) => (q.tempId === tempId ? { ...q, ...patch } : q)))
   }
@@ -472,9 +467,6 @@ export function ExamsTab() {
     })
   }
 
-  // ==========================
-  // ✅ BULK PICK (1-a, 2-b, 3-c)
-  // ==========================
   function parseBulkPicks(input: string) {
     const txt = (input || "").trim()
     if (!txt) return []
@@ -502,13 +494,13 @@ export function ExamsTab() {
       return toastError(t("exams.errors.bulk_invalid") || "Format düzgün deyil. Məs: 1-a, 2-b, 3-c")
     }
 
-    const letterToIdx = (l: string) => l.charCodeAt(0) - 65 // A=0..E=4
+    const letterToIdx = (l: string) => l.charCodeAt(0) - 65 
 
     setSelectedCorrect((prev) => {
       const next = { ...prev }
 
       for (const { qIndex, letter } of picks) {
-        const i = qIndex - 1 // 1-based -> 0-based
+        const i = qIndex - 1
         if (i < 0 || i >= draft.length) continue
 
         const q = draft[i] as any

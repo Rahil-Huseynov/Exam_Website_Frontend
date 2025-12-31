@@ -40,12 +40,7 @@ type Step = 1 | 2 | 3
 function getDisplayName(user: any, locale: string) {
   if (!user) return locale === "ru" ? "Пользователь" : locale === "en" ? "User" : "İstifadəçi"
   const full = [user.firstName, user.lastName].filter(Boolean).join(" ").trim()
-  return (
-    full ||
-    user.name ||
-    user.email ||
-    (locale === "ru" ? "Пользователь" : locale === "en" ? "User" : "İstifadəçi")
-  )
+  return full || user.name || user.email || (locale === "ru" ? "Пользователь" : locale === "en" ? "User" : "İstifadəçi")
 }
 
 function tName(obj: any, locale: string) {
@@ -98,7 +93,6 @@ export default function DashboardPage() {
 
   useEffect(() => {
     let cancelled = false
-
       ; (async () => {
         try {
           setUniLoading(true)
@@ -127,7 +121,6 @@ export default function DashboardPage() {
 
     if (didLoadRef.current) return
     didLoadRef.current = true
-
       ; (async () => {
         try {
           setLoading(true)
@@ -184,6 +177,17 @@ export default function DashboardPage() {
     } finally {
       setExamsLoading(false)
     }
+  }
+
+  const apiBase = useMemo(() => {
+    const raw = process.env.NEXT_PUBLIC_API_URL || ""
+    return raw.replace(/\/+$/, "").replace(/\/api$/, "")
+  }, [])
+
+  function resolveLogoUrl(logo?: string | null) {
+    if (!logo) return ""
+    if (/^https?:\/\//i.test(logo)) return logo
+    return `${apiBase}${logo.startsWith("/") ? "" : "/"}${logo}`
   }
 
   const filteredExams = useMemo(() => {
@@ -272,9 +276,9 @@ export default function DashboardPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen gradient-bg flex flex-col">
+      <div className="min-h-screen bg-background flex flex-col">
         <Navbar />
-        <main className="container mx-auto px-4 py-8 flex-1">
+        <main className="container mx-auto px-4 py-12 flex-1">
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent" />
           </div>
@@ -286,9 +290,9 @@ export default function DashboardPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen gradient-bg flex flex-col">
+      <div className="min-h-screen bg-background flex flex-col">
         <Navbar />
-        <main className="container mx-auto px-4 py-8 flex-1">
+        <main className="container mx-auto px-4 py-12 flex-1">
           <div className="flex items-center justify-center py-12">
             <p className="text-muted-foreground">{t("checkingAccount")}</p>
           </div>
@@ -299,132 +303,134 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen gradient-bg flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
 
-      <main className="container mx-auto px-4 py-8 flex-1">
-        <div className="space-y-10">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+      <main className="container mx-auto px-4 py-12 flex-1">
+        <div className="space-y-12">
+          <div className="space-y-3 max-w-2xl">
+            <div className="inline-flex items-center gap-2 text-xs font-medium text-primary/70 uppercase tracking-wide">
               <Sparkles className="h-4 w-4" />
               {t("dashboardPanel")}
             </div>
 
-            <h1 className="text-4xl md:text-5xl font-bold text-balance">
-              <span className="bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
-                {t("welcome")}
-              </span>
-              , {displayName}!
+            <h1 className="text-5xl md:text-6xl font-bold text-balance tracking-tight">
+              {t("welcome")}, <span className="text-primary">{displayName}</span>
             </h1>
 
-            <p className="text-muted-foreground">{t("dashboardSubtitle")}</p>
+            <p className="text-lg text-muted-foreground max-w-xl">{t("dashboardSubtitle")}</p>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            <Card className="border-2 rounded-3xl">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-medium">{t("dashboardBalance")}</CardTitle>
-                <Wallet className="h-5 w-5" />
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Card className="border border-border/40 bg-card/50 backdrop-blur-sm rounded-xl hover:bg-card/80 transition-colors">
+              <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
+                <CardTitle className="text-sm font-medium text-muted-foreground">{t("dashboardBalance")}</CardTitle>
+                <Wallet className="h-4 w-4 text-primary/60" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">{fromCents(balanceCents)} AZN</div>
-                <Button asChild variant="link" className="px-0 h-auto mt-3">
-                  <Link href="/balance" className="flex items-center gap-1">
+                <div className="text-3xl font-bold tracking-tight">{fromCents(balanceCents)} AZN</div>
+                <Button asChild variant="link" className="px-0 h-auto mt-4 text-primary/70 hover:text-primary">
+                  <Link href="/balance" className="flex items-center gap-1 text-sm">
                     {t("dashboardIncreaseBalance")}
-                    <ArrowRight className="h-4 w-4" />
+                    <ArrowRight className="h-3 w-3" />
                   </Link>
                 </Button>
               </CardContent>
             </Card>
 
-            <Card className="border-2 rounded-3xl">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-medium">{t("userId")}</CardTitle>
-                <User className="h-5 w-5" />
+            <Card className="border border-border/40 bg-card/50 backdrop-blur-sm rounded-xl hover:bg-card/80 transition-colors">
+              <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
+                <CardTitle className="text-sm font-medium text-muted-foreground">{t("userId")}</CardTitle>
+                <User className="h-4 w-4 text-primary/60" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold break-all">{user.publicId}</div>
+                <div className="text-2xl font-bold break-all tracking-tight">{user.publicId}</div>
               </CardContent>
             </Card>
 
-            <Card className="border-2 rounded-3xl">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-medium">{t("dashboardCompletedExams")}</CardTitle>
-                <BookOpen className="h-5 w-5" />
+            <Card className="border border-border/40 bg-card/50 backdrop-blur-sm rounded-xl hover:bg-card/80 transition-colors">
+              <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  {t("dashboardCompletedExams")}
+                </CardTitle>
+                <BookOpen className="h-4 w-4 text-primary/60" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">{completedAttempts.length}</div>
+                <div className="text-3xl font-bold tracking-tight">{completedAttempts.length}</div>
               </CardContent>
             </Card>
 
-            <Card className="border-2 rounded-3xl">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-medium">{t("dashboardAverageScore")}</CardTitle>
-                <TrendingUp className="h-5 w-5" />
+            <Card className="border border-border/40 bg-card/50 backdrop-blur-sm rounded-xl hover:bg-card/80 transition-colors">
+              <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  {t("dashboardAverageScore")}
+                </CardTitle>
+                <TrendingUp className="h-4 w-4 text-primary/60" />
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">{Number(averageScore).toFixed(1)}%</div>
+                <div className="text-3xl font-bold tracking-tight">{Number(averageScore).toFixed(1)}%</div>
               </CardContent>
             </Card>
           </div>
 
-          <Card className="border-2 rounded-3xl overflow-hidden">
-            <CardHeader className="pb-4">
-              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                <div className="space-y-1">
-                  <CardTitle className="text-xl flex items-center gap-2">
-                    <GraduationCap className="h-5 w-5" />
+          <Card className="border border-border/40 bg-card/50 backdrop-blur-sm rounded-xl overflow-hidden">
+            <CardHeader className="pb-6 border-b border-border/40">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div className="space-y-2">
+                  <CardTitle className="text-2xl flex items-center gap-2">
+                    <GraduationCap className="h-5 w-5 text-primary" />
                     {t("dashboardWizardTitle")}
                   </CardTitle>
-                  <CardDescription>{t("dashboardWizardDesc")}</CardDescription>
+                  <CardDescription className="text-base">{t("dashboardWizardDesc")}</CardDescription>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="rounded-full">
+                  <Badge variant="secondary" className="rounded-lg px-3 py-1">
                     {t("step")} {step}/3
                   </Badge>
 
                   {step > 1 && (
-                    <Button variant="outline" className="rounded-2xl" onClick={goBack}>
-                      <ArrowLeft className="h-4 w-4 mr-2" />
+                    <Button variant="outline" className="rounded-lg h-9 px-3 bg-transparent" onClick={goBack} size="sm">
+                      <ArrowLeft className="h-4 w-4 mr-1.5" />
                       {t("goBack")}
                     </Button>
                   )}
                 </div>
               </div>
 
-              <div className="mt-4 flex flex-wrap gap-2 text-xs">
-                <span className="px-3 py-1 rounded-full border flex items-center gap-1">
-                  <CheckCircle2 className={`h-4 w-4 ${step >= 1 ? "opacity-100" : "opacity-30"}`} />
+              <div className="mt-5 flex flex-wrap gap-2 text-xs">
+                <span className="px-3 py-1.5 rounded-lg border border-border/40 bg-background/60 flex items-center gap-1.5">
+                  <CheckCircle2 className={`h-4 w-4 ${step >= 1 ? "text-primary" : "text-muted-foreground/30"}`} />
                   {t("stepUniversity")}
                 </span>
-                <span className="px-3 py-1 rounded-full border flex items-center gap-1">
-                  <CheckCircle2 className={`h-4 w-4 ${step >= 2 ? "opacity-100" : "opacity-30"}`} />
+                <span className="px-3 py-1.5 rounded-lg border border-border/40 bg-background/60 flex items-center gap-1.5">
+                  <CheckCircle2 className={`h-4 w-4 ${step >= 2 ? "text-primary" : "text-muted-foreground/30"}`} />
                   {t("stepYear")}
                 </span>
-                <span className="px-3 py-1 rounded-full border flex items-center gap-1">
-                  <CheckCircle2 className={`h-4 w-4 ${step >= 3 ? "opacity-100" : "opacity-30"}`} />
+                <span className="px-3 py-1.5 rounded-lg border border-border/40 bg-background/60 flex items-center gap-1.5">
+                  <CheckCircle2 className={`h-4 w-4 ${step >= 3 ? "text-primary" : "text-muted-foreground/30"}`} />
                   {t("stepExams")}
                 </span>
 
                 {selectedUni && (
-                  <span className="px-3 py-1 rounded-full border text-muted-foreground">
+                  <span className="px-3 py-1.5 rounded-lg border border-border/40 bg-background/60 text-muted-foreground">
                     {t("selectedUniversity")}:{" "}
-                    <span className="font-medium">{tName(selectedUni, locale)}</span>
+                    <span className="font-medium text-foreground">{tName(selectedUni, locale)}</span>
                   </span>
                 )}
                 {selectedYear && (
-                  <span className="px-3 py-1 rounded-full border text-muted-foreground">
-                    {t("selectedYear")}: <span className="font-medium">{selectedYear}</span>
+                  <span className="px-3 py-1.5 rounded-lg border border-border/40 bg-background/60 text-muted-foreground">
+                    {t("selectedYear")}: <span className="font-medium text-foreground">{selectedYear}</span>
                   </span>
                 )}
               </div>
             </CardHeader>
 
-            <CardContent className="relative min-h-[320px]">
+            <CardContent className="relative min-h-[320px] pt-8">
+              {/* STEP 1 */}
               <div className={[base, step === 1 ? active : hiddenLeft].join(" ")}>
-                <div className="flex items-center justify-between gap-3 mb-4">
-                  <div className="font-medium">{t("chooseUniversity")}</div>
+                <div className="flex items-center justify-between gap-3 mb-5">
+                  <div className="font-semibold text-lg">{t("chooseUniversity")}</div>
 
                   {uniLoading && (
                     <div className="text-sm text-muted-foreground flex items-center gap-2">
@@ -435,69 +441,74 @@ export default function DashboardPage() {
                 </div>
 
                 {universities.length === 0 && !uniLoading ? (
-                  <div className="text-sm text-muted-foreground">{t("noUniversities")}</div>
+                  <div className="text-sm text-muted-foreground py-8 text-center">{t("noUniversities")}</div>
                 ) : (
                   <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
                     {universities.map((u) => {
                       const name = tName(u, locale)
+                      const logoUrl = resolveLogoUrl((u as any)?.logo)
 
                       return (
                         <button
                           key={u.id}
                           onClick={() => onSelectUniversity(u)}
                           className={[
-                            "group aspect-square rounded-3xl border-2 p-4 text-left bg-card",
-                            "hover:shadow-lg hover:-translate-y-0.5 transition-all",
-                            "flex flex-col justify-between",
+                            "group aspect-square rounded-lg border border-border/40 p-4 text-left bg-card/50",
+                            "hover:border-primary/50 hover:bg-card hover:shadow-md transition-all",
+                            "flex flex-col",
                           ].join(" ")}
                         >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0">
-                              <div className="font-semibold leading-snug line-clamp-2">{name}</div>
-                              <div className="text-xs text-muted-foreground mt-1 line-clamp-1">{u.name}</div>
-                            </div>
-
-                            {u.logo ? (
-                              <img
-                                src={u.logo}
-                                alt={name}
-                                className="h-11 w-11 rounded-2xl object-cover border group-hover:scale-[1.02] transition-transform"
-                              />
-                            ) : (
-                              <div className="h-11 w-11 rounded-2xl border flex items-center justify-center text-xs text-muted-foreground">
-                                —
-                              </div>
-                            )}
+                          {/* TOP */}
+                          <div className="min-w-0">
+                            <div className="font-semibold text-sm leading-snug line-clamp-2">{name}</div>
                           </div>
 
-                          <div className="flex items-center justify-between">
+                          {/* LOGO AREA - fixed height */}
+                          <div className="mt-3 flex-1 flex items-center justify-center">
+                            <div className="w-full h-80 rounded-md border border-border/40 bg-background/50 overflow-hidden flex items-center justify-center">
+                              {logoUrl ? (
+                                <img
+                                  src={logoUrl || "/placeholder.svg"}
+                                  alt={name}
+                                  className="w-full h-full object-contain p-2 transition-transform duration-300 group-hover:scale-[1.03]"
+                                />
+                              ) : (
+                                <div className="text-xs text-muted-foreground">—</div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* BOTTOM */}
+                          <div className="mt-3 flex items-center justify-between">
                             <span className="text-xs text-muted-foreground">{t("continue")}</span>
-                            <ArrowRight className="h-4 w-4 opacity-60 group-hover:opacity-90 transition-opacity" />
+                            <ArrowRight className="h-3 w-3 opacity-60 group-hover:opacity-100 transition-opacity text-primary" />
                           </div>
                         </button>
                       )
                     })}
                   </div>
                 )}
+
               </div>
 
+              {/* STEP 2 */}
               <div className={[base, step === 2 ? active : step < 2 ? hiddenRight : hiddenLeft].join(" ")}>
-                <div className="flex items-center justify-between gap-3 mb-4">
-                  <div className="font-medium flex items-center gap-2">
-                    <CalendarDays className="h-4 w-4" />
+                <div className="flex items-center justify-between gap-3 mb-5">
+                  <div className="font-semibold text-lg flex items-center gap-2">
+                    <CalendarDays className="h-4 w-4 text-primary" />
                     {t("chooseYear")}
                   </div>
                 </div>
 
                 {yearsLoading ? (
-                  <div className="text-sm text-muted-foreground flex items-center gap-2">
+                  <div className="text-sm text-muted-foreground flex items-center gap-2 py-8">
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
                     {t("yearsLoading")}
                   </div>
                 ) : years.length === 0 ? (
-                  <div className="text-sm text-muted-foreground">{t("noYears")}</div>
+                  <div className="text-sm text-muted-foreground py-8 text-center">{t("noYears")}</div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <div className="text-sm text-muted-foreground">{t("yearHint")}</div>
 
                     <div className="flex flex-wrap gap-2">
@@ -506,8 +517,8 @@ export default function DashboardPage() {
                           key={y}
                           onClick={() => onSelectYear(y)}
                           className={[
-                            "px-4 py-2 rounded-2xl border text-sm transition-all",
-                            "hover:bg-muted hover:-translate-y-0.5",
+                            "px-4 py-2 rounded-lg border border-border/40 text-sm font-medium transition-all",
+                            "bg-card/50 hover:bg-card hover:border-primary/50 hover:shadow-sm",
                           ].join(" ")}
                         >
                           {y}
@@ -518,10 +529,11 @@ export default function DashboardPage() {
                 )}
               </div>
 
+              {/* STEP 3 */}
               <div className={[base, step === 3 ? active : hiddenRight].join(" ")}>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-                  <div className="font-medium flex items-center gap-2">
-                    <BookOpen className="h-4 w-4" />
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+                  <div className="font-semibold text-lg flex items-center gap-2">
+                    <BookOpen className="h-4 w-4 text-primary" />
                     {t("stepExams")}
                   </div>
 
@@ -531,51 +543,46 @@ export default function DashboardPage() {
                       value={q}
                       onChange={(e) => setQ(e.target.value)}
                       placeholder={t("searchExamPlaceholder")}
-                      className="pl-9 rounded-2xl"
+                      className="pl-9 rounded-lg bg-card/50 border-border/40"
                     />
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between mb-4">
-                  <Badge className="rounded-full">
-                    {selectedUni ? tName(selectedUni, locale) : "—"} • {selectedYear ?? "—"}
-                  </Badge>
-
-                  <span className="text-xs text-muted-foreground">
-                    {t("found")}: <span className="font-medium">{filteredExams.length}</span>
-                  </span>
-                </div>
-
                 {examsLoading ? (
-                  <div className="text-sm text-muted-foreground flex items-center gap-2">
+                  <div className="text-sm text-muted-foreground flex items-center gap-2 py-8">
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
-                    {t("examsLoading")}
+                    {t("loading")}
                   </div>
                 ) : filteredExams.length === 0 ? (
-                  <div className="text-sm text-muted-foreground">{t("noExamsFound")}</div>
+                  <div className="text-sm text-muted-foreground py-8 text-center">{t("noExams")}</div>
                 ) : (
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {filteredExams.map((e: any) => (
-                      <Card key={e.id} className="rounded-3xl border-2 hover:shadow-lg transition-shadow">
-                        <CardHeader className="pb-3">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0">
-                              <CardTitle className="text-base truncate">{e.title}</CardTitle>
-                              <CardDescription className="mt-1">
-                                {e.subject?.name || t("subjectNotProvided")} • {e.year || "—"}
-                              </CardDescription>
-                            </div>
-                            <Badge className="rounded-full">{Number(e.price || 0).toFixed(2)} AZN</Badge>
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {filteredExams.map((exam: any) => (
+                      <div
+                        key={exam.id}
+                        className="flex items-center justify-between p-4 rounded-lg border border-border/40 bg-card/50 hover:bg-card/80 transition-colors group"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="font-medium text-sm">{exam.title || exam.name}</div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {exam.subject?.name || exam.subject} · {exam.questionCount || 0} {t("questions")}
                           </div>
-                        </CardHeader>
-
-                        <CardContent className="flex items-center justify-end">
-                          <Button className="rounded-2xl" onClick={() => startExam(e)}>
-                            {t("startExam")}
-                            <ArrowRight className="h-4 w-4 ml-2" />
+                        </div>
+                        <div className="flex items-center gap-3 ml-4">
+                          <div className="text-right">
+                            <div className="font-semibold text-sm">
+                              {fromCents(toCents((exam as any)?.price || 0))} AZN
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => startExam(exam)}
+                            className="rounded-lg h-8 px-3 group-hover:shadow-md transition-all"
+                          >
+                            {t("start")}
                           </Button>
-                        </CardContent>
-                      </Card>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 )}

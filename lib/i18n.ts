@@ -683,7 +683,12 @@ export const translations = {
     "exams.errors.no_draft": "Draft boşdur",
     "exams.errors.bulk_invalid": "Format düzgün deyil. Məs: 1-a, 2-b, 3-c",
     "exams.success.bulk_applied": "Seçimlər tətbiq olundu",
-
+    "universities.ui.logo": "Logo",
+    "universities.ui.change_logo": "Logonu dəyiş",
+    "selected": "Seçildi",
+    balanceWhatsappTitle: "Balansı artırmaq üçün WhatsApp-dan müraciət edin",
+    balanceWhatsappDesc: "Hazırda ödənişlər yalnız WhatsApp vasitəsilə həyata keçirilir.",
+    balanceWhatsappBtn: "WhatsApp-a keç",
 
   },
   en: {
@@ -1367,6 +1372,12 @@ export const translations = {
     "exams.errors.no_draft": "Draft is empty",
     "exams.errors.bulk_invalid": "Invalid format. Example: 1-a, 2-b, 3-c",
     "exams.success.bulk_applied": "Selections applied",
+    "universities.ui.logo": "Logo",
+    "universities.ui.change_logo": "Change logo",
+    "selected": "Selected",
+    balanceWhatsappTitle: "To top up your balance, contact us via WhatsApp",
+    balanceWhatsappDesc: "Balance top-ups are currently handled only via WhatsApp.",
+    balanceWhatsappBtn: "Open WhatsApp",
 
   },
   ru: {
@@ -2063,7 +2074,12 @@ export const translations = {
     "exams.errors.no_draft": "Черновик пуст",
     "exams.errors.bulk_invalid": "Неверный формат. Пример: 1-a, 2-b, 3-c",
     "exams.success.bulk_applied": "Выбор применён",
-
+    "universities.ui.logo": "Логотип",
+    "universities.ui.change_logo": "Изменить логотип",
+    "selected": "Выбрано",
+    balanceWhatsappTitle: "Для пополнения баланса напишите в WhatsApp",
+    balanceWhatsappDesc: "В данный момент пополнение доступно только через WhatsApp.",
+    balanceWhatsappBtn: "Открыть WhatsApp",
 
   },
 }
