@@ -675,6 +675,15 @@ export const translations = {
     resetPasswordToastFail: "Sorğu uğursuz oldu",
 
     backToLogin: "Girişə qayıt",
+    "exams.ui.bulk_pick_label": "Toplu düzgün cavab seçimi (məs: 1-a, 2-b, 3-c)",
+    "exams.ui.bulk_pick_placeholder": "1-a, 2-b, 3-c",
+    "exams.ui.apply": "Tətbiq et",
+    "exams.ui.bulk_pick_help": "Dəstək: 1-a, 2-b, 3-c | 1=a | 1:a | 1 a",
+
+    "exams.errors.no_draft": "Draft boşdur",
+    "exams.errors.bulk_invalid": "Format düzgün deyil. Məs: 1-a, 2-b, 3-c",
+    "exams.success.bulk_applied": "Seçimlər tətbiq olundu",
+
 
   },
   en: {
@@ -1350,11 +1359,14 @@ export const translations = {
     resetPasswordToastFail: "Request failed",
 
     backToLogin: "Back to Login",
+    "exams.ui.bulk_pick_label": "Bulk correct answer selection (e.g., 1-a, 2-b, 3-c)",
+    "exams.ui.bulk_pick_placeholder": "1-a, 2-b, 3-c",
+    "exams.ui.apply": "Apply",
+    "exams.ui.bulk_pick_help": "Supported: 1-a, 2-b, 3-c | 1=a | 1:a | 1 a",
 
-
-
-
-
+    "exams.errors.no_draft": "Draft is empty",
+    "exams.errors.bulk_invalid": "Invalid format. Example: 1-a, 2-b, 3-c",
+    "exams.success.bulk_applied": "Selections applied",
 
   },
   ru: {
@@ -2043,10 +2055,14 @@ export const translations = {
     resetPasswordToastFail: "Запрос не удался",
 
     backToLogin: "Назад к входу",
+    "exams.ui.bulk_pick_label": "Групповой выбор правильных ответов (например: 1-a, 2-b, 3-c)",
+    "exams.ui.bulk_pick_placeholder": "1-a, 2-b, 3-c",
+    "exams.ui.apply": "Применить",
+    "exams.ui.bulk_pick_help": "Поддерживается: 1-a, 2-b, 3-c | 1=a | 1:a | 1 a",
 
-
-
-
+    "exams.errors.no_draft": "Черновик пуст",
+    "exams.errors.bulk_invalid": "Неверный формат. Пример: 1-a, 2-b, 3-c",
+    "exams.success.bulk_applied": "Выбор применён",
 
 
   },

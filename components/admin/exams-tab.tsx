@@ -52,6 +52,9 @@ export function ExamsTab() {
   const [selectedCorrect, setSelectedCorrect] = useState<DraftSelectionMap>({})
   const [draftModalOpen, setDraftModalOpen] = useState(false)
 
+  // ✅ NEW: bulk input state
+  const [bulkPickText, setBulkPickText] = useState("")
+
   const [manageModalOpen, setManageModalOpen] = useState(false)
   const [manageBankId, setManageBankId] = useState<string>("")
   const [bankQuestions, setBankQuestions] = useState<AdminQuestion[]>([])
@@ -93,6 +96,7 @@ export function ExamsTab() {
   function resetDraftState() {
     setDraft([])
     setSelectedCorrect({})
+    setBulkPickText("")
     setDraftModalOpen(false)
   }
 
@@ -155,12 +159,12 @@ export function ExamsTab() {
 
   const canCommit = useMemo(() => {
     if (!selectedExamId || draft.length === 0) return false
-    return draft.some((q) => !!selectedCorrect[q.tempId])
+    return draft.some((q: any) => !!selectedCorrect[q.tempId])
   }, [selectedExamId, draft, selectedCorrect])
 
   const draftAnsweredCount = useMemo(() => {
     if (!draft.length) return 0
-    return draft.filter((q) => !!selectedCorrect[q.tempId]).length
+    return draft.filter((q: any) => !!selectedCorrect[q.tempId]).length
   }, [draft, selectedCorrect])
 
   const canAddQuestion = useMemo(() => {
@@ -222,8 +226,9 @@ export function ExamsTab() {
         throw new Error(t("exams.errors.pdf_no_questions"))
       }
 
-      setDraft(parsed)
+      setDraft(parsed as any)
       setSelectedCorrect({})
+      setBulkPickText("")
       setDraftModalOpen(true)
       toastSuccess(t("exams.success.pdf_parsed"))
     } catch (err: any) {
@@ -243,16 +248,16 @@ export function ExamsTab() {
       setBusy(true)
 
       const payload = {
-        questions: draft
+        questions: (draft as any[])
           .filter((q) => !!selectedCorrect[q.tempId])
           .map((q) => {
             const correctTempId = selectedCorrect[q.tempId]
-            const correctOpt = q.options.find((o) => o.tempOptionId === correctTempId)
+            const correctOpt = q.options.find((o: any) => o.tempOptionId === correctTempId)
             if (!correctOpt) throw new Error(t("exams.errors.correct_option_missing"))
 
             return {
               text: q.text,
-              options: q.options.map((o) => ({ text: o.text })),
+              options: q.options.map((o: any) => ({ text: o.text })),
               correctAnswerText: correctOpt.text,
             }
           }),
@@ -417,6 +422,108 @@ export function ExamsTab() {
     }
   }
 
+  // ==========================
+  // DRAFT EDIT HELPERS (PDF modal)
+  // ==========================
+  function updateDraftQuestion(tempId: string, patch: Partial<any>) {
+    setDraft((prev: any) => prev.map((q: any) => (q.tempId === tempId ? { ...q, ...patch } : q)))
+  }
+
+  function updateDraftOption(qTempId: string, optTempId: string, text: string) {
+    setDraft((prev: any) =>
+      prev.map((q: any) => {
+        if (q.tempId !== qTempId) return q
+        return {
+          ...q,
+          options: q.options.map((o: any) => (o.tempOptionId === optTempId ? { ...o, text } : o)),
+        }
+      }),
+    )
+  }
+
+  function addDraftOption(qTempId: string) {
+    setDraft((prev: any) =>
+      prev.map((q: any) => {
+        if (q.tempId !== qTempId) return q
+        const nextIndex = q.options.length
+        const idBase = Date.now()
+        return {
+          ...q,
+          options: [...q.options, { tempOptionId: `o_${idBase}_${qTempId}_${nextIndex}`, text: "" }],
+        }
+      }),
+    )
+  }
+
+  function removeDraftOption(qTempId: string, optTempId: string) {
+    setDraft((prev: any) =>
+      prev.map((q: any) => {
+        if (q.tempId !== qTempId) return q
+        const nextOpts = q.options.filter((o: any) => o.tempOptionId !== optTempId)
+        return { ...q, options: nextOpts }
+      }),
+    )
+
+    setSelectedCorrect((prev) => {
+      if (prev[qTempId] !== optTempId) return prev
+      const copy = { ...prev }
+      delete copy[qTempId]
+      return copy
+    })
+  }
+
+  // ==========================
+  // ✅ BULK PICK (1-a, 2-b, 3-c)
+  // ==========================
+  function parseBulkPicks(input: string) {
+    const txt = (input || "").trim()
+    if (!txt) return []
+
+    const parts = txt
+      .replace(/\n/g, " ")
+      .split(/[,;]+|\s{2,}/g)
+      .map((x) => x.trim())
+      .filter(Boolean)
+
+    const out: Array<{ qIndex: number; letter: string }> = []
+    for (const p of parts) {
+      const m = p.match(/^(\d{1,4})\s*[-=:. ]\s*([a-eA-E])$/)
+      if (!m) continue
+      out.push({ qIndex: Number(m[1]), letter: String(m[2]).toUpperCase() })
+    }
+    return out
+  }
+
+  function applyBulkPicks() {
+    if (!draft.length) return toastError(t("exams.errors.no_draft") || "Draft boşdur")
+
+    const picks = parseBulkPicks(bulkPickText)
+    if (!picks.length) {
+      return toastError(t("exams.errors.bulk_invalid") || "Format düzgün deyil. Məs: 1-a, 2-b, 3-c")
+    }
+
+    const letterToIdx = (l: string) => l.charCodeAt(0) - 65 // A=0..E=4
+
+    setSelectedCorrect((prev) => {
+      const next = { ...prev }
+
+      for (const { qIndex, letter } of picks) {
+        const i = qIndex - 1 // 1-based -> 0-based
+        if (i < 0 || i >= draft.length) continue
+
+        const q = draft[i] as any
+        const optIdx = letterToIdx(letter)
+        if (optIdx < 0 || optIdx >= q.options.length) continue
+
+        next[q.tempId] = q.options[optIdx].tempOptionId
+      }
+
+      return next
+    })
+
+    toastSuccess(t("exams.success.bulk_applied") || "Seçimlər tətbiq olundu")
+  }
+
   return (
     <div className="space-y-6">
       <Card>
@@ -562,61 +669,114 @@ export function ExamsTab() {
         </CardContent>
       </Card>
 
+      {/* ==========================
+          DRAFT MODAL (EDITABLE)
+         ========================== */}
       <Dialog open={draftModalOpen} onOpenChange={setDraftModalOpen}>
-        <DialogContent
-          className="
-    !w-[98vw]
-    !h-[96vh]
-    max-w-none
-    max-h-none
-    overflow-y-auto
-    rounded-2xl
-  "
-        >
+        <DialogContent className="!w-[98vw] !h-[96vh] max-w-none max-h-none overflow-y-auto rounded-2xl">
           <DialogHeader>
             <DialogTitle>{t("exams.ui.draft_modal_title")}</DialogTitle>
             <DialogDescription>{t("exams.ui.draft_modal_desc")}</DialogDescription>
           </DialogHeader>
 
-          {draft.length === 0 ? (
+          {(draft as any[]).length === 0 ? (
             <div className="text-sm text-muted-foreground">{t("exams.ui.no_draft_yet")}</div>
           ) : (
             <div className="space-y-4">
-              {draft.map((q, idx) => (
+              {(draft as any[]).map((q, idx) => (
                 <Card key={q.tempId} className="border-muted">
                   <CardHeader>
-                    <CardTitle className="text-base">
-                      {idx + 1}. {q.text}
-                    </CardTitle>
+                    <CardTitle className="text-base">{idx + 1}.</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-2">
-                    {q.options.map((opt) => {
-                      const checked = selectedCorrect[q.tempId] === opt.tempOptionId
-                      return (
-                        <label
-                          key={opt.tempOptionId}
-                          className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer ${checked ? "border-primary" : "border-muted"
-                            }`}
-                        >
-                          <input
-                            type="radio"
-                            name={q.tempId}
-                            checked={checked}
-                            onChange={() => setSelectedCorrect((prev) => ({ ...prev, [q.tempId]: opt.tempOptionId }))}
-                          />
-                          <span className="text-sm leading-relaxed">{opt.text}</span>
-                        </label>
-                      )
-                    })}
+
+                  <CardContent className="space-y-4">
+                    {/* Question editable */}
+                    <div className="space-y-2">
+                      <Label>{t("exams.ui.question_text") || "Sual"}</Label>
+                      <textarea
+                        className="w-full min-h-[90px] rounded-md border bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-primary"
+                        value={q.text}
+                        onChange={(e) => updateDraftQuestion(q.tempId, { text: e.target.value })}
+                        placeholder={t("exams.ui.question_placeholder") || "Sual mətnini yaz..."}
+                      />
+                    </div>
+
+                    {/* Options editable + correct radio */}
+                    <div className="space-y-2">
+                      <Label>{t("exams.ui.options") || "Variantlar"}</Label>
+
+                      <div className="space-y-2">
+                        {q.options.map((opt: any, oi: number) => {
+                          const checked = selectedCorrect[q.tempId] === opt.tempOptionId
+                          return (
+                            <div key={opt.tempOptionId} className="flex items-start gap-2">
+                              <input
+                                type="radio"
+                                name={q.tempId}
+                                checked={checked}
+                                onChange={() => setSelectedCorrect((prev) => ({ ...prev, [q.tempId]: opt.tempOptionId }))}
+                                className="mt-2"
+                                title={t("exams.ui.correct_answer") || "Düzgün cavab"}
+                              />
+
+                              <Input
+                                value={opt.text}
+                                onChange={(e) => updateDraftOption(q.tempId, opt.tempOptionId, e.target.value)}
+                                placeholder={`${String.fromCharCode(65 + oi)}) ${t("exams.ui.option_n", { n: oi + 1 }) || "Variant"}`}
+                              />
+
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => removeDraftOption(q.tempId, opt.tempOptionId)}
+                                disabled={q.options.length <= 2}
+                                title={t("exams.ui.remove_last_option") || "Sil"}
+                              >
+                                {t("common.delete") || "Sil"}
+                              </Button>
+                            </div>
+                          )
+                        })}
+                      </div>
+
+                      <div className="flex gap-2 pt-2 items-center">
+                        <Button type="button" variant="outline" onClick={() => addDraftOption(q.tempId)}>
+                          <Plus className="h-4 w-4 mr-2" />
+                          {t("exams.ui.add_option") || "Variant əlavə et"}
+                        </Button>
+
+                        <div className="text-xs text-muted-foreground">
+                          {t("exams.ui.note_min_2_unique") || "Minimum 2 fərqli variant saxla."}
+                        </div>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
           )}
 
+          {/* ✅ NEW: Bulk picker at the bottom */}
+          <div className="mt-4 border-t pt-4 space-y-2">
+            <Label>{t("exams.ui.bulk_pick_label") || "Toplu düzgün cavab seçimi (məs: 1-a, 2-b, 3-c)"}</Label>
+            <div className="flex gap-2">
+              <Input
+                value={bulkPickText}
+                onChange={(e) => setBulkPickText(e.target.value)}
+                placeholder={t("exams.ui.bulk_pick_placeholder") || "1-a, 2-b, 3-c"}
+              />
+              <Button type="button" variant="outline" onClick={applyBulkPicks} disabled={busy || draft.length === 0}>
+                {t("exams.ui.apply") || "Apply"}
+              </Button>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {t("exams.ui.bulk_pick_help") || "Dəstək: 1-a, 2-b, 3-c | 1=a | 1:a | 1 a"}
+            </div>
+          </div>
+
           <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:justify-between">
             <div className="text-sm text-muted-foreground">
-              {draft.length > 0 && <>{t("exams.ui.selected_count", { selected: draftAnsweredCount, total: draft.length })}</>}
+              {(draft as any[]).length > 0 && <>{t("exams.ui.selected_count", { selected: draftAnsweredCount, total: (draft as any[]).length })}</>}
             </div>
 
             <div className="flex gap-2">
@@ -687,16 +847,7 @@ export function ExamsTab() {
       </Card>
 
       <Dialog open={editExamOpen} onOpenChange={setEditExamOpen}>
-<DialogContent
-  className="
-    !w-[98vw]
-    !h-[96vh]
-    max-w-none
-    max-h-none
-    overflow-y-auto
-    rounded-2xl
-  "
->
+        <DialogContent className="!w-[98vw] !h-[96vh] max-w-none max-h-none overflow-y-auto rounded-2xl">
           <DialogHeader>
             <DialogTitle>{t("exams.ui.edit_exam_modal_title")}</DialogTitle>
             <DialogDescription>{t("exams.ui.edit_exam_modal_desc")}</DialogDescription>
@@ -732,16 +883,7 @@ export function ExamsTab() {
       </Dialog>
 
       <Dialog open={manageModalOpen} onOpenChange={setManageModalOpen}>
-<DialogContent
-  className="
-    !w-[98vw]
-    !h-[96vh]
-    max-w-none
-    max-h-none
-    overflow-y-auto
-    rounded-2xl
-  "
->
+        <DialogContent className="!w-[98vw] !h-[96vh] max-w-none max-h-none overflow-y-auto rounded-2xl">
           <DialogHeader>
             <DialogTitle>{t("exams.ui.manage_modal_title")}</DialogTitle>
             <DialogDescription>{t("exams.ui.manage_modal_desc")}</DialogDescription>
@@ -770,9 +912,7 @@ export function ExamsTab() {
                       <Input
                         value={q.text}
                         onChange={(e) =>
-                          setBankQuestions((prev) =>
-                            prev.map((x) => (x.id === q.id ? { ...x, text: e.target.value } : x)),
-                          )
+                          setBankQuestions((prev) => prev.map((x) => (x.id === q.id ? { ...x, text: e.target.value } : x)))
                         }
                       />
                     </CardTitle>
@@ -788,9 +928,7 @@ export function ExamsTab() {
                             type="radio"
                             checked={checked}
                             onChange={() => {
-                              setBankQuestions((prev) =>
-                                prev.map((x) => (x.id === q.id ? { ...x, correctAnswerText: opt.text } : x)),
-                              )
+                              setBankQuestions((prev) => prev.map((x) => (x.id === q.id ? { ...x, correctAnswerText: opt.text } : x)))
                             }}
                           />
 
@@ -841,16 +979,7 @@ export function ExamsTab() {
       </Dialog>
 
       <Dialog open={addModalOpen} onOpenChange={setAddModalOpen}>
-<DialogContent
-  className="
-    !w-[98vw]
-    !h-[96vh]
-    max-w-none
-    max-h-none
-    overflow-y-auto
-    rounded-2xl
-  "
->
+        <DialogContent className="!w-[98vw] !h-[96vh] max-w-none max-h-none overflow-y-auto rounded-2xl">
           <DialogHeader>
             <DialogTitle>{t("exams.ui.add_question_modal_title")}</DialogTitle>
             <DialogDescription>{t("exams.ui.add_question_modal_desc")}</DialogDescription>
@@ -867,12 +996,7 @@ export function ExamsTab() {
               <div className="space-y-2">
                 {newOptions.map((opt, i) => (
                   <div key={i} className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      checked={newCorrectIndex === i}
-                      onChange={() => setNewCorrectIndex(i)}
-                      title={t("exams.ui.correct_answer")}
-                    />
+                    <input type="radio" checked={newCorrectIndex === i} onChange={() => setNewCorrectIndex(i)} title={t("exams.ui.correct_answer")} />
                     <Input
                       value={opt}
                       onChange={(e) => {
