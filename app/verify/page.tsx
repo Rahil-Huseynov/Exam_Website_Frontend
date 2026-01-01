@@ -114,10 +114,7 @@ export default function VerifyPage() {
       <div className="relative min-h-screen flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           <Link href="/" className="flex items-center justify-center gap-2 mb-6">
-            <Sparkles className="h-6 w-6 text-violet-600" />
-            <span className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-blue-600 bg-clip-text text-transparent">
-              ExamPlatform
-            </span>
+            <img className="w-40" src="/Logo.png" alt="İmtahanVer.net logosu" />
           </Link>
 
           <Card className="backdrop-blur-xl bg-white/80 dark:bg-gray-950/80 border-white/20 shadow-2xl">

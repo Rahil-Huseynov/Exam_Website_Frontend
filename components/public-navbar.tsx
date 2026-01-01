@@ -21,7 +21,7 @@ export function PublicNavbar() {
             href="/"
             className="text-2xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent"
           >
-            ExamPro
+            <img className="w-40" src="/Logo.png" alt="İmtahanVer.net logosu" />
           </Link>
 
           {/* Desktop Menu */}

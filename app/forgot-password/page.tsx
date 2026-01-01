@@ -31,7 +31,6 @@ export default function ForgotPasswordPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setError("")
     setSuccess(false)
     setLoading(true)
 
@@ -71,8 +70,7 @@ export default function ForgotPasswordPage() {
               href="/"
               className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-blue-600 bg-clip-text text-transparent flex items-center gap-2"
             >
-              <Sparkles className="h-6 w-6 text-violet-600" />
-              ExamPlatform
+              <img className="w-40" src="/Logo.png" alt="İmtahanVer.net logosu" />
             </Link>
 
             <DropdownMenu>

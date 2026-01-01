@@ -13,9 +13,7 @@ export function Footer() {
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4">
-            <h3 className="text-xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
-              ExamPro
-            </h3>
+            <img className="w-40" src="/Logo.png" alt="İmtahanVer.net logosu" />
             <p className="text-sm text-muted-foreground">
               {t("footer.tagline")}
             </p>
@@ -48,8 +46,8 @@ export function Footer() {
           <div className="space-y-3">
             <h4 className="font-semibold">{t("footer.contact")}</h4>
             <div className="flex flex-col gap-2 text-sm text-muted-foreground">
-              <a href="mailto:info@exampro.com" className="hover:text-primary transition-colors">
-                info@exampro.com
+              <a href="mailto:info@imtahanver.net" className="hover:text-primary transition-colors">
+                info@imtahanver.net
               </a>
               <a href="tel:+994501234567" className="hover:text-primary transition-colors">
                 +994 50 123 45 67
@@ -59,7 +57,7 @@ export function Footer() {
         </div>
 
         <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
-          © 2025 ExamPro. {t("footer.rights")}
+          © 2025 İmtahanVer.net. {t("footer.rights")}
         </div>
       </div>
     </footer>

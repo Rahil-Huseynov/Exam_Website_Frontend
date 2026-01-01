@@ -15,7 +15,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Globe, Sparkles } from "lucide-react"
+import { Globe } from "lucide-react"
 
 export default function ResetPasswordPage() {
   const router = useRouter()
@@ -26,26 +26,35 @@ export default function ResetPasswordPage() {
   const { locale, setLocale } = useLocale()
   const { t } = useTranslation(locale)
 
+  // ✅ t-nin key tipi buradan gəlir (union)
+  type TKey = Parameters<typeof t>[0]
+
   const [tokenChecking, setTokenChecking] = useState(true)
   const [tokenValid, setTokenValid] = useState(false)
 
   const [password, setPassword] = useState("")
   const [confirm, setConfirm] = useState("")
 
-  const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
+
+  // ✅ helper artıq string deyil, TKey qəbul edir
+  const toastErr = (key: TKey, fallback: string, opts?: Parameters<typeof toast.error>[1]) =>
+    toast.error(t(key) || fallback, { autoClose: 3000, ...opts })
+
+  const toastOk = (message: string, opts?: Parameters<typeof toast.success>[1]) =>
+    toast.success(message, { autoClose: 2500, ...opts })
 
   useEffect(() => {
     let cancelled = false
 
     async function run() {
-      setError("")
       setSuccess(false)
 
       if (!token) {
         setTokenValid(false)
         setTokenChecking(false)
+        toastErr("resetPasswordErrMissingToken" as TKey, "Token tapılmadı")
         return
       }
 
@@ -53,10 +62,15 @@ export default function ResetPasswordPage() {
       try {
         const r = await api.checkResetToken(token)
         if (cancelled) return
-        setTokenValid(!!r.valid)
+
+        const valid = !!r?.valid
+        setTokenValid(valid)
+
+        if (!valid) toastErr("resetPasswordErrInvalidToken" as TKey, "Token etibarsızdır və ya vaxtı bitib")
       } catch {
         if (cancelled) return
         setTokenValid(false)
+        toastErr("resetPasswordErrInvalidToken" as TKey, "Token etibarsızdır və ya vaxtı bitib")
       } finally {
         if (!cancelled) setTokenChecking(false)
       }
@@ -66,36 +80,36 @@ export default function ResetPasswordPage() {
     return () => {
       cancelled = true
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setError("")
     setSuccess(false)
 
     const p = password
     const c = confirm
 
-    // validations -> i18n
-    if (!token) return setError(t("resetPasswordErrMissingToken") || "Token tapılmadı")
-    if (!tokenValid) return setError(t("resetPasswordErrInvalidToken") || "Token etibarsızdır")
-    if (!p || p.length < 6) return setError(t("resetPasswordErrTooShort") || "Şifrə ən az 6 simvol olmalıdır")
-    if (p !== c) return setError(t("resetPasswordErrMismatch") || "Şifrələr uyğun gəlmir")
+    if (!token) return toastErr("resetPasswordErrMissingToken" as TKey, "Token tapılmadı")
+    if (!tokenValid) return toastErr("resetPasswordErrInvalidToken" as TKey, "Token etibarsızdır")
+    if (!p || p.length < 6) return toastErr("resetPasswordErrTooShort" as TKey, "Şifrə ən az 6 simvol olmalıdır")
+    if (p !== c) return toastErr("resetPasswordErrMismatch" as TKey, "Şifrələr uyğun gəlmir")
 
     setLoading(true)
     try {
       const res = await api.resetPassword(token, p)
       setSuccess(true)
 
-      // Uğurlu toast -> bitəndə login
-      toast.success(res?.message || t("resetPasswordToastSuccess") || "Şifrə uğurla dəyişdirildi", {
-        autoClose: 2500,
+      toastOk(res?.message || t("resetPasswordToastSuccess" as TKey) || "Şifrə uğurla dəyişdirildi", {
         onClose: () => router.replace("/login"),
       })
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : (t("resetPasswordToastFail") || "Request failed")
-      setError(msg)
-      toast.error(msg)
+    } catch (err: any) {
+      const msg =
+        (typeof err?.message === "string" && err.message) ||
+        (typeof err === "string" && err) ||
+        (t("resetPasswordToastFail" as TKey) || "Request failed")
+
+      toast.error(msg, { autoClose: 3500 })
     } finally {
       setLoading(false)
     }
@@ -115,8 +129,7 @@ export default function ResetPasswordPage() {
               href="/"
               className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-blue-600 bg-clip-text text-transparent flex items-center gap-2"
             >
-              <Sparkles className="h-6 w-6 text-violet-600" />
-              ExamPlatform
+              <img className="w-40" src="/Logo.png" alt="İmtahanVer.net logosu" />
             </Link>
 
             <DropdownMenu>
@@ -126,50 +139,38 @@ export default function ResetPasswordPage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setLocale("az")}>{t("navbar.lang.az") || "Azərbaycan"}</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setLocale("en")}>{t("navbar.lang.en") || "English"}</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setLocale("ru")}>{t("navbar.lang.ru") || "Русский"}</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setLocale("az")}>{t("navbar.lang.az" as TKey) || "Azərbaycan"}</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setLocale("en")}>{t("navbar.lang.en" as TKey) || "English"}</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setLocale("ru")}>{t("navbar.lang.ru" as TKey) || "Русский"}</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
 
           <Card className="backdrop-blur-xl bg-white/80 dark:bg-gray-950/80 border-white/20 shadow-2xl">
             <CardHeader>
-              <CardTitle className="text-2xl">{t("resetPasswordTitle") || "Yeni şifrə təyin et"}</CardTitle>
-              <CardDescription>{t("resetPasswordDesc") || "Yeni şifrənizi daxil edin və təsdiqləyin"}</CardDescription>
+              <CardTitle className="text-2xl">{t("resetPasswordTitle" as TKey) || "Yeni şifrə təyin et"}</CardTitle>
+              <CardDescription>{t("resetPasswordDesc" as TKey) || "Yeni şifrənizi daxil edin və təsdiqləyin"}</CardDescription>
             </CardHeader>
 
             <form onSubmit={handleSubmit}>
               <CardContent className="space-y-4">
                 {tokenChecking && (
                   <Alert>
-                    <AlertDescription>{t("resetPasswordCheckingToken") || "Token yoxlanılır..."}</AlertDescription>
+                    <AlertDescription>{t("resetPasswordCheckingToken" as TKey) || "Token yoxlanılır..."}</AlertDescription>
                   </Alert>
                 )}
 
-                {!tokenChecking && !tokenValid && (
-                  <Alert variant="destructive">
-                    <AlertDescription>{t("resetPasswordTokenInvalidInline") || "Token etibarsızdır və ya vaxtı bitib"}</AlertDescription>
-                  </Alert>
-                )}
-
-                {error && (
-                  <Alert variant="destructive">
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
-
-                {/* success inline saxlamaq istəyirsənsə (istəyə bağlı) */}
                 {success && (
                   <Alert className="border-green-200 bg-green-50 dark:bg-green-950/20">
                     <AlertDescription className="text-green-700 dark:text-green-400">
-                      {t("resetPasswordSuccessInline") || "Şifrə uğurla dəyişdirildi. Login səhifəsinə yönləndirilirsiniz..."}
+                      {t("resetPasswordSuccessInline" as TKey) ||
+                        "Şifrə uğurla dəyişdirildi. Login səhifəsinə yönləndirilirsiniz..."}
                     </AlertDescription>
                   </Alert>
                 )}
 
                 <div className="space-y-2">
-                  <Label htmlFor="password">{t("password") || "Yeni şifrə"}</Label>
+                  <Label htmlFor="password">{t("password" as TKey) || "Yeni şifrə"}</Label>
                   <Input
                     id="password"
                     type="password"
@@ -178,12 +179,12 @@ export default function ResetPasswordPage() {
                     disabled={loading || success || tokenChecking || !tokenValid}
                     required
                     className="h-11"
-                    placeholder={t("resetPasswordPlaceholder") || "Minimum 6 simvol"}
+                    placeholder={t("resetPasswordPlaceholder" as TKey) || "Minimum 6 simvol"}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirm">{t("resetPasswordConfirmLabel") || "Şifrəni təsdiqlə"}</Label>
+                  <Label htmlFor="confirm">{t("resetPasswordConfirmLabel" as TKey) || "Şifrəni təsdiqlə"}</Label>
                   <Input
                     id="confirm"
                     type="password"
@@ -192,6 +193,7 @@ export default function ResetPasswordPage() {
                     disabled={loading || success || tokenChecking || !tokenValid}
                     required
                     className="h-11"
+                    placeholder={t("resetPasswordPlaceholder" as TKey) || "Minimum 6 simvol"}
                   />
                 </div>
               </CardContent>
@@ -199,15 +201,15 @@ export default function ResetPasswordPage() {
               <CardFooter className="flex flex-col gap-4">
                 <Button
                   type="submit"
-                  className="w-full h-11 bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-700 hover:to-blue-700"
+                  className="w-full mt-2 h-11 bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-700 hover:to-blue-700"
                   disabled={loading || success || tokenChecking || !tokenValid}
                 >
-                  {loading ? (t("saving") || "Yadda saxlanır...") : (t("resetPasswordSubmit") || "Şifrəni yenilə")}
+                  {loading ? (t("saving" as TKey) || "Yadda saxlanır...") : (t("resetPasswordSubmit" as TKey) || "Şifrəni yenilə")}
                 </Button>
 
                 <p className="text-sm text-muted-foreground text-center">
                   <Link href="/login" className="text-violet-600 hover:underline font-medium">
-                    {t("backToLogin") || "Girişə qayıt"}
+                    {t("backToLogin" as TKey) || "Girişə qayıt"}
                   </Link>
                 </p>
               </CardFooter>

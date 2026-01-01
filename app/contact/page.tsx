@@ -81,8 +81,8 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <p className="font-semibold text-lg">{t("email")}</p>
-                      <a href="mailto:info@exampro.com" className="text-sm text-muted-foreground hover:text-primary">
-                        info@exampro.com
+                      <a href="mailto:info@imtahanver.net" className="text-sm text-muted-foreground hover:text-primary">
+                        info@imtahanver.net
                       </a>
                     </div>
                   </div>

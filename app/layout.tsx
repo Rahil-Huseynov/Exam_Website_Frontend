@@ -11,24 +11,23 @@ const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "ExamPlatform - Online University Exams",
-  description: "Practice university exams online with real questions",
+  title: "İmtahanVer.net – Onlayn Universitet İmtahanları",
+  description: "Universitet imtahanlarını real suallarla onlayn şəkildə sına",
   icons: {
     icon: [
       {
-        url: "",
-        media: "",
+        url: "/favicon.ico",
       },
       {
-        url: "",
-        media: "",
+        url: "/icon-32x32.png",
+        type: "image/png",
       },
       {
-        url: "",
-        type: "",
+        url: "/icon-192.png",
+        type: "image/png",
       },
     ],
-    apple: "",
+    apple: "/apple-touch-icon.png",
   },
 }
 
@@ -38,10 +37,11 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
-      <body className={`font-sans antialiased`}>
+    <html lang="az">
+      <body className="font-sans antialiased">
         <LocaleProvider>
           <AuthProvider>{children}</AuthProvider>
+
           <ToastContainer
             position="top-right"
             autoClose={3000}
@@ -51,6 +51,7 @@ export default function RootLayout({
             draggable
           />
         </LocaleProvider>
+
         <Analytics />
       </body>
     </html>
