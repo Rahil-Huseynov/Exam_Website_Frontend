@@ -1,7 +1,6 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
-import { Analytics } from "@vercel/analytics/next"
 import { AuthProvider } from "@/contexts/auth-context"
 import { LocaleProvider } from "@/contexts/locale-context"
 import "./globals.css"
@@ -52,7 +51,6 @@ export default function RootLayout({
           />
         </LocaleProvider>
 
-        <Analytics />
       </body>
     </html>
   )
