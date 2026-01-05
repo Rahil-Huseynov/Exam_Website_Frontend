@@ -97,8 +97,8 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <p className="font-semibold text-lg">{t("contactPhoneLabel")}</p>
-                      <a href="tel:+994501234567" className="text-sm text-muted-foreground hover:text-primary">
-                        +994 50 123 45 67
+                      <a href="tel:+994515593172" className="text-sm text-muted-foreground hover:text-primary">
+                        +994 51 559 31 72
                       </a>
                     </div>
                   </div>
