@@ -15,7 +15,7 @@ export function PublicNavbar() {
 
   return (
     <nav className="sticky top-0 z-50 border-b bg-card/80 backdrop-blur-xl supports-[backdrop-filter]:bg-card/60">
-      <div className="container mx-auto px-4">
+      <div className="mx-auto px-4">
         <div className="flex h-20 items-center justify-between">
           <Link
             href="/"
@@ -25,7 +25,7 @@ export function PublicNavbar() {
           </Link>
 
           {/* Desktop Menu */}
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden lg:flex items-center gap-8">
             <Link href="/#features" className="text-sm font-medium hover:text-primary transition-colors">
               {t("features")}
             </Link>
@@ -61,12 +61,12 @@ export function PublicNavbar() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Button asChild variant="ghost" className="rounded-full hidden md:flex">
+            <Button asChild variant="ghost" className="rounded-full hidden lg:flex">
               <Link href="/login">{t("login")}</Link>
             </Button>
             <Button
               asChild
-              className="rounded-full bg-gradient-to-r from-primary via-secondary to-accent hover:opacity-90 transition-opacity hidden md:flex"
+              className="rounded-full bg-gradient-to-r from-primary via-secondary to-accent hover:opacity-90 transition-opacity hidden lg:flex"
             >
               <Link href="/register">{t("register")}</Link>
             </Button>
@@ -75,7 +75,7 @@ export function PublicNavbar() {
             <Button
               variant="ghost"
               size="icon"
-              className="md:hidden rounded-full"
+              className="lg:hidden rounded-full"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               <Menu className="h-5 w-5" />
@@ -85,7 +85,7 @@ export function PublicNavbar() {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden pb-4 flex flex-col gap-2">
+          <div className="lg:hidden pb-4 flex flex-col gap-2">
             <Link href="/#features" className="text-sm font-medium hover:text-primary transition-colors py-2">
               {t("features")}
             </Link>

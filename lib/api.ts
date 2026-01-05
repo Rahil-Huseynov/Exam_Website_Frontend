@@ -917,6 +917,25 @@ class ApiClient {
     })
   }
 
+  // ================== CONTACT ==================
+  async sendContact(payload: { name: string; email: string; message: string; subject?: unknown; phone?: string }) {
+    const cleanPayload = {
+      name: payload.name,
+      email: payload.email,
+      message: payload.message,
+      phone: payload.phone,
+      ...(typeof payload.subject === "string" && payload.subject.trim()
+        ? { subject: payload.subject.trim() }
+        : {}),
+    }
+
+    return this.request<{ ok: boolean; message?: unknown }>("/emails/contact", {
+      method: "POST",
+      json: cleanPayload,
+    })
+  }
+
+
 }
 
 export const api = new ApiClient()

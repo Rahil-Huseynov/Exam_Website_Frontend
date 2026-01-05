@@ -690,6 +690,22 @@ export const translations = {
     balanceWhatsappDesc: "Hazırda ödənişlər yalnız WhatsApp vasitəsilə həyata keçirilir.",
     balanceWhatsappBtn: "WhatsApp-a keç",
 
+    "contact.toast.err_name_min": "Ad ən azı 2 simvol olmalıdır.",
+    "contact.toast.err_email": "E-mail düzgün deyil.",
+    "contact.toast.err_phone_format": "Telefon formatı: 51 559 31 72",
+    "contact.toast.err_message_min": "Mesaj ən azı 5 simvol olmalıdır.",
+    "contact.toast.sending": "Göndərilir...",
+    "contact.toast.sending_btn": "Göndərilir...",
+    "contact.toast.success": "Mesaj göndərildi ✅ Sizinlə əlaqə saxlanılacaq.",
+    "contact.toast.fail": "Göndərmək alınmadı.",
+
+    "contact.phone.placeholder": "51 559 31 72",
+    "contact.phone.example_label": "Məsələn:",
+    "contact.phone.example_value": "+994 51 559 31 72",
+    "contact.phone.valid_ok": "OK",
+    "contact.phone.valid_hint": "9 rəqəm",
+    "contact.message.ok": "OK",
+
   },
   en: {
     login: "Login",
@@ -1378,6 +1394,22 @@ export const translations = {
     balanceWhatsappTitle: "To top up your balance, contact us via WhatsApp",
     balanceWhatsappDesc: "Balance top-ups are currently handled only via WhatsApp.",
     balanceWhatsappBtn: "Open WhatsApp",
+
+    "contact.toast.err_name_min": "Name must be at least 2 characters.",
+    "contact.toast.err_email": "Invalid email.",
+    "contact.toast.err_phone_format": "Phone format: 51 559 31 72",
+    "contact.toast.err_message_min": "Message must be at least 5 characters.",
+    "contact.toast.sending": "Sending...",
+    "contact.toast.sending_btn": "Sending...",
+    "contact.toast.success": "Message sent ✅ We will contact you.",
+    "contact.toast.fail": "Failed to send.",
+
+    "contact.phone.placeholder": "51 559 31 72",
+    "contact.phone.example_label": "Example:",
+    "contact.phone.example_value": "+994 51 559 31 72",
+    "contact.phone.valid_ok": "OK",
+    "contact.phone.valid_hint": "9 digits",
+    "contact.message.ok": "OK",
 
   },
   ru: {
@@ -2080,6 +2112,23 @@ export const translations = {
     balanceWhatsappTitle: "Для пополнения баланса напишите в WhatsApp",
     balanceWhatsappDesc: "В данный момент пополнение доступно только через WhatsApp.",
     balanceWhatsappBtn: "Открыть WhatsApp",
+
+    "contact.toast.err_name_min": "Имя должно быть минимум 2 символа.",
+    "contact.toast.err_email": "Неверный email.",
+    "contact.toast.err_phone_format": "Формат телефона: 51 559 31 72",
+    "contact.toast.err_message_min": "Сообщение должно быть минимум 5 символов.",
+    "contact.toast.sending": "Отправка...",
+    "contact.toast.sending_btn": "Отправка...",
+    "contact.toast.success": "Сообщение отправлено ✅ Мы свяжемся с вами.",
+    "contact.toast.fail": "Не удалось отправить.",
+
+    "contact.phone.placeholder": "51 559 31 72",
+    "contact.phone.example_label": "Пример:",
+    "contact.phone.example_value": "+994 51 559 31 72",
+    "contact.phone.valid_ok": "OK",
+    "contact.phone.valid_hint": "9 цифр",
+    "contact.message.ok": "OK",
+
 
   },
 }
