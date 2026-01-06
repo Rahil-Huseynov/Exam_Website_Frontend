@@ -21,33 +21,32 @@ export default function BalancePage() {
   const { locale } = useLocale()
   const { t } = useTranslation(locale)
 
-  const phone = "994501234567"
+  const phone = "994515593172"
 
   const publicId = user?.publicId || "-"
   const firstName = user?.firstName || "-"
   const lastName = user?.lastName || "-"
 
   const whatsappText = `Salam, balansımı artırmaq istəyirəm. IDim: ${publicId}. Ad: ${firstName}, Soyad: ${lastName}`
-
   const WHATSAPP_LINK = `https://wa.me/${phone}?text=${encodeURIComponent(whatsappText)}`
 
-  const currentBalance =
-    typeof user?.balance === "number" ? user.balance : Number(user?.balance || 0)
+  const currentBalance = typeof user?.balance === "number" ? user.balance : Number(user?.balance || 0)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/5 to-accent/5 flex flex-col relative">
-      <div className="absolute top-0 left-0 right-0 z-50">
+      {/* NAVBAR: z-50 (always on top) */}
+      <div className="fixed top-0 left-0 right-0 z-50">
         <Navbar />
       </div>
-      <main className="container mx-auto px-4 py-8 flex-1 blur-[6px] pointer-events-none select-none">
+
+      {/* MAIN CONTENT: blur only here (does NOT affect navbar) */}
+      <main className="container mx-auto px-4 py-8 flex-1 blur-[6px] pointer-events-none select-none pt-24">
         <div className="max-w-2xl mx-auto space-y-6">
           <div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-violet-600 via-blue-600 to-cyan-600 bg-clip-text text-transparent">
               {t("addBalance")}
             </h1>
-            <p className="text-muted-foreground mt-2 text-lg">
-              {t("balanceSubtitle")}
-            </p>
+            <p className="text-muted-foreground mt-2 text-lg">{t("balanceSubtitle")}</p>
           </div>
 
           <Card className="bg-white/80 dark:bg-gray-950/80 shadow-2xl">
@@ -59,9 +58,7 @@ export default function BalancePage() {
               <Wallet className="h-10 w-10 text-violet-600" />
             </CardHeader>
             <CardContent>
-              <p className="text-4xl font-bold">
-                {currentBalance.toFixed(2)} AZN
-              </p>
+              <p className="text-4xl font-bold">{currentBalance.toFixed(2)} AZN</p>
             </CardContent>
           </Card>
 
@@ -96,21 +93,20 @@ export default function BalancePage() {
 
       <Footer />
 
-      <div className="absolute inset-0 z-49 flex items-center justify-center p-4">
-        <div className="absolute inset-0" />
+      {/* WHATSAPP MODAL: z-49 (below navbar) */}
+      <div className="fixed inset-0 z-49 grid place-items-center p-4">
+        {/* overlay (below navbar) */}
+        <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
 
+        {/* modal card */}
         <div className="relative max-w-md w-full bg-white dark:bg-gray-950 rounded-2xl shadow-2xl p-6 text-center">
           <div className="mx-auto mb-4 h-14 w-14 rounded-full bg-green-500/10 flex items-center justify-center">
             <MessageCircle className="h-7 w-7 text-green-600" />
           </div>
 
-          <h2 className="text-xl font-bold mb-2">
-            {t("balanceWhatsappTitle")}
-          </h2>
+          <h2 className="text-xl font-bold mb-2">{t("balanceWhatsappTitle")}</h2>
 
-          <p className="text-muted-foreground mb-6">
-            {t("balanceWhatsappDesc")}
-          </p>
+          <p className="text-muted-foreground mb-6">{t("balanceWhatsappDesc")}</p>
 
           <a
             href={WHATSAPP_LINK}

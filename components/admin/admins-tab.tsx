@@ -154,7 +154,7 @@ export function AdminsTab() {
             <Input value={password} onChange={(e) => setPassword(e.target.value)} type="password" />
           </div>
 
-          <div className="grid gap-2 md:grid-cols-2">
+          <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
             <div className="grid gap-2">
               <Label>{t("firstName")}</Label>
               <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} />
@@ -168,10 +168,20 @@ export function AdminsTab() {
           <div className="grid gap-2">
             <Label>{t("role")}</Label>
             <div className="flex gap-2">
-              <Button type="button" variant={role === "admin" ? "default" : "outline"} onClick={() => setRole("admin")} className="flex-1">
+              <Button
+                type="button"
+                variant={role === "admin" ? "default" : "outline"}
+                onClick={() => setRole("admin")}
+                className="flex-1"
+              >
                 admin
               </Button>
-              <Button type="button" variant={role === "superadmin" ? "default" : "outline"} onClick={() => setRole("superadmin")} className="flex-1">
+              <Button
+                type="button"
+                variant={role === "superadmin" ? "default" : "outline"}
+                onClick={() => setRole("superadmin")}
+                className="flex-1"
+              >
                 superadmin
               </Button>
             </div>
@@ -184,13 +194,18 @@ export function AdminsTab() {
       </Card>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <CardTitle>{t("adminsTitle")}</CardTitle>
             <CardDescription>{t("adminsDesc")}</CardDescription>
           </div>
 
-          <Button variant="outline" onClick={loadAdmins} disabled={loadingList} className="gap-2">
+          <Button
+            variant="outline"
+            onClick={loadAdmins}
+            disabled={loadingList}
+            className="gap-2 w-full sm:w-auto bg-transparent"
+          >
             <RefreshCw className="h-4 w-4" />
             {t("refresh")}
           </Button>
@@ -212,41 +227,51 @@ export function AdminsTab() {
                 const isEditing = edit?.id === a.id
 
                 return (
-                  <div key={a.id} className="rounded-xl border p-4">
-                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div key={a.id} className="rounded-xl border p-3 sm:p-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div className="space-y-1">
-                        <div className="font-semibold">
-                          {(a.firstName || a.lastName)
-                            ? `${a.firstName ?? ""} ${a.lastName ?? ""}`.trim()
-                            : t("noName")}
+                        <div className="font-semibold text-sm sm:text-base">
+                          {a.firstName || a.lastName ? `${a.firstName ?? ""} ${a.lastName ?? ""}`.trim() : t("noName")}
                         </div>
-                        <div className="text-sm text-muted-foreground">{a.email}</div>
+                        <div className="text-xs sm:text-sm text-muted-foreground">{a.email}</div>
                         <div className="text-xs text-muted-foreground">
                           {t("role")}: {a.role ?? "admin"}
                         </div>
                       </div>
 
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap">
                         {!isEditing ? (
                           <>
-                            <Button variant="outline" onClick={() => startEdit(a)} className="gap-2">
+                            <Button
+                              variant="outline"
+                              onClick={() => startEdit(a)}
+                              className="gap-2 flex-1 sm:flex-none text-xs sm:text-sm"
+                            >
                               <Pencil className="h-4 w-4" />
-                              {t("edit")}
+                              <span className="hidden sm:inline">{t("edit")}</span>
                             </Button>
-                            <Button variant="destructive" onClick={() => removeAdmin(a.id)} className="gap-2">
+                            <Button
+                              variant="destructive"
+                              onClick={() => removeAdmin(a.id)}
+                              className="gap-2 flex-1 sm:flex-none text-xs sm:text-sm"
+                            >
                               <Trash2 className="h-4 w-4" />
-                              {t("delete")}
+                              <span className="hidden sm:inline">{t("delete")}</span>
                             </Button>
                           </>
                         ) : (
                           <>
-                            <Button onClick={saveEdit} className="gap-2">
+                            <Button onClick={saveEdit} className="gap-2 flex-1 sm:flex-none text-xs sm:text-sm">
                               <Save className="h-4 w-4" />
-                              {t("save")}
+                              <span className="hidden sm:inline">{t("save")}</span>
                             </Button>
-                            <Button variant="outline" onClick={cancelEdit} className="gap-2">
+                            <Button
+                              variant="outline"
+                              onClick={cancelEdit}
+                              className="gap-2 flex-1 sm:flex-none text-xs sm:text-sm bg-transparent"
+                            >
                               <X className="h-4 w-4" />
-                              {t("cancel")}
+                              <span className="hidden sm:inline">{t("cancel")}</span>
                             </Button>
                           </>
                         )}
@@ -254,29 +279,45 @@ export function AdminsTab() {
                     </div>
 
                     {isEditing && edit && (
-                      <div className="mt-4 grid gap-3 md:grid-cols-2">
+                      <div className="mt-4 grid gap-3 grid-cols-1 sm:grid-cols-2">
                         <div className="grid gap-2">
                           <Label>{t("firstName")}</Label>
-                          <Input value={edit.firstName} onChange={(e) => setEdit({ ...edit, firstName: e.target.value })} />
+                          <Input
+                            value={edit.firstName}
+                            onChange={(e) => setEdit({ ...edit, firstName: e.target.value })}
+                          />
                         </div>
                         <div className="grid gap-2">
                           <Label>{t("lastName")}</Label>
-                          <Input value={edit.lastName} onChange={(e) => setEdit({ ...edit, lastName: e.target.value })} />
+                          <Input
+                            value={edit.lastName}
+                            onChange={(e) => setEdit({ ...edit, lastName: e.target.value })}
+                          />
                         </div>
 
-                        <div className="grid gap-2 md:col-span-2">
+                        <div className="grid gap-2 sm:col-span-2">
                           <Label>{t("role")}</Label>
                           <div className="flex gap-2">
-                            <Button type="button" variant={edit.role === "admin" ? "default" : "outline"} onClick={() => setEdit({ ...edit, role: "admin" })} className="flex-1">
+                            <Button
+                              type="button"
+                              variant={edit.role === "admin" ? "default" : "outline"}
+                              onClick={() => setEdit({ ...edit, role: "admin" })}
+                              className="flex-1"
+                            >
                               admin
                             </Button>
-                            <Button type="button" variant={edit.role === "superadmin" ? "default" : "outline"} onClick={() => setEdit({ ...edit, role: "superadmin" })} className="flex-1">
+                            <Button
+                              type="button"
+                              variant={edit.role === "superadmin" ? "default" : "outline"}
+                              onClick={() => setEdit({ ...edit, role: "superadmin" })}
+                              className="flex-1"
+                            >
                               superadmin
                             </Button>
                           </div>
                         </div>
 
-                        <div className="grid gap-2 md:col-span-2">
+                        <div className="grid gap-2 sm:col-span-2">
                           <Label>{t("newPasswordOptional")}</Label>
                           <Input
                             value={edit.password}

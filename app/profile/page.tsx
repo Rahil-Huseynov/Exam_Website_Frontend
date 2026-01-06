@@ -139,10 +139,6 @@ export default function ProfilePage() {
               {t("profileSubtitle") || "Hesab məlumatlarını yenilə və şifrəni dəyiş."}
             </p>
           </div>
-
-          <Button variant="outline" onClick={doLogout}>
-            {t("logout") || "Çıxış"}
-          </Button>
         </div>
 
         {loading ? (

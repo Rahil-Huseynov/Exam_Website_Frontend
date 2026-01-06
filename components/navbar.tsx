@@ -29,7 +29,7 @@ export function Navbar() {
   const balanceCents = toCents((user as any)?.balance)
 
   return (
-    <nav className="sticky top-0 z-50 border-b bg-card/80 backdrop-blur-xl supports-[backdrop-filter]:bg-card/60">
+    <nav className="sticky top-0 z-50 border-b bg-white ">
       <div className="container mx-auto px-4">
         <div className="flex h-20 items-center justify-between">
           <Link
@@ -113,9 +113,6 @@ export function Navbar() {
                   <DropdownMenuContent align="end" className="w-56 rounded-2xl">
                     <div className="md:hidden px-3 py-3 border-b mb-2">
                       <div className="flex items-center gap-3 mb-2">
-                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-primary-foreground font-semibold">
-                          {initial}
-                        </div>
                         <div className="flex-1">
                           <div className="font-medium text-sm">{displayName}</div>
                           <div className="text-xs text-muted-foreground">{user.email}</div>
