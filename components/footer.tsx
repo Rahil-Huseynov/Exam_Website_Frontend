@@ -14,12 +14,12 @@ export function Footer() {
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4">
-            <img className="w-40" src="/Logo.png" alt="İmtahanVer.net logosu" />
+            {/* <img className="w-40" src="/Logo.png" alt="İmtahanVer.net logosu" /> */}
             <p className="text-sm text-muted-foreground">
               {t("footer.tagline")}
             </p>
             <div className="flex items-center">
-              <div>
+              {/* <div>
                 <a
                   href="https://www.instagram.com/azmiu.serbest_isler/"
                   target="_blank"
@@ -28,16 +28,16 @@ export function Footer() {
                 >
                   <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Instagram_logo_2016.svg/2048px-Instagram_logo_2016.svg.png" alt="Instagram" className="w-6 h-6 inline-block mr-2" />
                 </a>
-              </div>
+              </div> */}
               <div>
-                <a
+                {/* <a
                   href="https://wa.me/994515593172"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="ml-2 text-muted-foreground hover:text-primary transition-colors text-sm"
                 >
                   <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/WhatsApp.svg/1022px-WhatsApp.svg.png" alt="WhatsApp" className="w-6 h-6 inline-block mr-2" />
-                </a>
+                </a> */}
               </div>
             </div>
           </div>
@@ -69,12 +69,12 @@ export function Footer() {
           <div className="space-y-3">
             <h4 className="font-semibold">{t("footer.contact")}</h4>
             <div className="flex flex-col gap-2 text-sm text-muted-foreground">
-              <a href="mailto:info@imtahanver.net" className="hover:text-primary transition-colors">
+              {/* <a href="mailto:info@imtahanver.net" className="hover:text-primary transition-colors">
                 info@imtahanver.net
-              </a>
-              <a href="tel:+994515593172" className="hover:text-primary transition-colors">
+              </a> */}
+              {/* <a href="tel:+994515593172" className="hover:text-primary transition-colors">
                 +994 51 559 31 72
-              </a>
+              </a> */}
             </div>
           </div>
         </div>

@@ -113,9 +113,9 @@ export default function VerifyPage() {
 
       <div className="relative min-h-screen flex items-center justify-center p-4">
         <div className="w-full max-w-md">
-          <Link href="/" className="flex items-center justify-center gap-2 mb-6">
+          {/* <Link href="/" className="flex items-center justify-center gap-2 mb-6">
             <img className="w-40" src="/Logo.png" alt="İmtahanVer.net logosu" />
-          </Link>
+          </Link> */}
 
           <Card className="backdrop-blur-xl bg-white/80 dark:bg-gray-950/80 border-white/20 shadow-2xl">
             <CardHeader className="text-center">

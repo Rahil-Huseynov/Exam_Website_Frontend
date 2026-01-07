@@ -36,7 +36,7 @@ export function Navbar() {
             href={user ? "/dashboard" : "/"}
             className="text-2xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent"
           >
-            <img className="w-40" src="/Logo.png" alt="İmtahanVer.net logosu" />
+            {/* <img className="w-40" src="/Logo.png" alt="İmtahanVer.net logosu" /> */}
           </Link>
 
           {user && (

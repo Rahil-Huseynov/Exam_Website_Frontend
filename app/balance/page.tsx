@@ -21,8 +21,8 @@ export default function BalancePage() {
   const { locale } = useLocale()
   const { t } = useTranslation(locale)
 
-  const phone = "994515593172"
-
+  // const phone = "994515593172"
+  const phone = "1234567890"
   const publicId = user?.publicId || "-"
   const firstName = user?.firstName || "-"
   const lastName = user?.lastName || "-"
