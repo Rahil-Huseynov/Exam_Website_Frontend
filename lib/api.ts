@@ -89,7 +89,7 @@ export type AttemptReviewResponse = {
     total: number
   }
   exam: any
-  stats: { answered: number; correct: number; wrong: number }
+  stats: { total: number; correct: number; wrong: number }
   items: AttemptReviewItem[]
 }
 
@@ -226,6 +226,7 @@ export type ImportDirectPayload = {
     text: string
     options: Array<{ text: string }>
     correctAnswerText?: string
+    imageUrls?: string[]
   }>
 }
 

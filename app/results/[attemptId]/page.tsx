@@ -91,7 +91,7 @@ export default function AttemptDetailsPage({ params }: { params: AnyParams }) {
                   <div className="flex flex-wrap gap-3">
                     <Stat label={t("examRunner.result.correct")} value={stats?.correct} green />
                     <Stat label={t("examRunner.result.wrong")} value={stats?.wrong} red />
-                    <Stat label={t("examRunner.result.total")} value={stats?.answered} />
+                    <Stat label={t("examRunner.result.total")} value={stats?.total} />
                   </div>
                 </CardContent>
               </Card>
@@ -101,7 +101,7 @@ export default function AttemptDetailsPage({ params }: { params: AnyParams }) {
                   const correctId = it.question.correctOptionId
 
                   return (
-                    <Card key={it.answerId}>
+                    <Card key={it.answerId ?? it.question.id}>
                       <CardHeader>
                         <CardTitle className="flex items-center justify-between">
                           <span>
@@ -128,18 +128,18 @@ export default function AttemptDetailsPage({ params }: { params: AnyParams }) {
                         <div className="space-y-2">
                           {it.question.options.map((op) => {
                             const isCorrect = op.id === correctId
-                            const isSelected = op.id === it.selected.id
+                            const selectedId = it.selected?.id
+                            const isSelected = selectedId != null && op.id === selectedId
 
                             return (
                               <div
                                 key={op.id}
-                                className={`px-4 py-3 rounded-xl border flex gap-3 ${
-                                  isCorrect
-                                    ? "border-emerald-400 bg-emerald-50"
-                                    : isSelected
+                                className={`px-4 py-3 rounded-xl border flex gap-3 ${isCorrect
+                                  ? "border-emerald-400 bg-emerald-50"
+                                  : isSelected
                                     ? "border-rose-400 bg-rose-50"
                                     : "border-gray-200"
-                                }`}
+                                  }`}
                               >
                                 <span>{isCorrect ? "✅" : isSelected ? "👉" : "•"}</span>
                                 <span>{op.text}</span>
@@ -150,7 +150,7 @@ export default function AttemptDetailsPage({ params }: { params: AnyParams }) {
 
                         <div className="text-sm text-muted-foreground space-y-1">
                           <div>
-                            <b>{t("examRunner.badge.your_choice")}:</b> {it.selected.text}
+                            <b>{t("examRunner.badge.your_choice")}:</b> {it.selected?.text ?? "-"}
                           </div>
                           <div>
                             <b>{t("examRunner.ui.correct_answer")}:</b>{" "}
@@ -183,9 +183,8 @@ function Stat({
 }) {
   return (
     <div
-      className={`px-4 py-2 rounded-xl ${
-        green ? "bg-emerald-50" : red ? "bg-rose-50" : "bg-violet-50"
-      }`}
+      className={`px-4 py-2 rounded-xl ${green ? "bg-emerald-50" : red ? "bg-rose-50" : "bg-violet-50"
+        }`}
     >
       <div className="text-sm text-muted-foreground">{label}</div>
       <div className="text-2xl font-bold">{value ?? 0}</div>

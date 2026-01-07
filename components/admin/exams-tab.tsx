@@ -1,11 +1,12 @@
+// ExamsTab.tsx
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
 import { useLocale } from "@/contexts/locale-context"
 import { useTranslation } from "@/lib/i18n"
 import { api, type Exam, type University, type Subject, type DraftQuestion, type AdminQuestion } from "@/lib/api"
-import { readPdfText } from "@/lib/pdf-read"
-import { parseQuestionsFromText } from "@/lib/pdf-parser"
+import { readPdfPagesSmart } from "@/lib/pdf-read"
+import { parseQuestionsFromPdfPagesSmart } from "@/lib/pdf-parser"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -69,6 +70,9 @@ export function ExamsTab() {
   const [editTitle, setEditTitle] = useState("")
   const [editYear, setEditYear] = useState("")
   const [editPrice, setEditPrice] = useState("")
+
+  const total = useMemo(() => (Array.isArray(draft) ? draft.length : 0), [draft])
+  const [pdfProgress, setPdfProgress] = useState<number>(0)
 
   useEffect(() => {
     loadData()
@@ -209,7 +213,7 @@ export function ExamsTab() {
   }
 
   async function handleReadPdfFront() {
-    if (!canReadPdfFront) {
+    if (!canReadPdfFront || !file) {
       toastError(t("exams.errors.select_exam_and_pdf"))
       return
     }
@@ -218,8 +222,10 @@ export function ExamsTab() {
       setBusy(true)
       resetDraftState()
 
-      const text = await readPdfText(file!)
-      const parsed = parseQuestionsFromText(text)
+      setPdfProgress(0)
+      const pages = await readPdfPagesSmart(file!, (pct) => setPdfProgress(pct))
+
+      const parsed = await parseQuestionsFromPdfPagesSmart(pages)
 
       if (!parsed.length) {
         throw new Error(t("exams.errors.pdf_no_questions"))
@@ -235,6 +241,20 @@ export function ExamsTab() {
     } finally {
       setBusy(false)
     }
+  }
+
+  function removeDraftQuestion(qTempId: string) {
+    setDraft((prev: any) => prev.filter((q: any) => q.tempId !== qTempId))
+    setSelectedCorrect((prev) => {
+      if (!(qTempId in prev)) return prev
+      const copy = { ...prev }
+      delete copy[qTempId]
+      return copy
+    })
+  }
+
+  function removeDraftQuestionConfirm(qTempId: string) {
+    toastConfirm("Bu sualı silmək istəyirsən?", () => removeDraftQuestion(qTempId))
   }
 
   async function handleCommit() {
@@ -254,10 +274,16 @@ export function ExamsTab() {
             const correctOpt = q.options.find((o: any) => o.tempOptionId === correctTempId)
             if (!correctOpt) throw new Error(t("exams.errors.correct_option_missing"))
 
+            const imageUrls = [
+              ...(Array.isArray(q.clipUrls) ? q.clipUrls : []),
+              ...((q.options || []).flatMap((o: any) => (Array.isArray(o.clipUrls) ? o.clipUrls : []))),
+            ].filter(Boolean)
+
             return {
               text: q.text,
               options: q.options.map((o: any) => ({ text: o.text })),
               correctAnswerText: correctOpt.text,
+              imageUrls,
             }
           }),
       }
@@ -290,6 +316,40 @@ export function ExamsTab() {
     } finally {
       setQBusy(false)
     }
+  }
+
+  function makeEmptyDraftQuestion(nextNo: number) {
+    const base = Date.now()
+    const tempId = `q_${base}_${Math.random().toString(16).slice(2)}`
+    const mkOpt = (i: number) => ({
+      tempOptionId: `o_${base}_${tempId}_${i}`,
+      text: "",
+      clipUrls: [],
+    })
+
+    return {
+      tempId,
+      qNo: nextNo,
+      text: "",
+      clipUrls: [],
+      options: [mkOpt(0), mkOpt(1), mkOpt(2), mkOpt(3), mkOpt(4)],
+    }
+  }
+
+  function addDraftQuestion(atIndex?: number) {
+    setDraft((prev: any[]) => {
+      const list = Array.isArray(prev) ? [...prev] : []
+      const nextNo = (list[list.length - 1]?.qNo ?? list.length) + 1
+      const q = makeEmptyDraftQuestion(nextNo)
+
+      if (typeof atIndex === "number" && atIndex >= 0 && atIndex <= list.length) {
+        list.splice(atIndex, 0, q)
+        return list
+      }
+
+      list.push(q)
+      return list
+    })
   }
 
   function handleDeleteExam(bankId: string) {
@@ -420,6 +480,7 @@ export function ExamsTab() {
       setQBusy(false)
     }
   }
+
   function updateDraftQuestion(tempId: string, patch: Partial<any>) {
     setDraft((prev: any) => prev.map((q: any) => (q.tempId === tempId ? { ...q, ...patch } : q)))
   }
@@ -494,7 +555,7 @@ export function ExamsTab() {
       return toastError(t("exams.errors.bulk_invalid") || "Format düzgün deyil. Məs: 1-a, 2-b, 3-c")
     }
 
-    const letterToIdx = (l: string) => l.charCodeAt(0) - 65 
+    const letterToIdx = (l: string) => l.charCodeAt(0) - 65
 
     setSelectedCorrect((prev) => {
       const next = { ...prev }
@@ -515,6 +576,18 @@ export function ExamsTab() {
 
     toastSuccess(t("exams.success.bulk_applied") || "Seçimlər tətbiq olundu")
   }
+
+  const missing5VariantNumbers = useMemo(() => {
+    if (!Array.isArray(draft) || draft.length === 0) return []
+
+    return (draft as any[])
+      .map((q, idx) => {
+        const count = Array.isArray(q.options) ? q.options.length : 0
+        const no = q.qNo ?? (idx + 1)
+        return count === 5 ? null : no
+      })
+      .filter((x): x is number => x !== null)
+  }, [draft])
 
   return (
     <div className="space-y-6">
@@ -644,19 +717,40 @@ export function ExamsTab() {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-3 items-center">
-            <Button onClick={handleReadPdfFront} disabled={busy || !canReadPdfFront}>
-              {busy ? t("exams.ui.reading") : t("exams.ui.read_pdf_open_modal")}
-            </Button>
+          <div>
+            <div className="flex flex-wrap gap-3 items-center">
+              <Button onClick={handleReadPdfFront} disabled={busy || !canReadPdfFront}>
+                {busy ? t("exams.ui.reading") : t("exams.ui.read_pdf_open_modal")}
+              </Button>
 
-            <Button variant="outline" onClick={() => setDraftModalOpen(true)} disabled={busy || draft.length === 0}>
-              <Eye className="h-4 w-4 mr-2" />
-              {t("exams.ui.open_draft")}
-            </Button>
+              <Button variant="outline" onClick={() => setDraftModalOpen(true)} disabled={busy || draft.length === 0}>
+                <Eye className="h-4 w-4 mr-2" />
+                {t("exams.ui.open_draft")}
+              </Button>
 
-            <div className="text-sm text-muted-foreground">
-              {draft.length > 0 && <>{t("exams.ui.selected_count", { selected: draftAnsweredCount, total: draft.length })}</>}
+              <div className="text-sm text-muted-foreground">
+                {draft.length > 0 && <>{t("exams.ui.selected_count", { selected: draftAnsweredCount, total: draft.length })}</>}
+              </div>
             </div>
+
+            {busy && pdfProgress > 0 && (
+              <div className="mt-3 space-y-2">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>PDF yüklənir...</span>
+                  <span>{pdfProgress}%</span>
+                </div>
+                <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full bg-primary origin-left"
+                    style={{
+                      transform: `scaleX(${pdfProgress / 100})`,
+                      transition: "transform 80ms linear",
+                      willChange: "transform",
+                    }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -667,27 +761,66 @@ export function ExamsTab() {
       <Dialog open={draftModalOpen} onOpenChange={setDraftModalOpen}>
         <DialogContent className="!w-[98vw] !h-[96vh] max-w-none max-h-none overflow-y-auto rounded-2xl">
           <DialogHeader>
-            <DialogTitle>{t("exams.ui.draft_modal_title")}</DialogTitle>
-            <DialogDescription>{t("exams.ui.draft_modal_desc")}</DialogDescription>
+            <DialogTitle>{t("exams.ui.draft_modal_title") || "Draft"}</DialogTitle>
+            <DialogDescription>{t("exams.ui.draft_modal_desc") || "PDF-dən çıxan sualları yoxla və düzgün cavabları seç."}</DialogDescription>
           </DialogHeader>
 
-          {(draft as any[]).length === 0 ? (
-            <div className="text-sm text-muted-foreground">{t("exams.ui.no_draft_yet")}</div>
+          {total === 0 ? (
+            <div className="text-sm text-muted-foreground">{t("exams.ui.no_draft_yet") || "Hələ draft yoxdur."}</div>
           ) : (
             <div className="space-y-4">
               {(draft as any[]).map((q, idx) => (
                 <Card key={q.tempId} className="border-muted">
-                  <CardHeader>
-                    <CardTitle className="text-base">{idx + 1}.</CardTitle>
+                  <CardHeader className="flex flex-row items-center justify-between gap-2">
+                    <CardTitle className="text-base">{q.qNo ?? idx + 1}.</CardTitle>
+
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => addDraftQuestion(idx + 1)}
+                        disabled={busy}
+                        title="Bu sualdan sonra əlavə et"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Əlavə et
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => toastConfirm("Bu sualı silmək istəyirsən?", () => removeDraftQuestion(q.tempId))}
+                        disabled={busy}
+                        title="Sualı sil"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Sil
+                      </Button>
+                    </div>
                   </CardHeader>
 
+
                   <CardContent className="space-y-4">
+                    {/* ✅ SUALIN ÖZ CƏDVƏL/QRAFİK şəkilləri */}
+                    {Array.isArray(q.clipUrls) && q.clipUrls.length > 0 && (
+                      <div className="space-y-2">
+                        <Label>{t("exams.ui.figures") || "Qrafik / Cədvəl"}</Label>
+                        <div className="grid gap-3 md:grid-cols-2">
+                          {q.clipUrls.map((u: string, i: number) => (
+                            <img key={i} src={u} alt={`q-figure-${i}`} className="w-full rounded-lg border bg-white" />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Question editable */}
                     <div className="space-y-2">
                       <Label>{t("exams.ui.question_text") || "Sual"}</Label>
                       <textarea
                         className="w-full min-h-[90px] rounded-md border bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-primary"
-                        value={q.text}
+                        value={q.text || ""}
                         onChange={(e) => updateDraftQuestion(q.tempId, { text: e.target.value })}
                         placeholder={t("exams.ui.question_placeholder") || "Sual mətnini yaz..."}
                       />
@@ -697,48 +830,69 @@ export function ExamsTab() {
                     <div className="space-y-2">
                       <Label>{t("exams.ui.options") || "Variantlar"}</Label>
 
+                      {(!Array.isArray(q.options) || q.options.length === 0) && (
+                        <div className="text-sm text-muted-foreground">
+                          {t("exams.ui.no_options_found") || "Bu sualda variantlar avtomatik tapılmadı (əl ilə əlavə edə bilərsən)."}
+                        </div>
+                      )}
+
                       <div className="space-y-2">
-                        {q.options.map((opt: any, oi: number) => {
+                        {(q.options || []).map((opt: any, oi: number) => {
                           const checked = selectedCorrect[q.tempId] === opt.tempOptionId
                           return (
-                            <div key={opt.tempOptionId} className="flex items-start gap-2">
-                              <input
-                                type="radio"
-                                name={q.tempId}
-                                checked={checked}
-                                onChange={() => setSelectedCorrect((prev) => ({ ...prev, [q.tempId]: opt.tempOptionId }))}
-                                className="mt-2"
-                                title={t("exams.ui.correct_answer") || "Düzgün cavab"}
-                              />
+                            <div key={opt.tempOptionId} className="flex flex-col gap-2 rounded-lg border p-3">
+                              <div className="flex items-start gap-2">
+                                <input
+                                  type="radio"
+                                  name={q.tempId}
+                                  checked={checked}
+                                  onChange={() => setSelectedCorrect((prev) => ({ ...prev, [q.tempId]: opt.tempOptionId }))}
+                                  className="mt-2"
+                                  title={t("exams.ui.correct_answer") || "Düzgün cavab"}
+                                />
 
-                              <Input
-                                value={opt.text}
-                                onChange={(e) => updateDraftOption(q.tempId, opt.tempOptionId, e.target.value)}
-                                placeholder={`${String.fromCharCode(65 + oi)}) ${t("exams.ui.option_n", { n: oi + 1 }) || "Variant"}`}
-                              />
+                                <div className="flex-1 space-y-2">
+                                  <Input
+                                    value={opt.text || ""}
+                                    onChange={(e) => updateDraftOption(q.tempId, opt.tempOptionId, e.target.value)}
+                                    placeholder={`${String.fromCharCode(65 + oi)}) ${t("exams.ui.option_n", { n: oi + 1 }) || "Variant"}`}
+                                  />
 
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => removeDraftOption(q.tempId, opt.tempOptionId)}
-                                disabled={q.options.length <= 2}
-                                title={t("exams.ui.remove_last_option") || "Sil"}
-                              >
-                                {t("common.delete") || "Sil"}
-                              </Button>
+                                  {/* ✅ VARİANTIN ÖZ şəkli (table/graph variantın içində ola bilər) */}
+                                  {Array.isArray(opt.clipUrls) && opt.clipUrls.length > 0 && (
+                                    <div className="grid gap-2 md:grid-cols-2">
+                                      {opt.clipUrls.map((u: string, i: number) => (
+                                        <img key={i} src={u} alt={`opt-figure-${oi}-${i}`} className="w-full rounded-lg border bg-white" />
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => removeDraftOption(q.tempId, opt.tempOptionId)}
+                                  disabled={(q.options || []).length <= 2}
+                                  title={t("exams.ui.remove_last_option") || "Sil"}
+                                >
+                                  {t("common.delete") || "Sil"}
+                                </Button>
+                              </div>
                             </div>
                           )
                         })}
                       </div>
 
-                      <div className="flex gap-2 pt-2 items-center">
-                        <Button type="button" variant="outline" onClick={() => addDraftOption(q.tempId)}>
-                          <Plus className="h-4 w-4 mr-2" />
-                          {t("exams.ui.add_option") || "Variant əlavə et"}
-                        </Button>
+                      <div>
+                        <div className="flex gap-2 pt-2 items-center">
+                          <Button type="button" variant="outline" onClick={() => addDraftOption(q.tempId)}>
+                            <Plus className="h-4 w-4 mr-2" />
+                            {t("exams.ui.add_option") || "Variant əlavə et"}
+                          </Button>
 
-                        <div className="text-xs text-muted-foreground">
-                          {t("exams.ui.note_min_2_unique") || "Minimum 2 fərqli variant saxla."}
+                          <div className="text-xs text-muted-foreground">
+                            {t("exams.ui.note_min_2_unique") || "Minimum 2 fərqli variant saxla."}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -748,7 +902,7 @@ export function ExamsTab() {
             </div>
           )}
 
-          {/* ✅ NEW: Bulk picker at the bottom */}
+          {/* ✅ BULK PICK */}
           <div className="mt-4 border-t pt-4 space-y-2">
             <Label>{t("exams.ui.bulk_pick_label") || "Toplu düzgün cavab seçimi (məs: 1-a, 2-b, 3-c)"}</Label>
             <div className="flex gap-2">
@@ -757,28 +911,39 @@ export function ExamsTab() {
                 onChange={(e) => setBulkPickText(e.target.value)}
                 placeholder={t("exams.ui.bulk_pick_placeholder") || "1-a, 2-b, 3-c"}
               />
-              <Button type="button" variant="outline" onClick={applyBulkPicks} disabled={busy || draft.length === 0}>
+              <Button type="button" variant="outline" onClick={applyBulkPicks} disabled={busy || total === 0}>
                 {t("exams.ui.apply") || "Apply"}
               </Button>
             </div>
             <div className="text-xs text-muted-foreground">
               {t("exams.ui.bulk_pick_help") || "Dəstək: 1-a, 2-b, 3-c | 1=a | 1:a | 1 a"}
             </div>
+
+            {total > 0 && missing5VariantNumbers.length > 0 && (
+              <div className="text-sm text-destructive">
+                5 variantı olmayan suallar: {missing5VariantNumbers.join(", ")}
+              </div>
+            )}
           </div>
 
           <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:justify-between">
             <div className="text-sm text-muted-foreground">
-              {(draft as any[]).length > 0 && <>{t("exams.ui.selected_count", { selected: draftAnsweredCount, total: (draft as any[]).length })}</>}
+              {total > 0 && (
+                <>
+                  {t("exams.ui.selected_count", { selected: draftAnsweredCount, total }) ||
+                    `Seçilən: ${draftAnsweredCount} / ${total}`}
+                </>
+              )}
             </div>
 
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setDraftModalOpen(false)} disabled={busy}>
-                {t("common.close")}
+                {t("common.close") || "Bağla"}
               </Button>
 
               <Button onClick={handleCommit} disabled={busy || !canCommit}>
                 <CheckCircle2 className="h-4 w-4 mr-2" />
-                {busy ? t("exams.ui.sending") : t("exams.ui.save_selected")}
+                {busy ? (t("exams.ui.sending") || "Göndərilir...") : (t("exams.ui.save_selected") || "Seçilənləri yadda saxla")}
               </Button>
             </div>
           </DialogFooter>

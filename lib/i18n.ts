@@ -705,6 +705,8 @@ export const translations = {
     "contact.phone.valid_ok": "OK",
     "contact.phone.valid_hint": "9 rəqəm",
     "contact.message.ok": "OK",
+    "exams.ui.figures": "Qrafik / Cədvəl",
+    "exams.ui.no_options_found": "Bu sualda variantlar avtomatik tapılmadı (əl ilə əlavə edə bilərsən).",
 
   },
   en: {
@@ -1410,7 +1412,8 @@ export const translations = {
     "contact.phone.valid_ok": "OK",
     "contact.phone.valid_hint": "9 digits",
     "contact.message.ok": "OK",
-
+    "exams.ui.figures": "Chart / Table",
+    "exams.ui.no_options_found": "Options were not automatically detected for this question (you can add them manually).",
   },
   ru: {
     login: "Войти",
@@ -2128,8 +2131,8 @@ export const translations = {
     "contact.phone.valid_ok": "OK",
     "contact.phone.valid_hint": "9 цифр",
     "contact.message.ok": "OK",
-
-
+    "exams.ui.figures": "График / Таблица",
+    "exams.ui.no_options_found": "Варианты для этого вопроса не удалось найти автоматически (можно добавить вручную).",
   },
 }
 

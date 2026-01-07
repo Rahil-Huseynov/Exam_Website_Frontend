@@ -16,6 +16,9 @@ export default function ExamTokenRunner({ attemptId, userId }: { attemptId: stri
   const { locale } = useLocale()
   const { t } = useTranslation(locale)
   const router = useRouter()
+
+  const BASE = process.env.NEXT_PUBLIC_API_URL_FOR_IMAGE
+
   const [loading, setLoading] = useState(true)
   const [questions, setQuestions] = useState<ExamQuestion[]>([])
   const [activeIndex, setActiveIndex] = useState(0)
@@ -40,18 +43,15 @@ export default function ExamTokenRunner({ attemptId, userId }: { attemptId: stri
   useEffect(() => {
     if (!attemptId) return
 
-      ; (async () => {
-        try {
-          const summary = await api.getAttemptSummary(attemptId)
-
-          if (summary?.status === "FINISHED") {
-            router.replace(`/results/${attemptId}`)
-          }
-        } catch {
+    ;(async () => {
+      try {
+        const summary = await api.getAttemptSummary(attemptId)
+        if (summary?.status === "FINISHED") {
+          router.replace(`/results/${attemptId}`)
         }
-      })()
+      } catch {}
+    })()
   }, [attemptId, router])
-
 
   useEffect(() => {
     if (!attemptId) return
@@ -310,13 +310,31 @@ export default function ExamTokenRunner({ attemptId, userId }: { attemptId: stri
                   )
                 ) : (
                   <span>
-                    {selectedByQ[currentQ.id] ? t("examRunner.ui.answer_selected") : t("examRunner.ui.answer_not_selected")}
+                    {selectedByQ[currentQ.id]
+                      ? t("examRunner.ui.answer_selected")
+                      : t("examRunner.ui.answer_not_selected")}
                   </span>
                 )}
               </div>
             </CardHeader>
 
             <CardContent className="space-y-3">
+              {Array.isArray((currentQ as any).images) && (currentQ as any).images.length > 0 && (
+                <div className="space-y-3">
+                  {(currentQ as any).images
+                    .slice()
+                    .sort((a: any, b: any) => (a?.sort ?? 0) - (b?.sort ?? 0))
+                    .map((im: any) => (
+                      <img
+                        key={im.id || im.url}
+                        src={`${BASE}${im.url}`}
+                        alt="question"
+                        className="w-[524] object-contain rounded-2xl border bg-white"
+                      />
+                    ))}
+                </div>
+              )}
+
               {currentQ.options?.map((o) => {
                 const ans = reviewAnswers[currentQ.id]
                 const correctId = ans?.question?.correctOptionId
@@ -337,7 +355,7 @@ export default function ExamTokenRunner({ attemptId, userId }: { attemptId: stri
                     className={cn(
                       "w-full text-left rounded-2xl border p-4 transition-all",
                       !isFinished &&
-                      "hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 hover:bg-gradient-to-r hover:from-violet-50 hover:to-blue-50 dark:hover:from-violet-950/20 dark:hover:to-blue-950/20",
+                        "hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 hover:bg-gradient-to-r hover:from-violet-50 hover:to-blue-50 dark:hover:from-violet-950/20 dark:hover:to-blue-950/20",
                       selected && !isFinished && "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/20",
                       isCorrectOption && "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/20",
                       isWrongSelected && "border-red-600 bg-red-50 dark:bg-red-950/20",
@@ -350,14 +368,22 @@ export default function ExamTokenRunner({ attemptId, userId }: { attemptId: stri
                       {isFinished ? (
                         <>
                           {isCorrectOption && (
-                            <span className="text-emerald-600 text-xs font-semibold">{t("examRunner.badge.correct")}</span>
+                            <span className="text-emerald-600 text-xs font-semibold">
+                              {t("examRunner.badge.correct")}
+                            </span>
                           )}
                           {isWrongSelected && (
-                            <span className="text-red-600 text-xs font-semibold">{t("examRunner.badge.your_choice")}</span>
+                            <span className="text-red-600 text-xs font-semibold">
+                              {t("examRunner.badge.your_choice")}
+                            </span>
                           )}
                         </>
                       ) : (
-                        selected && <span className="text-emerald-600 text-xs font-semibold">{t("examRunner.badge.selected")}</span>
+                        selected && (
+                          <span className="text-emerald-600 text-xs font-semibold">
+                            {t("examRunner.badge.selected")}
+                          </span>
+                        )
                       )}
                     </div>
                   </button>
