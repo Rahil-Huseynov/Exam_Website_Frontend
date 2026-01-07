@@ -443,7 +443,7 @@ export default function DashboardPage() {
                 {universities.length === 0 && !uniLoading ? (
                   <div className="text-sm text-muted-foreground py-8 text-center">{t("noUniversities")}</div>
                 ) : (
-                  <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
+                  <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:sm:grid-cols-3 lg:grid-cols-4">
                     {universities.map((u) => {
                       const name = tName(u, locale)
                       const logoUrl = resolveLogoUrl((u as any)?.logo)
