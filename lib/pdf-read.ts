@@ -20,6 +20,7 @@ export type PdfPageData = {
   page: number
   text: string
   imageUrl: string
+  widthPx: number
   heightPx: number
   lines: PdfLine[]
   figures: PdfFigure[]
@@ -66,8 +67,9 @@ function calcFigureQuality(c: HTMLCanvasElement): FigureQuality {
 
   const darkRatio = dark / Math.max(1, total)
 
-  const minRunH = Math.floor(w * 0.65)
-  const minRunV = Math.floor(h * 0.55)
+  // uzun xəttlər: cədvəl/grid/oxlar üçün yaxşı siqnaldır
+  const minRunH = Math.floor(w * 0.62)
+  const minRunV = Math.floor(h * 0.50)
 
   let longH = 0
   for (let y = 0; y < h; y++) {
@@ -103,12 +105,14 @@ function calcFigureQuality(c: HTMLCanvasElement): FigureQuality {
 function isValidFigureCrop(c: HTMLCanvasElement): boolean {
   const w = c.width
   const h = c.height
-  if (w < 40 || h < 20) return false
+  if (w < 50 || h < 28) return false
 
   const q = calcFigureQuality(c)
 
-  // yumşaldıldı (2-ci/3-cü cədvəli kəsməsin)
-  if (q.darkRatio > 0.28) return false
+  // Çox qara bloklar (məs: böyük qara fon, qalın marker) çox vaxt false-positive olur
+  if (q.darkRatio > 0.33) return false
+
+  // Heç bir uzun xətt yoxdursa, çox vaxt “sadə mətn parçası” olur
   if (q.longH + q.longV < 1) return false
 
   return true
@@ -116,6 +120,7 @@ function isValidFigureCrop(c: HTMLCanvasElement): boolean {
 
 /**
  * ✅ Figure detector + valid crop filter
+ * Məqsəd: cədvəl/qrafik/diagram kimi “şəkil” bloklarını tapmaq.
  */
 function extractFiguresFromCanvas(canvas: HTMLCanvasElement): PdfFigure[] {
   const ctx = canvas.getContext("2d")
@@ -135,8 +140,8 @@ function extractFiguresFromCanvas(canvas: HTMLCanvasElement): PdfFigure[] {
     gray[k++] = lum
     sum += lum
   }
-  const mean = sum / (w * h)
-  const darkThr = Math.max(190, Math.min(235, mean - 10))
+  const mean = sum / Math.max(1, w * h)
+  const darkThr = Math.max(185, Math.min(235, mean - 10))
 
   // 2) Sobel edge
   const edge = new Uint8Array(w * h)
@@ -170,10 +175,11 @@ function extractFiguresFromCanvas(canvas: HTMLCanvasElement): PdfFigure[] {
     bin[i] = isDark || isEdge ? 1 : 0
   }
 
-  // 4) dilate x3
+  // 4) dilate x4 (daha aqressiv: qrafik/cədvəl parçalanmasın)
   const dil1 = new Uint8Array(w * h)
   const dil2 = new Uint8Array(w * h)
   const dil3 = new Uint8Array(w * h)
+  const dil4 = new Uint8Array(w * h)
 
   const dilateOnce = (src: Uint8Array, dst: Uint8Array) => {
     dst.fill(0)
@@ -198,14 +204,15 @@ function extractFiguresFromCanvas(canvas: HTMLCanvasElement): PdfFigure[] {
   dilateOnce(bin, dil1)
   dilateOnce(dil1, dil2)
   dilateOnce(dil2, dil3)
+  dilateOnce(dil3, dil4)
 
   // 5) connected components
   const seen = new Uint8Array(w * h)
   const figs: PdfFigure[] = []
 
-  const minArea = Math.floor(w * h * 0.0035)
-  const minW = Math.floor(w * 0.12)
-  const minH = Math.floor(h * 0.025)
+  const minArea = Math.floor(w * h * 0.0032) // azca yumşaq
+  const minW = Math.floor(w * 0.10)
+  const minH = Math.floor(h * 0.022)
 
   const qx = new Int32Array(w * h)
   const qy = new Int32Array(w * h)
@@ -214,7 +221,7 @@ function extractFiguresFromCanvas(canvas: HTMLCanvasElement): PdfFigure[] {
     for (let x0 = 0; x0 < w; x0++) {
       const p0 = y0 * w + x0
       if (seen[p0]) continue
-      if (!dil3[p0]) continue
+      if (!dil4[p0]) continue
 
       let head = 0,
         tail = 0
@@ -245,25 +252,25 @@ function extractFiguresFromCanvas(canvas: HTMLCanvasElement): PdfFigure[] {
         const lf = y * w + (x - 1)
         const rt = y * w + (x + 1)
 
-        if (y > 0 && !seen[up] && dil3[up]) {
+        if (y > 0 && !seen[up] && dil4[up]) {
           seen[up] = 1
           qx[tail] = x
           qy[tail] = y - 1
           tail++
         }
-        if (y < h - 1 && !seen[dn] && dil3[dn]) {
+        if (y < h - 1 && !seen[dn] && dil4[dn]) {
           seen[dn] = 1
           qx[tail] = x
           qy[tail] = y + 1
           tail++
         }
-        if (x > 0 && !seen[lf] && dil3[lf]) {
+        if (x > 0 && !seen[lf] && dil4[lf]) {
           seen[lf] = 1
           qx[tail] = x - 1
           qy[tail] = y
           tail++
         }
-        if (x < w - 1 && !seen[rt] && dil3[rt]) {
+        if (x < w - 1 && !seen[rt] && dil4[rt]) {
           seen[rt] = 1
           qx[tail] = x + 1
           qy[tail] = y
@@ -276,9 +283,11 @@ function extractFiguresFromCanvas(canvas: HTMLCanvasElement): PdfFigure[] {
 
       if (area < minArea) continue
       if (bw < minW || bh < minH) continue
+
+      // səhifənin ən üstündəki header xəttlərini çox vaxt istəmirik
       if (miny < h * 0.02) continue
 
-      const pad = 16
+      const pad = 18
       const cx = clamp(minx - pad, 0, w - 1)
       const cy = clamp(miny - pad, 0, h - 1)
       const cw = clamp(bw + pad * 2, 1, w - cx)
@@ -305,11 +314,12 @@ function extractFiguresFromCanvas(canvas: HTMLCanvasElement): PdfFigure[] {
 
   figs.sort((a, b) => b.area - a.area)
 
-  // 16 az olurdu -> 28 etdik
-  return figs.slice(0, 28)
+  // daha çox saxla (dəqiqlik üçün)
+  return figs.slice(0, 40)
 }
 
 async function ensureOcrWorker(): Promise<TesseractWorker> {
+  // prioritet: aze, fallback: eng
   try {
     return await createWorker("aze")
   } catch {
@@ -341,6 +351,7 @@ export async function readPdfPagesSmart(
     await (page.render({ canvasContext: ctx, viewport } as any).promise as Promise<unknown>)
     const imageUrl = canvas.toDataURL("image/png")
 
+    // -------- TEXT CONTENT (pdfjs) --------
     const content = await page.getTextContent()
     const items = content.items as any[]
 
@@ -383,21 +394,33 @@ export async function readPdfPagesSmart(
 
     const pageText = lines.map((l) => l.text).join("\n").trim()
 
+    // -------- FIGURES --------
+    const figures = extractFiguresFromCanvas(canvas)
+
+    // -------- OCR (dəqiqlik üçün daha aqressiv) --------
+    // Performans ikinci plandadır: mətndə boşluq/çatışmazlıq varsa OCR ilə tamamlayırıq.
     let finalText = pageText
-    if (finalText.trim().length < 60) {
+
+    const isTextWeak = finalText.trim().length < 400
+    const isLinesWeak = lines.length < 14
+    const isProbablyScanned = items.length < 30 || (isLinesWeak && isTextWeak)
+
+    if (isProbablyScanned || isTextWeak) {
       try {
         const res = await ocrWorker.recognize(imageUrl)
         const ocrText = res?.data?.text ? String(res.data.text) : ""
-        if (ocrText.trim().length > finalText.trim().length) finalText = ocrText.trim()
+        // OCR daha uzun / daha informativdirsə götür
+        if (ocrText.trim().length > finalText.trim().length) {
+          finalText = ocrText.trim()
+        }
       } catch {}
     }
-
-    const figures = extractFiguresFromCanvas(canvas)
 
     pages.push({
       page: p,
       text: finalText,
       imageUrl,
+      widthPx: canvas.width,
       heightPx: canvas.height,
       lines,
       figures,
