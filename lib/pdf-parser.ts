@@ -254,43 +254,48 @@ export function mergePagesForParsing(pages: { page: number; text: string }[]) {
 function splitIntoQuestionBlocksSmart(merged: string): Array<{ page?: number; rawLines: string[] }> {
   let t = normalizeBase(merged)
 
-  // OCR-bənzər mətnlərdə: "... cümlə 12. sual ..." -> yeni sətirə sal (daha ehtiyatla)
-  // Yalnız o zaman ki, əvvəlki hissə çox uzundur (sadə "2023. ildə" kimi halları azaltsın)
+  // OCR-bənzər: "... cümlə 12. sual ..." -> yeni sətirə sal (ehtiyatla)
   t = t.replace(/([^\n]{25,})\s+(\d{1,4})\.\s+(?=\S)/g, "$1\n$2. ")
 
-  const parts = t.split(/(?=\[PAGE:\d+\])/g)
+  const lines = t.split("\n").map((x) => x.trim()).filter(Boolean)
 
   const out: Array<{ page?: number; rawLines: string[] }> = []
+
   let currentPage: number | undefined
+  let curBlockLines: string[] = []
+  let curBlockPage: number | undefined
 
-  for (let part of parts) {
-    part = part.trim()
-    if (!part) continue
+  const flush = () => {
+    if (curBlockLines.length) out.push({ page: curBlockPage, rawLines: curBlockLines })
+    curBlockLines = []
+    curBlockPage = undefined
+  }
 
-    const pm = part.match(/^\[PAGE:(\d+)\]\s*/i)
+  for (const line of lines) {
+    const pm = line.match(/^\[PAGE:(\d+)\]$/i) || line.match(/^\[PAGE:(\d+)\]\s*/i)
     if (pm) {
       currentPage = Number(pm[1])
-      part = part.replace(/^\[PAGE:\d+\]\s*/i, "").trim()
-      if (!part) continue
+      continue
     }
 
-    // sual start-lara görə böl
-    const chunks = part
-      .split(/(?=(?:^|\n)\s*\d{1,4}\s*[.)\-:]\s+)/g)
-      .map((x) => x.trim())
-      .filter(Boolean)
+    // yeni sual başlayırsa, əvvəlkini bağla
+    if (Q_START.test(line)) {
+      flush()
+      curBlockPage = currentPage
+      curBlockLines.push(line)
+      continue
+    }
 
-    for (const c of chunks) {
-      const rawLines = c
-        .split("\n")
-        .map((x) => x.trim())
-        .filter(Boolean)
-      if (rawLines.length) out.push({ page: currentPage, rawLines })
+    // sual blokunun davamı (variant növbəti səhifədə olsa belə bura düşəcək)
+    if (curBlockLines.length) {
+      curBlockLines.push(line)
     }
   }
 
+  flush()
   return out
 }
+
 
 /** ----------------- PARSE FROM TEXT (inteqrasiya) ----------------- */
 export function parseQuestionsFromText(rawMerged: string): DraftQuestion[] {
@@ -327,158 +332,111 @@ export function parseQuestionsFromText(rawMerged: string): DraftQuestion[] {
 }
 
 /** ----------------- PARSE FROM PAGES (əsl güclü parse) ----------------- */
-export async function parseQuestionsFromPages(pages: PdfPageData[]): Promise<DraftQuestion[]> {
+export async function parseQuestionsFromPages(
+  pages: PdfPageData[],
+): Promise<DraftQuestion[]> {
   const drafts: DraftQuestion[] = []
   const base = Date.now()
   let globalIndex = 0
+
+  // 🔴 SƏHİFƏLƏR ARASI DAVAM EDƏN SUAL
+  let pending:
+    | {
+      draft: DraftQuestion
+      optionCount: number
+    }
+    | null = null
 
   for (const pg of pages) {
     const lines = (pg.lines || [])
       .map((l) => ({ yPx: l.yPx, text: cleanLine(l.text) }))
       .filter((l) => l.text.length > 0)
 
+    // 🔍 SƏHİFƏ BAŞINDA VARİANT VAR?
+    const leadingOptions: string[] = []
+    for (let i = 0; i < Math.min(8, lines.length); i++) {
+      if (OPT_START.test(lines[i].text)) {
+        leadingOptions.push(lines[i].text)
+      } else {
+        break
+      }
+    }
+
+    // ✅ ƏVVƏLKİ SUALIN DAVAMI
+    if (pending && leadingOptions.length) {
+      for (const raw of leadingOptions) {
+        if (pending.optionCount >= 5) break
+
+        pending.draft.options.push({
+          tempOptionId: `o_${base}_${globalIndex}_${pending.optionCount}`,
+          text: cleanLine(raw.replace(OPT_START, "")),
+        })
+
+        pending.optionCount++
+      }
+
+      // bu səhifədə yeni sual axtarma
+      continue
+    }
+
+    // 🔎 BU SƏHİFƏDƏ SUAL START-LARI
     const starts: { idx: number; y: number }[] = []
     for (let i = 0; i < lines.length; i++) {
-      if (Q_START.test(lines[i].text)) starts.push({ idx: i, y: lines[i].yPx })
+      if (Q_START.test(lines[i].text)) {
+        starts.push({ idx: i, y: lines[i].yPx })
+      }
     }
     if (!starts.length) continue
 
-    const figs = (pg.figures || []).slice()
-
+    // 🧠 BU SƏHİFƏDƏKİ SUALLAR
     for (let si = 0; si < starts.length; si++) {
       const startIdx = starts[si].idx
-      const endIdxExcl = si + 1 < starts.length ? starts[si + 1].idx : lines.length
-      const blockLines = lines.slice(startIdx, endIdxExcl)
+      const endIdx =
+        si + 1 < starts.length ? starts[si + 1].idx : lines.length
 
+      const blockLines = lines.slice(startIdx, endIdx)
       const parsed = parseQuestionBlock(blockLines)
-      if (!parsed) continue
-      if (!parsed.options || parsed.options.length < 2) continue
 
-      const qStartY = starts[si].y
-      const qEndY = si + 1 < starts.length ? starts[si + 1].y : (pg.heightPx ?? 999999) + 1
+      if (!parsed || !parsed.options || parsed.options.length < 2) continue
 
-      // sual aralığında olan figure-lar (overlap-a görə)
-      const qFigures = figs
-        .filter((f) => overlapLen(f.yTop, f.yBottom, qStartY, qEndY, 22) >= 18)
-        .sort((a, b) => b.area - a.area)
-
-      // ---- buckets: stem + options ----
-      type Bucket = { kind: "stem" | "opt"; oi?: number; y1: number; y2: number }
-      const buckets: Bucket[] = [{ kind: "stem", y1: qStartY, y2: qEndY }]
-
-      if (parsed.options.length >= 2) {
-        const knownYs = parsed.options.map((o) => o.yStart).filter((v) => v > 0)
-        const firstY = knownYs.length ? Math.min(...knownYs) : null
-        if (firstY !== null) buckets[0].y2 = firstY
-
-        for (let oi = 0; oi < parsed.options.length; oi++) {
-          const o = parsed.options[oi]
-          let y1 = o.yStart
-          let y2 = o.yEnd
-          if (!(y1 > 0 && y2 > 0)) {
-            // fallback: bərabər böl
-            const span = qEndY - qStartY
-            const step = Math.max(1, span / Math.max(2, parsed.options.length))
-            y1 = qStartY + step * oi
-            y2 = qStartY + step * (oi + 1)
-          }
-          buckets.push({ kind: "opt", oi, y1, y2 })
-        }
-      }
-
-      // ---- şəkil bağlama (dəqiqlik prioritet) ----
-      const captionWants = hasCaptionNear(blockLines, qStartY, qEndY)
-      const stemWants = wantsFigure(parsed.stem) || captionWants
-      const optWants = parsed.options.map((o) => wantsFigure(o.text))
-
-      const usedFigureKeys = new Set<string>()
-      function figKey(f: any) {
-        // sadə, stabil dedupe
-        return `${Math.round(f.yTop)}::${Math.round(f.yBottom)}::${Math.round(f.area)}`
-      }
-
-      function pickTopFiguresForBucket(
-        bucket: { y1: number; y2: number },
-        maxCount: number,
-        minOv: number,
-        minArea: number,
-      ) {
-        const candidates = qFigures
-          .map((f) => ({ f, ov: overlapLen(f.yTop, f.yBottom, bucket.y1, bucket.y2, 14) }))
-          .filter((x) => x.ov >= minOv && (x.f?.area ?? 0) >= minArea)
-          .sort((a, b) => b.ov - a.ov || b.f.area - a.f.area)
-
-        const out: string[] = []
-        for (const c of candidates) {
-          if (!c.f?.dataUrl) continue
-          const k = figKey(c.f)
-          if (usedFigureKeys.has(k)) continue
-          usedFigureKeys.add(k)
-          out.push(c.f.dataUrl)
-          if (out.length >= maxCount) break
-        }
-        return out
-      }
-
-      // ✅ düzgün minArea: page area faizi ilə
-      const pageArea = Math.max(1, (pg.widthPx ?? 2000) * (pg.heightPx ?? 2000))
-      const stemMinArea = Math.floor(pageArea * 0.02) // ~2%
-      const optMinArea = Math.floor(pageArea * 0.012) // ~1.2%
-      const fallbackMinArea = Math.floor(pageArea * 0.03) // ~3%
-
-      const stemUrls: string[] = []
-      const optToUrls: Record<number, string[]> = {}
-
-      if (qFigures.length) {
-        const stemBucket = buckets[0]
-        const stemPicked = pickTopFiguresForBucket(stemBucket, stemWants ? 4 : 0, 22, stemMinArea)
-        if (stemPicked.length) stemUrls.push(...stemPicked)
-
-        // option-level bağlama: yalnız mətndə hint varsa
-        for (let oi = 0; oi < parsed.options.length; oi++) {
-          if (!optWants[oi]) continue
-
-          const b = buckets.find((x) => x.kind === "opt" && x.oi === oi)
-          if (!b) continue
-
-          const picked = pickTopFiguresForBucket({ y1: b.y1, y2: b.y2 }, 2, 24, optMinArea)
-          if (picked.length) optToUrls[oi] = picked
-        }
-
-        // ✅ fallback: hint olmasa da, iri figure varsa bağla (dəqiqlik üçün)
-        if (!stemUrls.length) {
-          const qBucket = { y1: qStartY, y2: qEndY }
-          const fallbackPicked = pickTopFiguresForBucket(qBucket, 2, 28, fallbackMinArea)
-          if (fallbackPicked.length) stemUrls.push(...fallbackPicked)
-        }
-      }
-
-      const finalStemUrls = stemUrls.length ? dedupeUrls(stemUrls) : undefined
-
-      const optionDrafts: DraftOption[] = parsed.options.slice(0, 5).map((o, oi) => {
-        const urls = optToUrls[oi] || []
-        return {
+      const optionDrafts: DraftOption[] = parsed.options
+        .slice(0, 5)
+        .map((o, oi) => ({
           tempOptionId: `o_${base}_${globalIndex}_${oi}`,
           text: cleanLine(o.text),
-          clipUrls: urls.length ? dedupeUrls(urls) : undefined,
-        }
-      })
+        }))
 
-      drafts.push({
+      const draft: DraftQuestion = {
         tempId: `q_${base}_${globalIndex}`,
         qNo: parsed.qNo,
         text: cleanLine(parsed.stem),
         page: pg.page,
-        clipUrls: finalStemUrls,
         options: optionDrafts,
-      })
+      }
+
+      drafts.push(draft)
+
+      // 🟡 ƏGƏR 5-DƏN AZ VARİANT VARSA → DAVAM GÖZLƏ
+      if (optionDrafts.length < 5) {
+        pending = {
+          draft,
+          optionCount: optionDrafts.length,
+        }
+      } else {
+        pending = null
+      }
 
       globalIndex++
     }
   }
 
-  return drafts
+  return drafts.sort(
+    (a, b) =>
+      (a.page ?? 0) - (b.page ?? 0) ||
+      (a.qNo ?? 0) - (b.qNo ?? 0),
+  )
 }
+
 
 /** ----------------- ONE ENTRY (SMART STRATEGY) ----------------- */
 export async function parseQuestionsFromPdfPagesSmart(pages: PdfPageData[]) {
