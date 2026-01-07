@@ -1,7 +1,6 @@
-// ExamsTab.tsx
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useLocale } from "@/contexts/locale-context"
 import { useTranslation } from "@/lib/i18n"
 import { api, type Exam, type University, type Subject, type DraftQuestion, type AdminQuestion } from "@/lib/api"
@@ -17,7 +16,7 @@ import { FileText, CheckCircle2, Eye, Trash2, Pencil, Plus } from "lucide-react"
 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
-import { toastConfirm, toastError, toastSuccess } from "@/lib/toast"
+import { toastError, toastSuccess } from "@/lib/toast"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
@@ -74,9 +73,32 @@ export function ExamsTab() {
   const total = useMemo(() => (Array.isArray(draft) ? draft.length : 0), [draft])
   const [pdfProgress, setPdfProgress] = useState<number>(0)
 
+  const draftScrollRef = useRef<HTMLDivElement | null>(null)
+  const qRefs = useRef<Record<string, HTMLDivElement | null>>({})
+
   useEffect(() => {
     loadData()
   }, [])
+
+  function findFirstBadTempId(list: any[]) {
+    const bad = (Array.isArray(list) ? list : []).find((q) => (q?.options?.length ?? 0) !== 5)
+    return bad?.tempId as string | undefined
+  }
+
+  function scrollToTempId(tempId: string) {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const el = qRefs.current[tempId]
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" })
+      })
+    })
+  }
+
+  function scrollToQuestionNo(no: number) {
+    const q = (draft as any[]).find((x, idx) => (x.qNo ?? idx + 1) === no)
+    if (!q?.tempId) return
+    scrollToTempId(q.tempId)
+  }
 
   async function loadData() {
     try {
@@ -162,12 +184,12 @@ export function ExamsTab() {
 
   const canCommit = useMemo(() => {
     if (!selectedExamId || draft.length === 0) return false
-    return draft.some((q: any) => !!selectedCorrect[q.tempId])
+    return (draft as any[]).some((q: any) => !!selectedCorrect[q.tempId])
   }, [selectedExamId, draft, selectedCorrect])
 
   const draftAnsweredCount = useMemo(() => {
     if (!draft.length) return 0
-    return draft.filter((q: any) => !!selectedCorrect[q.tempId]).length
+    return (draft as any[]).filter((q: any) => !!selectedCorrect[q.tempId]).length
   }, [draft, selectedCorrect])
 
   const canAddQuestion = useMemo(() => {
@@ -224,7 +246,6 @@ export function ExamsTab() {
 
       setPdfProgress(0)
       const pages = await readPdfPagesSmart(file!, (pct) => setPdfProgress(pct))
-
       const parsed = await parseQuestionsFromPdfPagesSmart(pages)
 
       if (!parsed.length) {
@@ -235,6 +256,15 @@ export function ExamsTab() {
       setSelectedCorrect({})
       setBulkPickText("")
       setDraftModalOpen(true)
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const badId = findFirstBadTempId(parsed as any[])
+          if (badId) scrollToTempId(badId)
+          else draftScrollRef.current?.scrollTo({ top: 0, behavior: "auto" })
+        })
+      })
+
       toastSuccess(t("exams.success.pdf_parsed"))
     } catch (err: any) {
       toastError(err?.message || t("exams.errors.pdf_read_failed"))
@@ -243,18 +273,23 @@ export function ExamsTab() {
     }
   }
 
-  function removeDraftQuestion(qTempId: string) {
-    setDraft((prev: any) => prev.filter((q: any) => q.tempId !== qTempId))
+  function removeDraftQuestionCascade(qTempId: string) {
+    delete qRefs.current[qTempId]
+
+    setDraft((prev: any) => {
+      const list = Array.isArray(prev) ? prev : []
+      const next = list
+        .filter((x: any) => x.tempId !== qTempId)
+        .map((x: any, i: number) => ({ ...x, qNo: i + 1 }))
+      return next
+    })
+
     setSelectedCorrect((prev) => {
-      if (!(qTempId in prev)) return prev
+      if (!prev || !(qTempId in prev)) return prev
       const copy = { ...prev }
       delete copy[qTempId]
       return copy
     })
-  }
-
-  function removeDraftQuestionConfirm(qTempId: string) {
-    toastConfirm("Bu sualı silmək istəyirsən?", () => removeDraftQuestion(qTempId))
   }
 
   async function handleCommit() {
@@ -344,16 +379,18 @@ export function ExamsTab() {
 
       if (typeof atIndex === "number" && atIndex >= 0 && atIndex <= list.length) {
         list.splice(atIndex, 0, q)
-        return list
+        return list.map((x: any, idx: number) => ({ ...x, qNo: idx + 1 }))
       }
 
       list.push(q)
-      return list
+      return list.map((x: any, idx: number) => ({ ...x, qNo: idx + 1 }))
     })
   }
 
   function handleDeleteExam(bankId: string) {
-    toastConfirm(t("exams.confirm.delete_exam"), async () => {
+    if (!window.confirm(t("exams.confirm.delete_exam") || "İmtahanı silmək istəyirsən?")) return
+
+    ;(async () => {
       try {
         setBusy(true)
         await api.deleteBank(bankId)
@@ -364,11 +401,13 @@ export function ExamsTab() {
       } finally {
         setBusy(false)
       }
-    })
+    })()
   }
 
   function handleDeleteQuestion(questionId: string) {
-    toastConfirm(t("exams.confirm.delete_question"), async () => {
+    if (!window.confirm(t("exams.confirm.delete_question") || "Sualı silmək istəyirsən?")) return
+
+    ;(async () => {
       try {
         setQBusy(true)
         await api.deleteQuestion(questionId)
@@ -380,7 +419,7 @@ export function ExamsTab() {
       } finally {
         setQBusy(false)
       }
-    })
+    })()
   }
 
   async function handleSaveQuestion(q: AdminQuestion) {
@@ -564,7 +603,7 @@ export function ExamsTab() {
         const i = qIndex - 1
         if (i < 0 || i >= draft.length) continue
 
-        const q = draft[i] as any
+        const q = (draft as any[])[i] as any
         const optIdx = letterToIdx(letter)
         if (optIdx < 0 || optIdx >= q.options.length) continue
 
@@ -583,7 +622,7 @@ export function ExamsTab() {
     return (draft as any[])
       .map((q, idx) => {
         const count = Array.isArray(q.options) ? q.options.length : 0
-        const no = q.qNo ?? (idx + 1)
+        const no = q.qNo ?? idx + 1
         return count === 5 ? null : no
       })
       .filter((x): x is number => x !== null)
@@ -610,12 +649,7 @@ export function ExamsTab() {
 
             <div className="space-y-2">
               <Label>{t("year")}</Label>
-              <Input
-                type="number"
-                value={examForm.year}
-                onChange={(e) => setExamForm({ ...examForm, year: e.target.value })}
-                disabled={busy}
-              />
+              <Input type="number" value={examForm.year} onChange={(e) => setExamForm({ ...examForm, year: e.target.value })} disabled={busy} />
             </div>
 
             <div className="space-y-2">
@@ -652,17 +686,11 @@ export function ExamsTab() {
 
             <div className="space-y-2">
               <Label>{t("price")} (AZN)</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={examForm.price}
-                onChange={(e) => setExamForm({ ...examForm, price: e.target.value })}
-                disabled={busy}
-              />
+              <Input type="number" step="0.01" value={examForm.price} onChange={(e) => setExamForm({ ...examForm, price: e.target.value })} disabled={busy} />
             </div>
           </div>
 
-          <Button onClick={handleCreateExam} disabled={busy || !canCreateExam}>
+          <Button onClick={handleCreateExam} disabled={busy || !canCreateExam} type="button">
             {busy ? t("processing") : t("common.create")}
           </Button>
         </CardContent>
@@ -719,11 +747,24 @@ export function ExamsTab() {
 
           <div>
             <div className="flex flex-wrap gap-3 items-center">
-              <Button onClick={handleReadPdfFront} disabled={busy || !canReadPdfFront}>
+              <Button onClick={handleReadPdfFront} disabled={busy || !canReadPdfFront} type="button">
                 {busy ? t("exams.ui.reading") : t("exams.ui.read_pdf_open_modal")}
               </Button>
 
-              <Button variant="outline" onClick={() => setDraftModalOpen(true)} disabled={busy || draft.length === 0}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setDraftModalOpen(true)
+                  requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                      const badId = findFirstBadTempId(draft as any[])
+                      if (badId) scrollToTempId(badId)
+                    })
+                  })
+                }}
+                disabled={busy || draft.length === 0}
+                type="button"
+              >
                 <Eye className="h-4 w-4 mr-2" />
                 {t("exams.ui.open_draft")}
               </Button>
@@ -759,7 +800,12 @@ export function ExamsTab() {
           DRAFT MODAL (EDITABLE)
          ========================== */}
       <Dialog open={draftModalOpen} onOpenChange={setDraftModalOpen}>
-        <DialogContent className="!w-[98vw] !h-[96vh] max-w-none max-h-none overflow-y-auto rounded-2xl">
+        <DialogContent
+          ref={draftScrollRef as any}
+          className="!w-[98vw] !h-[96vh] max-w-none max-h-none overflow-y-auto rounded-2xl"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          onCloseAutoFocus={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle>{t("exams.ui.draft_modal_title") || "Draft"}</DialogTitle>
             <DialogDescription>{t("exams.ui.draft_modal_desc") || "PDF-dən çıxan sualları yoxla və düzgün cavabları seç."}</DialogDescription>
@@ -769,159 +815,167 @@ export function ExamsTab() {
             <div className="text-sm text-muted-foreground">{t("exams.ui.no_draft_yet") || "Hələ draft yoxdur."}</div>
           ) : (
             <div className="space-y-4">
-              {(draft as any[]).map((q, idx) => (
-                <Card key={q.tempId} className="border-muted">
-                  <CardHeader className="flex flex-row items-center justify-between gap-2">
-                    <CardTitle className="text-base">{q.qNo ?? idx + 1}.</CardTitle>
+              {(draft as any[]).map((q, idx) => {
+                const no = q.qNo ?? idx + 1
+                return (
+                  <div
+                    key={q.tempId}
+                    id={`draft-q-${no}`}
+                    ref={(el) => {
+                      qRefs.current[q.tempId] = el
+                    }}
+                    className="scroll-mt-24"
+                  >
+                    <Card className="border-muted">
+                      <CardHeader className="flex flex-row items-center justify-between gap-2">
+                        <CardTitle className="text-base">{no}.</CardTitle>
 
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => addDraftQuestion(idx + 1)}
-                        disabled={busy}
-                        title="Bu sualdan sonra əlavə et"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Əlavə et
-                      </Button>
-
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => toastConfirm("Bu sualı silmək istəyirsən?", () => removeDraftQuestion(q.tempId))}
-                        disabled={busy}
-                        title="Sualı sil"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Sil
-                      </Button>
-                    </div>
-                  </CardHeader>
-
-
-                  <CardContent className="space-y-4">
-                    {/* ✅ SUALIN ÖZ CƏDVƏL/QRAFİK şəkilləri */}
-                    {Array.isArray(q.clipUrls) && q.clipUrls.length > 0 && (
-                      <div className="space-y-2">
-                        <Label>{t("exams.ui.figures") || "Qrafik / Cədvəl"}</Label>
-                        <div className="grid gap-3 md:grid-cols-2">
-                          {q.clipUrls.map((u: string, i: number) => (
-                            <img key={i} src={u} alt={`q-figure-${i}`} className="w-full rounded-lg border bg-white" />
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Question editable */}
-                    <div className="space-y-2">
-                      <Label>{t("exams.ui.question_text") || "Sual"}</Label>
-                      <textarea
-                        className="w-full min-h-[90px] rounded-md border bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-primary"
-                        value={q.text || ""}
-                        onChange={(e) => updateDraftQuestion(q.tempId, { text: e.target.value })}
-                        placeholder={t("exams.ui.question_placeholder") || "Sual mətnini yaz..."}
-                      />
-                    </div>
-
-                    {/* Options editable + correct radio */}
-                    <div className="space-y-2">
-                      <Label>{t("exams.ui.options") || "Variantlar"}</Label>
-
-                      {(!Array.isArray(q.options) || q.options.length === 0) && (
-                        <div className="text-sm text-muted-foreground">
-                          {t("exams.ui.no_options_found") || "Bu sualda variantlar avtomatik tapılmadı (əl ilə əlavə edə bilərsən)."}
-                        </div>
-                      )}
-
-                      <div className="space-y-2">
-                        {(q.options || []).map((opt: any, oi: number) => {
-                          const checked = selectedCorrect[q.tempId] === opt.tempOptionId
-                          return (
-                            <div key={opt.tempOptionId} className="flex flex-col gap-2 rounded-lg border p-3">
-                              <div className="flex items-start gap-2">
-                                <input
-                                  type="radio"
-                                  name={q.tempId}
-                                  checked={checked}
-                                  onChange={() => setSelectedCorrect((prev) => ({ ...prev, [q.tempId]: opt.tempOptionId }))}
-                                  className="mt-2"
-                                  title={t("exams.ui.correct_answer") || "Düzgün cavab"}
-                                />
-
-                                <div className="flex-1 space-y-2">
-                                  <Input
-                                    value={opt.text || ""}
-                                    onChange={(e) => updateDraftOption(q.tempId, opt.tempOptionId, e.target.value)}
-                                    placeholder={`${String.fromCharCode(65 + oi)}) ${t("exams.ui.option_n", { n: oi + 1 }) || "Variant"}`}
-                                  />
-
-                                  {/* ✅ VARİANTIN ÖZ şəkli (table/graph variantın içində ola bilər) */}
-                                  {Array.isArray(opt.clipUrls) && opt.clipUrls.length > 0 && (
-                                    <div className="grid gap-2 md:grid-cols-2">
-                                      {opt.clipUrls.map((u: string, i: number) => (
-                                        <img key={i} src={u} alt={`opt-figure-${oi}-${i}`} className="w-full rounded-lg border bg-white" />
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  onClick={() => removeDraftOption(q.tempId, opt.tempOptionId)}
-                                  disabled={(q.options || []).length <= 2}
-                                  title={t("exams.ui.remove_last_option") || "Sil"}
-                                >
-                                  {t("common.delete") || "Sil"}
-                                </Button>
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-
-                      <div>
-                        <div className="flex gap-2 pt-2 items-center">
-                          <Button type="button" variant="outline" onClick={() => addDraftOption(q.tempId)}>
+                        <div className="flex gap-2">
+                          <Button type="button" variant="outline" size="sm" onClick={() => addDraftQuestion(idx + 1)} disabled={busy} title="Bu sualdan sonra əlavə et">
                             <Plus className="h-4 w-4 mr-2" />
-                            {t("exams.ui.add_option") || "Variant əlavə et"}
+                            Əlavə et
                           </Button>
 
-                          <div className="text-xs text-muted-foreground">
-                            {t("exams.ui.note_min_2_unique") || "Minimum 2 fərqli variant saxla."}
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => {
+                              const ok = window.confirm("Bu sualı silmək istəyirsən?")
+                              if (ok) removeDraftQuestionCascade(q.tempId)
+                            }}
+                            disabled={busy}
+                            title="Sualı sil"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Sil
+                          </Button>
+                        </div>
+                      </CardHeader>
+
+                      <CardContent className="space-y-4">
+                        {Array.isArray(q.clipUrls) && q.clipUrls.length > 0 && (
+                          <div className="space-y-2">
+                            <Label>{t("exams.ui.figures") || "Qrafik / Cədvəl"}</Label>
+                            <div className="grid gap-3 md:grid-cols-2">
+                              {q.clipUrls.map((u: string, i: number) => (
+                                <img key={i} src={u} alt={`q-figure-${i}`} className="w-full rounded-lg border bg-white" />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="space-y-2">
+                          <Label>{t("exams.ui.question_text") || "Sual"}</Label>
+                          <textarea
+                            className="w-full min-h-[90px] rounded-md border bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-primary"
+                            value={q.text || ""}
+                            onChange={(e) => updateDraftQuestion(q.tempId, { text: e.target.value })}
+                            placeholder={t("exams.ui.question_placeholder") || "Sual mətnini yaz..."}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>{t("exams.ui.options") || "Variantlar"}</Label>
+
+                          {(!Array.isArray(q.options) || q.options.length === 0) && (
+                            <div className="text-sm text-muted-foreground">
+                              {t("exams.ui.no_options_found") || "Bu sualda variantlar avtomatik tapılmadı (əl ilə əlavə edə bilərsən)."}
+                            </div>
+                          )}
+
+                          <div className="space-y-2">
+                            {(q.options || []).map((opt: any, oi: number) => {
+                              const checked = selectedCorrect[q.tempId] === opt.tempOptionId
+                              return (
+                                <div key={opt.tempOptionId} className="flex flex-col gap-2 rounded-lg border p-3">
+                                  <div className="flex items-start gap-2">
+                                    <input
+                                      type="radio"
+                                      name={q.tempId}
+                                      checked={checked}
+                                      onChange={() => setSelectedCorrect((prev) => ({ ...prev, [q.tempId]: opt.tempOptionId }))}
+                                      className="mt-2"
+                                      title={t("exams.ui.correct_answer") || "Düzgün cavab"}
+                                    />
+
+                                    <div className="flex-1 space-y-2">
+                                      <Input
+                                        value={opt.text || ""}
+                                        onChange={(e) => updateDraftOption(q.tempId, opt.tempOptionId, e.target.value)}
+                                        placeholder={`${String.fromCharCode(65 + oi)}) ${t("exams.ui.option_n", { n: oi + 1 }) || "Variant"}`}
+                                      />
+
+                                      {Array.isArray(opt.clipUrls) && opt.clipUrls.length > 0 && (
+                                        <div className="grid gap-2 md:grid-cols-2">
+                                          {opt.clipUrls.map((u: string, i: number) => (
+                                            <img key={i} src={u} alt={`opt-figure-${oi}-${i}`} className="w-full rounded-lg border bg-white" />
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      onClick={() => removeDraftOption(q.tempId, opt.tempOptionId)}
+                                      disabled={(q.options || []).length <= 2}
+                                      title={t("exams.ui.remove_last_option") || "Sil"}
+                                    >
+                                      {t("common.delete") || "Sil"}
+                                    </Button>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+
+                          <div>
+                            <div className="flex gap-2 pt-2 items-center">
+                              <Button type="button" variant="outline" onClick={() => addDraftOption(q.tempId)}>
+                                <Plus className="h-4 w-4 mr-2" />
+                                {t("exams.ui.add_option") || "Variant əlavə et"}
+                              </Button>
+
+                              <div className="text-xs text-muted-foreground">{t("exams.ui.note_min_2_unique") || "Minimum 2 fərqli variant saxla."}</div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                      </CardContent>
+                    </Card>
+                  </div>
+                )
+              })}
             </div>
           )}
 
-          {/* ✅ BULK PICK */}
+          {/* ✅ BULK PICK + clickable numbers */}
           <div className="mt-4 border-t pt-4 space-y-2">
             <Label>{t("exams.ui.bulk_pick_label") || "Toplu düzgün cavab seçimi (məs: 1-a, 2-b, 3-c)"}</Label>
             <div className="flex gap-2">
-              <Input
-                value={bulkPickText}
-                onChange={(e) => setBulkPickText(e.target.value)}
-                placeholder={t("exams.ui.bulk_pick_placeholder") || "1-a, 2-b, 3-c"}
-              />
+              <Input value={bulkPickText} onChange={(e) => setBulkPickText(e.target.value)} placeholder={t("exams.ui.bulk_pick_placeholder") || "1-a, 2-b, 3-c"} />
               <Button type="button" variant="outline" onClick={applyBulkPicks} disabled={busy || total === 0}>
                 {t("exams.ui.apply") || "Apply"}
               </Button>
             </div>
-            <div className="text-xs text-muted-foreground">
-              {t("exams.ui.bulk_pick_help") || "Dəstək: 1-a, 2-b, 3-c | 1=a | 1:a | 1 a"}
-            </div>
+            <div className="text-xs text-muted-foreground">{t("exams.ui.bulk_pick_help") || "Dəstək: 1-a, 2-b, 3-c | 1=a | 1:a | 1 a"}</div>
 
             {total > 0 && missing5VariantNumbers.length > 0 && (
               <div className="text-sm text-destructive">
-                5 variantı olmayan suallar: {missing5VariantNumbers.join(", ")}
+                5 variantı olmayan suallar:
+                <span className="flex flex-wrap gap-2 mt-1">
+                  {missing5VariantNumbers.map((no) => (
+                    <button
+                      key={no}
+                      type="button"
+                      className="underline underline-offset-2 hover:opacity-80"
+                      onClick={() => scrollToQuestionNo(no)}
+                      title={`Sual ${no}-a get`}
+                    >
+                      {no}
+                    </button>
+                  ))}
+                </span>
               </div>
             )}
           </div>
@@ -930,18 +984,17 @@ export function ExamsTab() {
             <div className="text-sm text-muted-foreground">
               {total > 0 && (
                 <>
-                  {t("exams.ui.selected_count", { selected: draftAnsweredCount, total }) ||
-                    `Seçilən: ${draftAnsweredCount} / ${total}`}
+                  {t("exams.ui.selected_count", { selected: draftAnsweredCount, total }) || `Seçilən: ${draftAnsweredCount} / ${total}`}
                 </>
               )}
             </div>
 
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setDraftModalOpen(false)} disabled={busy}>
+              <Button variant="outline" onClick={() => setDraftModalOpen(false)} disabled={busy} type="button">
                 {t("common.close") || "Bağla"}
               </Button>
 
-              <Button onClick={handleCommit} disabled={busy || !canCommit}>
+              <Button onClick={handleCommit} disabled={busy || !canCommit} type="button">
                 <CheckCircle2 className="h-4 w-4 mr-2" />
                 {busy ? (t("exams.ui.sending") || "Göndərilir...") : (t("exams.ui.save_selected") || "Seçilənləri yadda saxla")}
               </Button>
@@ -981,17 +1034,17 @@ export function ExamsTab() {
                   </div>
 
                   <div className="flex gap-2 flex-wrap justify-end">
-                    <Button variant="outline" onClick={() => openEditExam(exam)} disabled={busy || qBusy}>
+                    <Button variant="outline" onClick={() => openEditExam(exam)} disabled={busy || qBusy} type="button">
                       <Pencil className="h-4 w-4 mr-2" />
                       {t("exams.ui.edit_exam")}
                     </Button>
 
-                    <Button variant="outline" onClick={() => openManageQuestions(exam.id)} disabled={busy || qBusy}>
+                    <Button variant="outline" onClick={() => openManageQuestions(exam.id)} disabled={busy || qBusy} type="button">
                       <Pencil className="h-4 w-4 mr-2" />
                       {t("exams.ui.manage_questions")}
                     </Button>
 
-                    <Button variant="destructive" onClick={() => handleDeleteExam(exam.id)} disabled={busy || qBusy}>
+                    <Button variant="destructive" onClick={() => handleDeleteExam(exam.id)} disabled={busy || qBusy} type="button">
                       <Trash2 className="h-4 w-4 mr-2" />
                       {t("common.delete")}
                     </Button>
@@ -1028,11 +1081,11 @@ export function ExamsTab() {
           </div>
 
           <DialogFooter className="flex gap-2">
-            <Button variant="outline" onClick={() => setEditExamOpen(false)} disabled={busy}>
+            <Button variant="outline" onClick={() => setEditExamOpen(false)} disabled={busy} type="button">
               {t("common.close")}
             </Button>
 
-            <Button onClick={handleSaveExamEdit} disabled={busy}>
+            <Button onClick={handleSaveExamEdit} disabled={busy} type="button">
               {busy ? t("exams.ui.saving") : t("common.save")}
             </Button>
           </DialogFooter>
@@ -1047,7 +1100,7 @@ export function ExamsTab() {
           </DialogHeader>
 
           <div className="flex items-center justify-between gap-2 pb-2">
-            <Button variant="outline" onClick={() => setAddModalOpen(true)} disabled={qBusy || !manageBankId}>
+            <Button variant="outline" onClick={() => setAddModalOpen(true)} disabled={qBusy || !manageBankId} type="button">
               <Plus className="h-4 w-4 mr-2" />
               {t("exams.ui.add_question")}
             </Button>
@@ -1068,9 +1121,7 @@ export function ExamsTab() {
                       {idx + 1}.{" "}
                       <Input
                         value={q.text}
-                        onChange={(e) =>
-                          setBankQuestions((prev) => prev.map((x) => (x.id === q.id ? { ...x, text: e.target.value } : x)))
-                        }
+                        onChange={(e) => setBankQuestions((prev) => prev.map((x) => (x.id === q.id ? { ...x, text: e.target.value } : x)))}
                       />
                     </CardTitle>
                     <CardDescription className="text-sm">{t("exams.ui.select_correct")}</CardDescription>
@@ -1084,9 +1135,7 @@ export function ExamsTab() {
                           <input
                             type="radio"
                             checked={checked}
-                            onChange={() => {
-                              setBankQuestions((prev) => prev.map((x) => (x.id === q.id ? { ...x, correctAnswerText: opt.text } : x)))
-                            }}
+                            onChange={() => setBankQuestions((prev) => prev.map((x) => (x.id === q.id ? { ...x, correctAnswerText: opt.text } : x)))}
                           />
 
                           <Input
@@ -1099,11 +1148,7 @@ export function ExamsTab() {
                                   const oldText = opt.text
                                   const newOpts = x.options.map((o) => (o.id === opt.id ? { ...o, text: v } : o))
                                   const wasCorrect = (x.correctAnswerText || "").trim() === (oldText || "").trim()
-                                  return {
-                                    ...x,
-                                    options: newOpts,
-                                    correctAnswerText: wasCorrect ? v : x.correctAnswerText,
-                                  }
+                                  return { ...x, options: newOpts, correctAnswerText: wasCorrect ? v : x.correctAnswerText }
                                 }),
                               )
                             }}
@@ -1113,11 +1158,11 @@ export function ExamsTab() {
                     })}
 
                     <div className="flex gap-2 pt-2">
-                      <Button variant="outline" onClick={() => handleSaveQuestion(q)} disabled={qBusy}>
+                      <Button variant="outline" onClick={() => handleSaveQuestion(q)} disabled={qBusy} type="button">
                         {t("common.save")}
                       </Button>
 
-                      <Button variant="destructive" onClick={() => handleDeleteQuestion(q.id)} disabled={qBusy}>
+                      <Button variant="destructive" onClick={() => handleDeleteQuestion(q.id)} disabled={qBusy} type="button">
                         {t("exams.ui.delete_question")}
                       </Button>
                     </div>
@@ -1128,7 +1173,7 @@ export function ExamsTab() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setManageModalOpen(false)} disabled={qBusy}>
+            <Button variant="outline" onClick={() => setManageModalOpen(false)} disabled={qBusy} type="button">
               {t("common.close")}
             </Button>
           </DialogFooter>
@@ -1154,14 +1199,7 @@ export function ExamsTab() {
                 {newOptions.map((opt, i) => (
                   <div key={i} className="flex items-center gap-2">
                     <input type="radio" checked={newCorrectIndex === i} onChange={() => setNewCorrectIndex(i)} title={t("exams.ui.correct_answer")} />
-                    <Input
-                      value={opt}
-                      onChange={(e) => {
-                        const v = e.target.value
-                        setNewOptions((prev) => prev.map((x, idx) => (idx === i ? v : x)))
-                      }}
-                      placeholder={t("exams.ui.option_n", { n: i + 1 })}
-                    />
+                    <Input value={opt} onChange={(e) => setNewOptions((prev) => prev.map((x, idx) => (idx === i ? e.target.value : x)))} placeholder={t("exams.ui.option_n", { n: i + 1 })} />
                   </div>
                 ))}
               </div>
@@ -1194,11 +1232,11 @@ export function ExamsTab() {
           </div>
 
           <DialogFooter className="flex gap-2">
-            <Button variant="outline" onClick={resetAddState} disabled={qBusy}>
+            <Button variant="outline" onClick={resetAddState} disabled={qBusy} type="button">
               {t("common.cancel")}
             </Button>
 
-            <Button onClick={handleAddQuestion} disabled={qBusy || !canAddQuestion}>
+            <Button onClick={handleAddQuestion} disabled={qBusy || !canAddQuestion} type="button">
               {qBusy ? t("exams.ui.adding") : t("exams.ui.add")}
             </Button>
           </DialogFooter>
