@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useLocale } from "@/contexts/locale-context"
 import { useTranslation } from "@/lib/i18n"
 import { api, type ExamQuestion, type AttemptAnswer, type AttemptSummary } from "@/lib/api"
@@ -9,10 +9,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { CheckCircle2, ChevronLeft, ChevronRight, Flag, Loader2, XCircle } from "lucide-react"
+import { CheckCircle2, ChevronLeft, ChevronRight, Flag, Loader2, XCircle, Clock } from "lucide-react"
 import { useRouter } from "next/navigation"
 
-export default function ExamTokenRunner({ attemptId, userId }: { attemptId: string; userId: number }) {
+const EXAM_DURATION_SEC = 60 * 60
+
+function formatTime(totalSec: number) {
+  const sec = Math.max(0, totalSec)
+  const mm = Math.floor(sec / 60)
+  const ss = sec % 60
+  return `${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`
+}
+
+export default function ExamTokenRunner({ attemptId, userId, onFinished, }: { attemptId: string; userId: number; onFinished?: () => void }) {
   const { locale } = useLocale()
   const { t } = useTranslation(locale)
   const router = useRouter()
@@ -30,6 +39,72 @@ export default function ExamTokenRunner({ attemptId, userId }: { attemptId: stri
   const [reviewAnswers, setReviewAnswers] = useState<Record<string, AttemptAnswer>>({})
   const [reviewMode, setReviewMode] = useState(false)
 
+  const [remainingSec, setRemainingSec] = useState<number>(EXAM_DURATION_SEC)
+  const intervalRef = useRef<number | null>(null)
+  const autoFinishedRef = useRef(false)
+
+  const timerKey = useMemo(() => (attemptId ? `exam_timer_started_at:${attemptId}` : ""), [attemptId])
+
+  function stopTimer() {
+    if (intervalRef.current) {
+      window.clearInterval(intervalRef.current)
+      intervalRef.current = null
+    }
+  }
+
+  function startOrResumeTimer() {
+    if (!attemptId) return
+    if (summary?.status === "FINISHED") return
+
+    let startedAt = 0
+    try {
+      const raw = localStorage.getItem(timerKey)
+      startedAt = raw ? Number(raw) : 0
+    } catch { }
+
+    if (!startedAt || Number.isNaN(startedAt)) {
+      startedAt = Date.now()
+      try {
+        localStorage.setItem(timerKey, String(startedAt))
+      } catch { }
+    }
+
+    const tick = () => {
+      const elapsed = Math.floor((Date.now() - startedAt) / 1000)
+      const left = EXAM_DURATION_SEC - elapsed
+      setRemainingSec(left)
+
+      if (left <= 0 && !autoFinishedRef.current) {
+        autoFinishedRef.current = true
+        stopTimer()
+        void finishExam()
+      }
+    }
+
+    tick()
+    stopTimer()
+    intervalRef.current = window.setInterval(tick, 1000)
+  }
+
+  useEffect(() => {
+    if (!attemptId) return
+    if (loading) return
+    if (!questions.length) return
+    if (summary?.status === "FINISHED") return
+    startOrResumeTimer()
+
+    return () => stopTimer()
+  }, [attemptId, loading, questions.length, summary?.status])
+
+  useEffect(() => {
+    if (summary?.status === "FINISHED") {
+      stopTimer()
+      try {
+        if (timerKey) localStorage.removeItem(timerKey)
+      } catch { }
+    }
+  }, [summary?.status, timerKey])
+
   const total = questions.length
   const answeredCount = Object.keys(selectedByQ).length
   const progress = total ? Math.round((answeredCount / total) * 100) : 0
@@ -39,19 +114,20 @@ export default function ExamTokenRunner({ attemptId, userId }: { attemptId: stri
   const isLast = activeIndex === total - 1
 
   const isFinished = summary?.status === "FINISHED"
-
   useEffect(() => {
     if (!attemptId) return
 
-    ;(async () => {
-      try {
-        const summary = await api.getAttemptSummary(attemptId)
-        if (summary?.status === "FINISHED") {
-          router.replace(`/results/${attemptId}`)
-        }
-      } catch {}
-    })()
-  }, [attemptId, router])
+      ; (async () => {
+        try {
+          const summary = await api.getAttemptSummary(attemptId)
+          if (summary?.status === "FINISHED") {
+            onFinished?.()
+            router.replace(`/results/${attemptId}`)
+          }
+        } catch { }
+      })()
+  }, [attemptId, router, onFinished])
+
 
   useEffect(() => {
     if (!attemptId) return
@@ -67,6 +143,9 @@ export default function ExamTokenRunner({ attemptId, userId }: { attemptId: stri
       setSummary(null)
       setReviewMode(false)
       setReviewAnswers({})
+      autoFinishedRef.current = false
+
+      setRemainingSec(EXAM_DURATION_SEC)
 
       const res = await api.getAttemptQuestions(attemptId, userId)
       const list = Array.isArray(res?.questions) ? res.questions : []
@@ -107,6 +186,7 @@ export default function ExamTokenRunner({ attemptId, userId }: { attemptId: stri
       return
     }
     if (summary?.status === "FINISHED") return
+    if (finishing) return
 
     try {
       setFinishing(true)
@@ -115,7 +195,7 @@ export default function ExamTokenRunner({ attemptId, userId }: { attemptId: stri
 
       const s = await api.getAttemptSummary(attemptId)
       setSummary(s)
-
+      onFinished?.()
       const res = await api.getAttemptAnswers(attemptId)
       const list: AttemptAnswer[] = Array.isArray(res?.answers) ? res.answers : []
 
@@ -251,6 +331,33 @@ export default function ExamTokenRunner({ attemptId, userId }: { attemptId: stri
               </>
             )}
           </div>
+
+          {/* TIMER UI (Sual siyahısının altında) */}
+          {!isFinished && (
+            <div className="mt-5 rounded-2xl border p-4 bg-white/60 dark:bg-gray-950/40">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Clock className="h-4 w-4" />
+                  <span>{t("examRunner.ui.time_left") ?? "Qalan vaxt"}</span>
+                </div>
+
+                <div
+                  className={cn(
+                    "text-sm font-semibold tabular-nums",
+                    remainingSec <= 60 && "text-red-600",
+                  )}
+                >
+                  {formatTime(remainingSec)}
+                </div>
+              </div>
+
+              {remainingSec <= 60 && (
+                <div className="mt-2 text-[11px] text-red-600">
+                  {t("examRunner.ui.last_minute_warning") ?? "Son 1 dəqiqə!"}
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -344,7 +451,8 @@ export default function ExamTokenRunner({ attemptId, userId }: { attemptId: stri
                 const isCorrectOption = isFinished && correctId === o.id
                 const isWrongSelected = isFinished && selected && !!correctId && correctId !== o.id
 
-                const disabled = finishing || summary?.status === "FINISHED"
+                const timeUp = remainingSec <= 0
+                const disabled = finishing || summary?.status === "FINISHED" || timeUp
 
                 return (
                   <button
@@ -355,7 +463,7 @@ export default function ExamTokenRunner({ attemptId, userId }: { attemptId: stri
                     className={cn(
                       "w-full text-left rounded-2xl border p-4 transition-all",
                       !isFinished &&
-                        "hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 hover:bg-gradient-to-r hover:from-violet-50 hover:to-blue-50 dark:hover:from-violet-950/20 dark:hover:to-blue-950/20",
+                      "hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 hover:bg-gradient-to-r hover:from-violet-50 hover:to-blue-50 dark:hover:from-violet-950/20 dark:hover:to-blue-950/20",
                       selected && !isFinished && "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/20",
                       isCorrectOption && "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/20",
                       isWrongSelected && "border-red-600 bg-red-50 dark:bg-red-950/20",

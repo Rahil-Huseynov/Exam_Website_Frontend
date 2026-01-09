@@ -1,6 +1,6 @@
 "use client"
 
-import { use, useEffect, useMemo, useState } from "react"
+import { use, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { api } from "@/lib/api"
 
@@ -28,19 +28,107 @@ export default function ExamTokenPage({ params }: { params: AnyParams }) {
   const [attemptId, setAttemptId] = useState("")
   const [bankId, setBankId] = useState("")
   const [loading, setLoading] = useState(true)
+  const [guardEnabled, setGuardEnabled] = useState(false)
+
+  const allowingRef = useRef(false)
+
+  const confirmLeave = () => {
+    if (allowingRef.current) return true
+    return window.confirm(t("exam.leave_confirm"))
+  }
+  useEffect(() => {
+    if (attemptId) setGuardEnabled(true)
+  }, [attemptId])
+
+  useEffect(() => {
+    if (!guardEnabled) return
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = ""
+      return ""
+    }
+
+    window.addEventListener("beforeunload", handleBeforeUnload)
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload)
+  }, [guardEnabled])
+
+  useEffect(() => {
+    if (!guardEnabled) return
+
+    history.pushState({ guard: true }, "", window.location.href)
+
+    const handlePopState = () => {
+      const ok = confirmLeave()
+      if (ok) {
+        allowingRef.current = true
+        setGuardEnabled(false)
+        history.back()
+      } else {
+        history.pushState({ guard: true }, "", window.location.href)
+      }
+    }
+
+    window.addEventListener("popstate", handlePopState)
+    return () => window.removeEventListener("popstate", handlePopState)
+  }, [guardEnabled, t])
+
+  useEffect(() => {
+    if (!guardEnabled) return
+
+    const onClickCapture = (e: MouseEvent) => {
+      if (allowingRef.current) return
+
+      if (e.button !== 0) return
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+
+      const target = e.target as HTMLElement | null
+      if (!target) return
+
+      const a = target.closest("a") as HTMLAnchorElement | null
+      if (!a) return
+
+      const href = a.getAttribute("href") || ""
+
+      if (!href || href.startsWith("#")) return
+      if (a.target === "_blank") return
+      if (href.startsWith("http")) return
+
+      const ok = confirmLeave()
+      if (!ok) {
+        e.preventDefault()
+        e.stopPropagation()
+      } else {
+        allowingRef.current = true
+        setGuardEnabled(false)
+      }
+    }
+
+    document.addEventListener("click", onClickCapture, true)
+    return () => document.removeEventListener("click", onClickCapture, true)
+  }, [guardEnabled, t])
+
+  const guardedReplace = (url: string) => {
+    if (!guardEnabled) return router.replace(url)
+    const ok = confirmLeave()
+    if (!ok) return
+    allowingRef.current = true
+    setGuardEnabled(false)
+    router.replace(url)
+  }
 
   useEffect(() => {
     if (authLoading) return
 
     if (!user?.id) {
       toast.error(t("examTokenNotLoggedIn"))
-      router.replace("/login")
+      guardedReplace("/login")
       return
     }
 
     if (!token) {
       toast.error(t("examTokenMissing"))
-      router.replace("/dashboard")
+      guardedReplace("/dashboard")
       return
     }
 
@@ -53,7 +141,7 @@ export default function ExamTokenPage({ params }: { params: AnyParams }) {
 
         if (!storedBankId) {
           toast.error(t("examTokenBankMissingSession"))
-          router.replace("/dashboard")
+          guardedReplace("/dashboard")
           return
         }
 
@@ -74,7 +162,7 @@ export default function ExamTokenPage({ params }: { params: AnyParams }) {
         const newAttemptId = String((created as any).attemptId || "")
         if (!newAttemptId) {
           toast.error(t("examTokenAttemptIdMissing"))
-          router.replace("/dashboard")
+          guardedReplace("/dashboard")
           return
         }
 
@@ -85,12 +173,12 @@ export default function ExamTokenPage({ params }: { params: AnyParams }) {
         }
       } catch (e: any) {
         toast.error(e?.message || t("examTokenStartFail"))
-        router.replace("/dashboard")
+        guardedReplace("/dashboard")
       } finally {
         setLoading(false)
       }
     })()
-  }, [authLoading, user?.id, token, router, t])
+  }, [authLoading, user?.id, token])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-50 via-blue-50 to-cyan-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
@@ -109,7 +197,14 @@ export default function ExamTokenPage({ params }: { params: AnyParams }) {
             </CardContent>
           </Card>
         ) : (
-          <ExamTokenRunner attemptId={attemptId} userId={user!.id} />
+          <ExamTokenRunner
+            attemptId={attemptId}
+            userId={user!.id}
+            onFinished={() => {
+              allowingRef.current = true
+              setGuardEnabled(false)
+            }}
+          />
         )}
       </main>
     </div>
