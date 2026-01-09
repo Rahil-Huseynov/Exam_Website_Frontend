@@ -21,7 +21,8 @@ export default function ExamTokenPage({ params }: { params: AnyParams }) {
   const token = useMemo(() => String(p.token || ""), [p])
 
   const router = useRouter()
-  const { user, loading: authLoading } = useAuth()
+  const refreshedOnceRef = useRef(false)
+  const { user, loading: authLoading, refreshUser } = useAuth()
   const { locale } = useLocale()
   const { t } = useTranslation(locale)
 
@@ -116,7 +117,6 @@ export default function ExamTokenPage({ params }: { params: AnyParams }) {
     setGuardEnabled(false)
     router.replace(url)
   }
-
   useEffect(() => {
     if (authLoading) return
 
@@ -132,12 +132,14 @@ export default function ExamTokenPage({ params }: { params: AnyParams }) {
       return
     }
 
-    ;(async () => {
+    ; (async () => {
       try {
         setLoading(true)
 
         const storedBankId =
-          typeof window !== "undefined" ? window.sessionStorage.getItem(`exam_token_bank_${token}`) : null
+          typeof window !== "undefined"
+            ? window.sessionStorage.getItem(`exam_token_bank_${token}`)
+            : null
 
         if (!storedBankId) {
           toast.error(t("examTokenBankMissingSession"))
@@ -150,10 +152,18 @@ export default function ExamTokenPage({ params }: { params: AnyParams }) {
 
         const attemptKey = `exam_attempt_${token}`
         const existingAttemptId =
-          typeof window !== "undefined" ? window.sessionStorage.getItem(attemptKey) : null
+          typeof window !== "undefined"
+            ? window.sessionStorage.getItem(attemptKey)
+            : null
 
         if (existingAttemptId) {
           setAttemptId(existingAttemptId)
+
+          if (!refreshedOnceRef.current) {
+            refreshedOnceRef.current = true
+            void refreshUser()
+          }
+
           return
         }
 
@@ -171,6 +181,11 @@ export default function ExamTokenPage({ params }: { params: AnyParams }) {
         if (typeof window !== "undefined") {
           window.sessionStorage.setItem(attemptKey, newAttemptId)
         }
+
+        if (!refreshedOnceRef.current) {
+          refreshedOnceRef.current = true
+          void refreshUser()
+        }
       } catch (e: any) {
         toast.error(e?.message || t("examTokenStartFail"))
         guardedReplace("/dashboard")
@@ -178,7 +193,7 @@ export default function ExamTokenPage({ params }: { params: AnyParams }) {
         setLoading(false)
       }
     })()
-  }, [authLoading, user?.id, token])
+  }, [authLoading, user?.id, token, refreshUser, t])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-50 via-blue-50 to-cyan-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
