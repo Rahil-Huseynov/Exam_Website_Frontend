@@ -9,14 +9,16 @@ import { BookOpen, TrendingUp, Award, Clock, Users, Shield } from "lucide-react"
 
 import { useLocale } from "@/contexts/locale-context"
 import { useTranslation } from "@/lib/i18n"
+import { useAuth } from "@/contexts/auth-context"
+import { Navbar } from "@/components/navbar"
 
 export default function HomePage() {
   const { locale } = useLocale()
   const { t } = useTranslation(locale)
-
+  const { user } = useAuth()
   return (
     <div className="min-h-screen flex flex-col">
-      <PublicNavbar />
+      {user ? <Navbar /> : <PublicNavbar />}
 
       <section className="relative overflow-hidden gradient-bg">
         <div className="absolute inset-0 bg-grid-slate-900/[0.04] bg-[size:40px_40px]" />

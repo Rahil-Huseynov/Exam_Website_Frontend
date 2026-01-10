@@ -6,11 +6,13 @@ import { PublicNavbar } from "@/components/public-navbar"
 import { Footer } from "@/components/footer"
 import { Card } from "@/components/ui/card"
 import { HelpCircle } from "lucide-react"
+import { useAuth } from "@/contexts/auth-context"
+import { Navbar } from "@/components/navbar"
 
 export default function FAQPage() {
   const { locale } = useLocale()
   const { t } = useTranslation(locale)
-
+  const { user } = useAuth()
   const faqs = [
     { question: t("faqQ1"), answer: t("faqA1") },
     { question: t("faqQ2"), answer: t("faqA2") },
@@ -20,7 +22,8 @@ export default function FAQPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/5 to-accent/5 flex flex-col">
-      <PublicNavbar />
+
+      {user ? <Navbar /> : <PublicNavbar />}
 
       <main className="container mx-auto px-4 py-16 flex-grow">
         <div className="max-w-4xl mx-auto space-y-8">
