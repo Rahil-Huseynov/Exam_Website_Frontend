@@ -40,7 +40,12 @@ type Step = 1 | 2 | 3
 function getDisplayName(user: any, locale: string) {
   if (!user) return locale === "ru" ? "Пользователь" : locale === "en" ? "User" : "İstifadəçi"
   const full = [user.firstName, user.lastName].filter(Boolean).join(" ").trim()
-  return full || user.name || user.email || (locale === "ru" ? "Пользователь" : locale === "en" ? "User" : "İstifadəçi")
+  return (
+    full ||
+    user.name ||
+    user.email ||
+    (locale === "ru" ? "Пользователь" : locale === "en" ? "User" : "İstifadəçi")
+  )
 }
 
 function tName(obj: any, locale: string) {
@@ -68,7 +73,6 @@ export default function DashboardPage() {
   const [attempts, setAttempts] = useState<Attempt[]>([])
   const [loading, setLoading] = useState(true)
   const lastErrorRef = useRef<string>("")
-
   const didLoadRef = useRef(false)
 
   const [step, setStep] = useState<Step>(1)
@@ -91,9 +95,27 @@ export default function DashboardPage() {
   const hiddenLeft = "opacity-0 -translate-x-6 pointer-events-none absolute inset-0"
   const hiddenRight = "opacity-0 translate-x-6 pointer-events-none absolute inset-0"
 
-  // -----------------------------
-  // ✅ Wizard history helpers
-  // -----------------------------
+  const wizardRef = useRef<HTMLDivElement | null>(null)
+  const didAutoScrollRef = useRef(false)
+
+  function scrollToWizard() {
+    if (typeof window === "undefined") return
+    const el = wizardRef.current
+    if (!el) return
+
+    requestAnimationFrame(() => {
+      el.scrollIntoView({ behavior: "smooth", block: "start" })
+    })
+  }
+
+  useEffect(() => {
+    if (!didAutoScrollRef.current) {
+      didAutoScrollRef.current = true
+      return
+    }
+    scrollToWizard()
+  }, [step])
+
   function pushWizardState(next: Step, extra?: Partial<{ uni: University | null; year: number | null }>) {
     if (typeof window === "undefined") return
     const state = {
@@ -116,11 +138,9 @@ export default function DashboardPage() {
     window.history.replaceState(state, "")
   }
 
-  // ✅ Init wizard state + handle browser Back (popstate)
   useEffect(() => {
     if (typeof window === "undefined") return
 
-    // page ilk açılarkən step=1 state yaz (sadəcə 1 dəfə)
     if (!window.history.state?.__wizard) {
       replaceWizardState(1, { uni: null, year: null })
     }
@@ -128,8 +148,6 @@ export default function DashboardPage() {
     const onPopState = (e: PopStateEvent) => {
       const st: any = e.state
 
-      // Əgər bizim wizard state deyilsə, yenə də step-lərə görə geri alaq
-      // (bu, back basanda səhifədən çıxmağı minimuma endirir)
       if (!st?.__wizard) {
         if (step === 3) {
           setStep(2)
@@ -149,7 +167,6 @@ export default function DashboardPage() {
           replaceWizardState(1, { uni: null, year: null })
           return
         }
-        // step=1-dirsə normal back işləsin
         return
       }
 
@@ -161,12 +178,10 @@ export default function DashboardPage() {
       setSelectedUni(uni)
       setSelectedYear(year)
 
-      // back ilə 3->2 keçəndə exams təmizlə
       if (nextStep < 3) {
         setExams([])
         setQ("")
       }
-      // back ilə 2->1 keçəndə years təmizlə
       if (nextStep < 2) {
         setYears([])
         setExams([])
@@ -177,7 +192,6 @@ export default function DashboardPage() {
 
     window.addEventListener("popstate", onPopState)
     return () => window.removeEventListener("popstate", onPopState)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, selectedUni, selectedYear])
 
   useEffect(() => {
@@ -213,10 +227,8 @@ export default function DashboardPage() {
     ;(async () => {
       try {
         setLoading(true)
-
         const data = await api.getUserAttempts(user.id)
         setAttempts(Array.isArray((data as any)?.attempts) ? (data as any).attempts : [])
-
         lastErrorRef.current = ""
       } catch (err: any) {
         const msg = err instanceof Error ? err.message : t("errDataLoad")
@@ -228,7 +240,7 @@ export default function DashboardPage() {
         setLoading(false)
       }
     })()
-  }, [authLoading, user, router])
+  }, [authLoading, user, router, t])
 
   async function onSelectUniversity(u: University) {
     setSelectedUni(u)
@@ -238,7 +250,6 @@ export default function DashboardPage() {
     setQ("")
     setStep(2)
 
-    // ✅ history-ə step 2 yaz
     pushWizardState(2, { uni: u, year: null })
 
     try {
@@ -260,7 +271,6 @@ export default function DashboardPage() {
     setQ("")
     setStep(3)
 
-    // ✅ history-ə step 3 yaz
     pushWizardState(3, { year: y })
 
     try {
@@ -351,13 +361,11 @@ export default function DashboardPage() {
   }
 
   function goBack() {
-    // ✅ Button “Geri” də browser history-yə uyğun işləsin
     if (typeof window !== "undefined") {
       window.history.back()
       return
     }
 
-    // fallback (SSR/edge halları üçün)
     if (step === 3) {
       setStep(2)
       setExams([])
@@ -471,221 +479,220 @@ export default function DashboardPage() {
             </Card>
           </div>
 
-          <Card className="border border-border/40 bg-card/50 backdrop-blur-sm rounded-xl overflow-hidden">
-            <CardHeader className="pb-6 border-b border-border/40">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div className="space-y-2">
-                  <CardTitle className="text-2xl flex items-center gap-2">
-                    <GraduationCap className="h-5 w-5 text-primary" />
-                    {t("dashboardWizardTitle")}
-                  </CardTitle>
-                  <CardDescription className="text-base">{t("dashboardWizardDesc")}</CardDescription>
+          <div ref={wizardRef} className="scroll-mt-24">
+            <Card className="border border-border/40 bg-card/50 backdrop-blur-sm rounded-xl overflow-hidden">
+              <CardHeader className="pb-6 border-b border-border/40">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div className="space-y-2">
+                    <CardTitle className="text-2xl flex items-center gap-2">
+                      <GraduationCap className="h-5 w-5 text-primary" />
+                      {t("dashboardWizardTitle")}
+                    </CardTitle>
+                    <CardDescription className="text-base">{t("dashboardWizardDesc")}</CardDescription>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="rounded-lg px-3 py-1">
+                      {t("step")} {step}/3
+                    </Badge>
+
+                    {step > 1 && (
+                      <Button variant="outline" className="rounded-lg h-9 px-3 bg-transparent" onClick={goBack} size="sm">
+                        <ArrowLeft className="h-4 w-4 mr-1.5" />
+                        {t("goBack")}
+                      </Button>
+                    )}
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="rounded-lg px-3 py-1">
-                    {t("step")} {step}/3
-                  </Badge>
+                <div className="mt-5 flex flex-wrap gap-2 text-xs">
+                  <span className="px-3 py-1.5 rounded-lg border border-border/40 bg-background/60 flex items-center gap-1.5">
+                    <CheckCircle2 className={`h-4 w-4 ${step >= 1 ? "text-primary" : "text-muted-foreground/30"}`} />
+                    {t("ExamType")}
+                  </span>
+                  <span className="px-3 py-1.5 rounded-lg border border-border/40 bg-background/60 flex items-center gap-1.5">
+                    <CheckCircle2 className={`h-4 w-4 ${step >= 2 ? "text-primary" : "text-muted-foreground/30"}`} />
+                    {t("stepYear")}
+                  </span>
+                  <span className="px-3 py-1.5 rounded-lg border border-border/40 bg-background/60 flex items-center gap-1.5">
+                    <CheckCircle2 className={`h-4 w-4 ${step >= 3 ? "text-primary" : "text-muted-foreground/30"}`} />
+                    {t("stepExams")}
+                  </span>
 
-                  {step > 1 && (
-                    <Button variant="outline" className="rounded-lg h-9 px-3 bg-transparent" onClick={goBack} size="sm">
-                      <ArrowLeft className="h-4 w-4 mr-1.5" />
-                      {t("goBack")}
-                    </Button>
+                  {selectedUni && (
+                    <span className="px-3 py-1.5 rounded-lg border border-border/40 bg-background/60 text-muted-foreground">
+                      {t("selectedExamType")}:{" "}
+                      <span className="font-medium text-foreground">{tName(selectedUni, locale)}</span>
+                    </span>
+                  )}
+                  {selectedYear && (
+                    <span className="px-3 py-1.5 rounded-lg border border-border/40 bg-background/60 text-muted-foreground">
+                      {t("selectedYear")}: <span className="font-medium text-foreground">{selectedYear}</span>
+                    </span>
                   )}
                 </div>
-              </div>
+              </CardHeader>
 
-              <div className="mt-5 flex flex-wrap gap-2 text-xs">
-                <span className="px-3 py-1.5 rounded-lg border border-border/40 bg-background/60 flex items-center gap-1.5">
-                  <CheckCircle2 className={`h-4 w-4 ${step >= 1 ? "text-primary" : "text-muted-foreground/30"}`} />
-                  {t("ExamType")}
-                </span>
-                <span className="px-3 py-1.5 rounded-lg border border-border/40 bg-background/60 flex items-center gap-1.5">
-                  <CheckCircle2 className={`h-4 w-4 ${step >= 2 ? "text-primary" : "text-muted-foreground/30"}`} />
-                  {t("stepYear")}
-                </span>
-                <span className="px-3 py-1.5 rounded-lg border border-border/40 bg-background/60 flex items-center gap-1.5">
-                  <CheckCircle2 className={`h-4 w-4 ${step >= 3 ? "text-primary" : "text-muted-foreground/30"}`} />
-                  {t("stepExams")}
-                </span>
+              <CardContent className="relative min-h-[320px] pt-8">
+                {/* STEP 1 */}
+                <div className={[base, step === 1 ? active : hiddenLeft].join(" ")}>
+                  <div className="flex items-center justify-between gap-3 mb-5">
+                    <div className="font-semibold text-lg">{t("chooseExamType")}</div>
 
-                {selectedUni && (
-                  <span className="px-3 py-1.5 rounded-lg border border-border/40 bg-background/60 text-muted-foreground">
-                    {t("selectedExamType")}:{" "}
-                    <span className="font-medium text-foreground">{tName(selectedUni, locale)}</span>
-                  </span>
-                )}
-                {selectedYear && (
-                  <span className="px-3 py-1.5 rounded-lg border border-border/40 bg-background/60 text-muted-foreground">
-                    {t("selectedYear")}: <span className="font-medium text-foreground">{selectedYear}</span>
-                  </span>
-                )}
-              </div>
-            </CardHeader>
+                    {uniLoading && (
+                      <div className="text-sm text-muted-foreground flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
+                        {t("loading")}
+                      </div>
+                    )}
+                  </div>
 
-            <CardContent className="relative min-h-[320px] pt-8">
-              {/* STEP 1 */}
-              <div className={[base, step === 1 ? active : hiddenLeft].join(" ")}>
-                <div className="flex items-center justify-between gap-3 mb-5">
-                  <div className="font-semibold text-lg">{t("chooseExamType")}</div>
+                  {universities.length === 0 && !uniLoading ? (
+                    <div className="text-sm text-muted-foreground py-8 text-center">{t("noUniversities")}</div>
+                  ) : (
+                    <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:sm:grid-cols-3 lg:grid-cols-4">
+                      {universities.map((u) => {
+                        const name = tName(u, locale)
+                        const logoUrl = resolveLogoUrl((u as any)?.logo)
 
-                  {uniLoading && (
-                    <div className="text-sm text-muted-foreground flex items-center gap-2">
+                        return (
+                          <button
+                            key={u.id}
+                            onClick={() => onSelectUniversity(u)}
+                            className={[
+                              "group aspect-square rounded-lg border border-border/40 p-4 text-left bg-card/50",
+                              "hover:border-primary/50 hover:bg-card hover:shadow-md transition-all",
+                              "flex flex-col",
+                            ].join(" ")}
+                          >
+                            <div className="min-w-0">
+                              <div className="font-semibold text-sm leading-snug line-clamp-2">{name}</div>
+                            </div>
+
+                            <div className="mt-3 flex-1 flex items-center justify-center">
+                              <div className="w-full h-80 rounded-md border border-border/40 bg-background/50 overflow-hidden flex items-center justify-center">
+                                {logoUrl ? (
+                                  <img
+                                    src={logoUrl || "/placeholder.svg"}
+                                    alt={name}
+                                    className="w-full h-full object-contain p-2 transition-transform duration-300 group-hover:scale-[1.03]"
+                                  />
+                                ) : (
+                                  <div className="text-xs text-muted-foreground">—</div>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="mt-3 flex items-center justify-between">
+                              <span className="text-xs text-muted-foreground">{t("continue")}</span>
+                              <ArrowRight className="h-3 w-3 opacity-60 group-hover:opacity-100 transition-opacity text-primary" />
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* STEP 2 */}
+                <div className={[base, step === 2 ? active : step < 2 ? hiddenRight : hiddenLeft].join(" ")}>
+                  <div className="flex items-center justify-between gap-3 mb-5">
+                    <div className="font-semibold text-lg flex items-center gap-2">
+                      <CalendarDays className="h-4 w-4 text-primary" />
+                      {t("chooseYear")}
+                    </div>
+                  </div>
+
+                  {yearsLoading ? (
+                    <div className="text-sm text-muted-foreground flex items-center gap-2 py-8">
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
+                      {t("yearsLoading")}
+                    </div>
+                  ) : years.length === 0 ? (
+                    <div className="text-sm text-muted-foreground py-8 text-center">{t("noYears")}</div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="text-sm text-muted-foreground">{t("yearHint")}</div>
+
+                      <div className="flex flex-wrap gap-2">
+                        {years.map((y) => (
+                          <button
+                            key={y}
+                            onClick={() => onSelectYear(y)}
+                            className={[
+                              "px-4 py-2 rounded-lg border border-border/40 text-sm font-medium transition-all",
+                              "bg-card/50 hover:bg-card hover:border-primary/50 hover:shadow-sm",
+                            ].join(" ")}
+                          >
+                            {y}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* STEP 3 */}
+                <div className={[base, step === 3 ? active : hiddenRight].join(" ")}>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+                    <div className="font-semibold text-lg flex items-center gap-2">
+                      <BookOpen className="h-4 w-4 text-primary" />
+                      {t("stepExams")}
+                    </div>
+
+                    <div className="w-full sm:max-w-xs relative">
+                      <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 opacity-60" />
+                      <Input
+                        value={q}
+                        onChange={(e) => setQ(e.target.value)}
+                        placeholder={t("searchExamPlaceholder")}
+                        className="pl-9 rounded-lg bg-card/50 border-border/40"
+                      />
+                    </div>
+                  </div>
+
+                  {examsLoading ? (
+                    <div className="text-sm text-muted-foreground flex items-center gap-2 py-8">
                       <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
                       {t("loading")}
                     </div>
-                  )}
-                </div>
-
-                {universities.length === 0 && !uniLoading ? (
-                  <div className="text-sm text-muted-foreground py-8 text-center">{t("noUniversities")}</div>
-                ) : (
-                  <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:sm:grid-cols-3 lg:grid-cols-4">
-                    {universities.map((u) => {
-                      const name = tName(u, locale)
-                      const logoUrl = resolveLogoUrl((u as any)?.logo)
-
-                      return (
-                        <button
-                          key={u.id}
-                          onClick={() => onSelectUniversity(u)}
-                          className={[
-                            "group aspect-square rounded-lg border border-border/40 p-4 text-left bg-card/50",
-                            "hover:border-primary/50 hover:bg-card hover:shadow-md transition-all",
-                            "flex flex-col",
-                          ].join(" ")}
+                  ) : filteredExams.length === 0 ? (
+                    <div className="text-sm text-muted-foreground py-8 text-center">{t("noExams")}</div>
+                  ) : (
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                      {filteredExams.map((exam: any) => (
+                        <div
+                          key={exam.id}
+                          className="flex items-center justify-between p-4 rounded-lg border border-border/40 bg-card/50 hover:bg-card/80 transition-colors group"
                         >
-                          {/* TOP */}
-                          <div className="min-w-0">
-                            <div className="font-semibold text-sm leading-snug line-clamp-2">{name}</div>
-                          </div>
-
-                          {/* LOGO AREA - fixed height */}
-                          <div className="mt-3 flex-1 flex items-center justify-center">
-                            <div className="w-full h-80 rounded-md border border-border/40 bg-background/50 overflow-hidden flex items-center justify-center">
-                              {logoUrl ? (
-                                <img
-                                  src={logoUrl || "/placeholder.svg"}
-                                  alt={name}
-                                  className="w-full h-full object-contain p-2 transition-transform duration-300 group-hover:scale-[1.03]"
-                                />
-                              ) : (
-                                <div className="text-xs text-muted-foreground">—</div>
-                              )}
+                          <div className="min-w-0 flex-1">
+                            <div className="font-medium text-sm">{exam.title || exam.name}</div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {exam.subject?.name || exam.subject} · {exam.questionCount || 0} {t("questions")}
                             </div>
                           </div>
-
-                          {/* BOTTOM */}
-                          <div className="mt-3 flex items-center justify-between">
-                            <span className="text-xs text-muted-foreground">{t("continue")}</span>
-                            <ArrowRight className="h-3 w-3 opacity-60 group-hover:opacity-100 transition-opacity text-primary" />
+                          <div className="flex items-center gap-3 ml-4">
+                            <div className="text-right">
+                              <div className="font-semibold text-sm">
+                                {fromCents(toCents((exam as any)?.price || 0))} AZN
+                              </div>
+                            </div>
+                            <Button
+                              size="sm"
+                              onClick={() => startExam(exam)}
+                              className="rounded-lg h-8 px-3 group-hover:shadow-md transition-all"
+                            >
+                              {t("start")}
+                            </Button>
                           </div>
-                        </button>
-                      )
-                    })}
-                  </div>
-                )}
-              </div>
-
-              {/* STEP 2 */}
-              <div className={[base, step === 2 ? active : step < 2 ? hiddenRight : hiddenLeft].join(" ")}>
-                <div className="flex items-center justify-between gap-3 mb-5">
-                  <div className="font-semibold text-lg flex items-center gap-2">
-                    <CalendarDays className="h-4 w-4 text-primary" />
-                    {t("chooseYear")}
-                  </div>
-                </div>
-
-                {yearsLoading ? (
-                  <div className="text-sm text-muted-foreground flex items-center gap-2 py-8">
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
-                    {t("yearsLoading")}
-                  </div>
-                ) : years.length === 0 ? (
-                  <div className="text-sm text-muted-foreground py-8 text-center">{t("noYears")}</div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="text-sm text-muted-foreground">{t("yearHint")}</div>
-
-                    <div className="flex flex-wrap gap-2">
-                      {years.map((y) => (
-                        <button
-                          key={y}
-                          onClick={() => onSelectYear(y)}
-                          className={[
-                            "px-4 py-2 rounded-lg border border-border/40 text-sm font-medium transition-all",
-                            "bg-card/50 hover:bg-card hover:border-primary/50 hover:shadow-sm",
-                          ].join(" ")}
-                        >
-                          {y}
-                        </button>
+                        </div>
                       ))}
                     </div>
-                  </div>
-                )}
-              </div>
-
-              {/* STEP 3 */}
-              <div className={[base, step === 3 ? active : hiddenRight].join(" ")}>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
-                  <div className="font-semibold text-lg flex items-center gap-2">
-                    <BookOpen className="h-4 w-4 text-primary" />
-                    {t("stepExams")}
-                  </div>
-
-                  <div className="w-full sm:max-w-xs relative">
-                    <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 opacity-60" />
-                    <Input
-                      value={q}
-                      onChange={(e) => setQ(e.target.value)}
-                      placeholder={t("searchExamPlaceholder")}
-                      className="pl-9 rounded-lg bg-card/50 border-border/40"
-                    />
-                  </div>
+                  )}
                 </div>
-
-                {examsLoading ? (
-                  <div className="text-sm text-muted-foreground flex items-center gap-2 py-8">
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
-                    {t("loading")}
-                  </div>
-                ) : filteredExams.length === 0 ? (
-                  <div className="text-sm text-muted-foreground py-8 text-center">{t("noExams")}</div>
-                ) : (
-                  <div className="space-y-3 max-h-96 overflow-y-auto">
-                    {filteredExams.map((exam: any) => (
-                      <div
-                        key={exam.id}
-                        className="flex items-center justify-between p-4 rounded-lg border border-border/40 bg-card/50 hover:bg-card/80 transition-colors group"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <div className="font-medium text-sm">{exam.title || exam.name}</div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            {exam.subject?.name || exam.subject} · {exam.questionCount || 0} {t("questions")}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3 ml-4">
-                          <div className="text-right">
-                            <div className="font-semibold text-sm">
-                              {fromCents(toCents((exam as any)?.price || 0))} AZN
-                            </div>
-                          </div>
-                          <Button
-                            size="sm"
-                            onClick={() => startExam(exam)}
-                            className="rounded-lg h-8 px-3 group-hover:shadow-md transition-all"
-                          >
-                            {t("start")}
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </main>
 
