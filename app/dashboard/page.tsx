@@ -91,19 +91,108 @@ export default function DashboardPage() {
   const hiddenLeft = "opacity-0 -translate-x-6 pointer-events-none absolute inset-0"
   const hiddenRight = "opacity-0 translate-x-6 pointer-events-none absolute inset-0"
 
+  // -----------------------------
+  // ✅ Wizard history helpers
+  // -----------------------------
+  function pushWizardState(next: Step, extra?: Partial<{ uni: University | null; year: number | null }>) {
+    if (typeof window === "undefined") return
+    const state = {
+      __wizard: true,
+      step: next,
+      uni: extra?.uni ?? selectedUni,
+      year: extra?.year ?? selectedYear,
+    }
+    window.history.pushState(state, "")
+  }
+
+  function replaceWizardState(next: Step, extra?: Partial<{ uni: University | null; year: number | null }>) {
+    if (typeof window === "undefined") return
+    const state = {
+      __wizard: true,
+      step: next,
+      uni: extra?.uni ?? selectedUni,
+      year: extra?.year ?? selectedYear,
+    }
+    window.history.replaceState(state, "")
+  }
+
+  // ✅ Init wizard state + handle browser Back (popstate)
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    // page ilk açılarkən step=1 state yaz (sadəcə 1 dəfə)
+    if (!window.history.state?.__wizard) {
+      replaceWizardState(1, { uni: null, year: null })
+    }
+
+    const onPopState = (e: PopStateEvent) => {
+      const st: any = e.state
+
+      // Əgər bizim wizard state deyilsə, yenə də step-lərə görə geri alaq
+      // (bu, back basanda səhifədən çıxmağı minimuma endirir)
+      if (!st?.__wizard) {
+        if (step === 3) {
+          setStep(2)
+          setSelectedYear(null)
+          setExams([])
+          setQ("")
+          replaceWizardState(2, { year: null })
+          return
+        }
+        if (step === 2) {
+          setStep(1)
+          setSelectedUni(null)
+          setSelectedYear(null)
+          setYears([])
+          setExams([])
+          setQ("")
+          replaceWizardState(1, { uni: null, year: null })
+          return
+        }
+        // step=1-dirsə normal back işləsin
+        return
+      }
+
+      const nextStep: Step = st.step || 1
+      const uni: University | null = st.uni ?? null
+      const year: number | null = st.year ?? null
+
+      setStep(nextStep)
+      setSelectedUni(uni)
+      setSelectedYear(year)
+
+      // back ilə 3->2 keçəndə exams təmizlə
+      if (nextStep < 3) {
+        setExams([])
+        setQ("")
+      }
+      // back ilə 2->1 keçəndə years təmizlə
+      if (nextStep < 2) {
+        setYears([])
+        setExams([])
+        setQ("")
+        setSelectedYear(null)
+      }
+    }
+
+    window.addEventListener("popstate", onPopState)
+    return () => window.removeEventListener("popstate", onPopState)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, selectedUni, selectedYear])
+
   useEffect(() => {
     let cancelled = false
-      ; (async () => {
-        try {
-          setUniLoading(true)
-          const list = await api.getUniversities()
-          if (!cancelled) setUniversities(Array.isArray(list) ? list : [])
-        } catch (e: any) {
-          toastError(e?.message || t("errUniversitiesLoad"))
-        } finally {
-          if (!cancelled) setUniLoading(false)
-        }
-      })()
+    ;(async () => {
+      try {
+        setUniLoading(true)
+        const list = await api.getUniversities()
+        if (!cancelled) setUniversities(Array.isArray(list) ? list : [])
+      } catch (e: any) {
+        toastError(e?.message || t("errUniversitiesLoad"))
+      } finally {
+        if (!cancelled) setUniLoading(false)
+      }
+    })()
 
     return () => {
       cancelled = true
@@ -121,24 +210,24 @@ export default function DashboardPage() {
 
     if (didLoadRef.current) return
     didLoadRef.current = true
-      ; (async () => {
-        try {
-          setLoading(true)
+    ;(async () => {
+      try {
+        setLoading(true)
 
-          const data = await api.getUserAttempts(user.id)
-          setAttempts(Array.isArray((data as any)?.attempts) ? (data as any).attempts : [])
+        const data = await api.getUserAttempts(user.id)
+        setAttempts(Array.isArray((data as any)?.attempts) ? (data as any).attempts : [])
 
-          lastErrorRef.current = ""
-        } catch (err: any) {
-          const msg = err instanceof Error ? err.message : t("errDataLoad")
-          if (lastErrorRef.current !== msg) {
-            lastErrorRef.current = msg
-            toastError(msg)
-          }
-        } finally {
-          setLoading(false)
+        lastErrorRef.current = ""
+      } catch (err: any) {
+        const msg = err instanceof Error ? err.message : t("errDataLoad")
+        if (lastErrorRef.current !== msg) {
+          lastErrorRef.current = msg
+          toastError(msg)
         }
-      })()
+      } finally {
+        setLoading(false)
+      }
+    })()
   }, [authLoading, user, router])
 
   async function onSelectUniversity(u: University) {
@@ -148,6 +237,9 @@ export default function DashboardPage() {
     setExams([])
     setQ("")
     setStep(2)
+
+    // ✅ history-ə step 2 yaz
+    pushWizardState(2, { uni: u, year: null })
 
     try {
       setYearsLoading(true)
@@ -167,6 +259,9 @@ export default function DashboardPage() {
     setExams([])
     setQ("")
     setStep(3)
+
+    // ✅ history-ə step 3 yaz
+    pushWizardState(3, { year: y })
 
     try {
       setExamsLoading(true)
@@ -207,10 +302,10 @@ export default function DashboardPage() {
   const averageScore =
     completedAttempts.length > 0
       ? completedAttempts.reduce((sum, a) => {
-        const score = Number(a?.score || 0)
-        const total = Number(a?.totalQuestions || a?.total || 1)
-        return sum + (score / (total || 1)) * 100
-      }, 0) / completedAttempts.length
+          const score = Number(a?.score || 0)
+          const total = Number(a?.totalQuestions || a?.total || 1)
+          return sum + (score / (total || 1)) * 100
+        }, 0) / completedAttempts.length
       : 0
 
   const totalSpent = useMemo(
@@ -256,6 +351,13 @@ export default function DashboardPage() {
   }
 
   function goBack() {
+    // ✅ Button “Geri” də browser history-yə uyğun işləsin
+    if (typeof window !== "undefined") {
+      window.history.back()
+      return
+    }
+
+    // fallback (SSR/edge halları üçün)
     if (step === 3) {
       setStep(2)
       setExams([])
@@ -350,9 +452,7 @@ export default function DashboardPage() {
 
             <Card className="border border-border/40 bg-card/50 backdrop-blur-sm rounded-xl hover:bg-card/80 transition-colors">
               <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {t("dashboardCompletedExams")}
-                </CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">{t("dashboardCompletedExams")}</CardTitle>
                 <BookOpen className="h-4 w-4 text-primary/60" />
               </CardHeader>
               <CardContent>
@@ -362,9 +462,7 @@ export default function DashboardPage() {
 
             <Card className="border border-border/40 bg-card/50 backdrop-blur-sm rounded-xl hover:bg-card/80 transition-colors">
               <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {t("dashboardAverageScore")}
-                </CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">{t("dashboardAverageScore")}</CardTitle>
                 <TrendingUp className="h-4 w-4 text-primary/60" />
               </CardHeader>
               <CardContent>
@@ -401,7 +499,7 @@ export default function DashboardPage() {
               <div className="mt-5 flex flex-wrap gap-2 text-xs">
                 <span className="px-3 py-1.5 rounded-lg border border-border/40 bg-background/60 flex items-center gap-1.5">
                   <CheckCircle2 className={`h-4 w-4 ${step >= 1 ? "text-primary" : "text-muted-foreground/30"}`} />
-                  {t("stepUniversity")}
+                  {t("ExamType")}
                 </span>
                 <span className="px-3 py-1.5 rounded-lg border border-border/40 bg-background/60 flex items-center gap-1.5">
                   <CheckCircle2 className={`h-4 w-4 ${step >= 2 ? "text-primary" : "text-muted-foreground/30"}`} />
@@ -414,7 +512,7 @@ export default function DashboardPage() {
 
                 {selectedUni && (
                   <span className="px-3 py-1.5 rounded-lg border border-border/40 bg-background/60 text-muted-foreground">
-                    {t("selectedUniversity")}:{" "}
+                    {t("selectedExamType")}:{" "}
                     <span className="font-medium text-foreground">{tName(selectedUni, locale)}</span>
                   </span>
                 )}
@@ -430,7 +528,7 @@ export default function DashboardPage() {
               {/* STEP 1 */}
               <div className={[base, step === 1 ? active : hiddenLeft].join(" ")}>
                 <div className="flex items-center justify-between gap-3 mb-5">
-                  <div className="font-semibold text-lg">{t("chooseUniversity")}</div>
+                  <div className="font-semibold text-lg">{t("chooseExamType")}</div>
 
                   {uniLoading && (
                     <div className="text-sm text-muted-foreground flex items-center gap-2">
@@ -488,7 +586,6 @@ export default function DashboardPage() {
                     })}
                   </div>
                 )}
-
               </div>
 
               {/* STEP 2 */}

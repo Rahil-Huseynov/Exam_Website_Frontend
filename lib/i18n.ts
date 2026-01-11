@@ -710,6 +710,10 @@ export const translations = {
     "examRunner.ui.time_left": "Qalan vaxt",
     "examRunner.ui.last_minute_warning": "Son 1 dəqiqə!",
     "exam.leave_confirm": "İmtahan davam edir. Səhifədən çıxsanız imtahan yarımçıq qalacaq və ödəniş geri qaytarılmayacaq. Davam etmək istədiyinizə əminsiniz?",
+    "ExamType": "İmtahan növü",
+    "selectedExamType": "Seçilmiş imtahan növü",
+    "chooseExamType": "İmtahan növünü seç"
+
 
   },
   en: {
@@ -1420,6 +1424,10 @@ export const translations = {
     "examRunner.ui.time_left": "Time left",
     "examRunner.ui.last_minute_warning": "Last minute!",
     "exam.leave_confirm": "The exam is still in progress. If you leave this page, the exam will be interrupted and the payment will NOT be refunded. Are you sure you want to continue?",
+    "ExamType": "Exam type",
+    "selectedExamType": "Selected exam type",
+    "chooseExamType": "Choose an exam type"
+
 
   },
   ru: {
@@ -2143,6 +2151,10 @@ export const translations = {
     "examRunner.ui.time_left": "Осталось времени",
     "examRunner.ui.last_minute_warning": "Последняя минута!",
     "exam.leave_confirm": "Экзамен ещё продолжается. Если вы покинете страницу, экзамен будет прерван и оплата НЕ возвращается. Вы уверены, что хотите продолжить?",
+    "ExamType": "Тип экзамена",
+    "selectedExamType": "Выбранный тип экзамена",
+    "chooseExamType": "Выберите тип экзамена"
+
 
   },
 }
