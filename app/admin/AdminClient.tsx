@@ -19,6 +19,8 @@ import { AdminsTab } from "@/components/admin/admins-tab"
 import { Users, BookOpen, DollarSign, FileText, LogOut, Globe } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import AdminNewsPage from "@/components/admin/news-tab"
+import { LogsTab } from "@/components/admin/logs-tab"
+import { ResultsTab } from "@/components/admin/results-tab"
 
 export default function AdminPage() {
   const { user, loading, logout } = useAuth()
@@ -176,6 +178,12 @@ export default function AdminPage() {
                 <TabsTrigger value="news" className="text-xs sm:text-sm whitespace-nowrap">
                   {t("news")}
                 </TabsTrigger>
+                <TabsTrigger value="logs" className="text-xs sm:text-sm whitespace-nowrap">
+                  {t("logsTitle")}
+                </TabsTrigger>
+                <TabsTrigger value="results" className="text-xs sm:text-sm whitespace-nowrap">
+                  {t("resultsTitle")}
+                </TabsTrigger>
               </TabsList>
             </div>
 
@@ -201,6 +209,14 @@ export default function AdminPage() {
 
             <TabsContent value="news" className="overflow-x-auto">
               <AdminNewsPage />
+            </TabsContent>
+
+            <TabsContent value="logs" className="overflow-x-auto">
+              <LogsTab />
+            </TabsContent>
+
+            <TabsContent value="results" className="overflow-x-auto">
+              <ResultsTab />
             </TabsContent>
           </Tabs>
         </div>

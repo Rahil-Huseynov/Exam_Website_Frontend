@@ -110,6 +110,33 @@ export interface Question {
   options: QuestionOption[]
 }
 
+export type AdminResultItem = {
+  id: string
+  status: "IN_PROGRESS" | "FINISHED"
+  startedAt: string
+  finishedAt?: string | null
+  score: number
+  total: number
+  user: { id: number; email: string; firstName?: string | null; lastName?: string | null; publicId?: string | null }
+  bank: {
+    id: string
+    title: string
+    year: number
+    price: any
+    university: { id: string; name: string; nameAz?: string; nameEn?: string; nameRu?: string; logo?: string | null }
+    subject: { id: string; name: string; nameAz?: string; nameEn?: string; nameRu?: string }
+    topic?: any
+  }
+}
+
+export type AdminResultsResponse = {
+  page: number
+  limit: number
+  total: number
+  pages: number
+  items: AdminResultItem[]
+}
+
 export type AttemptAnswer = {
   id: string
   questionId: string
@@ -131,6 +158,22 @@ export type AdminListItem = {
   firstName?: string | null
   lastName?: string | null
   role?: string | null
+}
+
+export type LogItem = {
+  id: string
+  action?: string | null
+  message?: string | null
+  level?: "INFO" | "WARN" | "ERROR" | string
+  meta?: any
+  adminId?: number | null
+  userId?: number | null
+  createdAt: string
+}
+
+export type LogsListResponse = {
+  data: LogItem[]
+  total: number
 }
 
 export type AdminListResponse = {
@@ -935,7 +978,20 @@ class ApiClient {
       json: cleanPayload,
     })
   }
+  // ================== LOGS ==================
+  async getLogs(page = 1, limit = 20) {
+    const qs = new URLSearchParams({ page: String(page), limit: String(limit) }).toString()
+    return this.request<LogsListResponse>(`/logs?${qs}`)
+  }
 
+  async adminListResults(params?: { page?: number; limit?: number; q?: string; status?: "FINISHED" | "IN_PROGRESS" }) {
+    const sp = new URLSearchParams()
+    sp.set("page", String(params?.page ?? 1))
+    sp.set("limit", String(params?.limit ?? 20))
+    if (params?.q) sp.set("q", params.q)
+    if (params?.status) sp.set("status", params.status)
+    return this.request<AdminResultsResponse>(`/admin/results?${sp.toString()}`)
+  }
 
 }
 

@@ -712,9 +712,24 @@ export const translations = {
     "exam.leave_confirm": "İmtahan davam edir. Səhifədən çıxsanız imtahan yarımçıq qalacaq və ödəniş geri qaytarılmayacaq. Davam etmək istədiyinizə əminsiniz?",
     "ExamType": "İmtahan növü",
     "selectedExamType": "Seçilmiş imtahan növü",
-    "chooseExamType": "İmtahan növünü seç"
-
-
+    "chooseExamType": "İmtahan növünü seç",
+    "logsTitle": "Loqlar",
+    "logsDesc": "Sistem fəaliyyət qeydləri (audit/logs).",
+    "errLogsLoad": "Loqları yükləmək alınmadı.",
+    "noLogsFound": "Loq tapılmadı.",
+    "searchLogsPlaceholder": "ID, message, action, adminId, userId...",
+    "logId": "Log ID",
+    "adminId": "Admin ID",
+    "prev": "Əvvəlki",
+    "page": "Səhifə",
+    "total": "Cəmi",
+    "resultsTitle": "İmtahan nəticələri",
+    "resultsDesc": "İstifadəçilərin imtahan cəhdləri və nəticələri.",
+    "errResultsLoad": "Nəticələri yükləmək alınmadı.",
+    "noResultsFound": "Nəticə tapılmadı.",
+    "searchResultsPlaceholder": "Email, ad/soyad, publicId, exam title...",
+    "startedAt": "Başlama",
+    "finishedAt": "Bitmə",
   },
   en: {
     login: "Login",
@@ -1426,9 +1441,24 @@ export const translations = {
     "exam.leave_confirm": "The exam is still in progress. If you leave this page, the exam will be interrupted and the payment will NOT be refunded. Are you sure you want to continue?",
     "ExamType": "Exam type",
     "selectedExamType": "Selected exam type",
-    "chooseExamType": "Choose an exam type"
-
-
+    "chooseExamType": "Choose an exam type",
+    "logsTitle": "Logs",
+    "logsDesc": "System activity records (audit/logs).",
+    "errLogsLoad": "Failed to load logs.",
+    "noLogsFound": "No logs found.",
+    "searchLogsPlaceholder": "ID, message, action, adminId, userId...",
+    "logId": "Log ID",
+    "adminId": "Admin ID",
+    "prev": "Prev",
+    "page": "Page",
+    "total": "Total",
+    "resultsTitle": "Exam results",
+    "resultsDesc": "Users’ exam attempts and results.",
+    "errResultsLoad": "Failed to load results.",
+    "noResultsFound": "No results found.",
+    "searchResultsPlaceholder": "Email, name, publicId, exam title...",
+    "startedAt": "Started",
+    "finishedAt": "Finished",
   },
   ru: {
     login: "Войти",
@@ -2153,9 +2183,24 @@ export const translations = {
     "exam.leave_confirm": "Экзамен ещё продолжается. Если вы покинете страницу, экзамен будет прерван и оплата НЕ возвращается. Вы уверены, что хотите продолжить?",
     "ExamType": "Тип экзамена",
     "selectedExamType": "Выбранный тип экзамена",
-    "chooseExamType": "Выберите тип экзамена"
-
-
+    "chooseExamType": "Выберите тип экзамена",
+    "logsTitle": "Логи",
+    "logsDesc": "Записи активности системы (audit/logs).",
+    "errLogsLoad": "Не удалось загрузить логи.",
+    "noLogsFound": "Логи не найдены.",
+    "searchLogsPlaceholder": "ID, message, action, adminId, userId...",
+    "logId": "ID лога",
+    "adminId": "ID админа",
+    "prev": "Назад",
+    "page": "Страница",
+    "total": "Всего",
+    "resultsTitle": "Результаты экзаменов",
+    "resultsDesc": "Попытки и результаты пользователей.",
+    "errResultsLoad": "Не удалось загрузить результаты.",
+    "noResultsFound": "Результаты не найдены.",
+    "searchResultsPlaceholder": "Email, имя, publicId, название экзамена...",
+    "startedAt": "Начало",
+    "finishedAt": "Окончание",
   },
 }
 
