@@ -43,6 +43,7 @@ export function ExamsTab() {
     subjectId: "",
     year: new Date().getFullYear().toString(),
     price: "5.00",
+    questionCount: "25",
   })
 
   const [selectedExamId, setSelectedExamId] = useState<string>("")
@@ -54,16 +55,15 @@ export function ExamsTab() {
 
   const [bulkPickText, setBulkPickText] = useState("")
 
-  // Manage Questions modal
   const [manageModalOpen, setManageModalOpen] = useState(false)
   const [manageBankId, setManageBankId] = useState<string>("")
   const [bankQuestions, setBankQuestions] = useState<AdminQuestion[]>([])
   const [qBusy, setQBusy] = useState(false)
 
-  // ✅ Exam edit fields INSIDE Manage modal
   const [manageExamTitle, setManageExamTitle] = useState("")
   const [manageExamYear, setManageExamYear] = useState("")
   const [manageExamPrice, setManageExamPrice] = useState("")
+  const [manageExamQuestionCount, setManageExamQuestionCount] = useState("25")
   const [manageExamUniversityName, setManageExamUniversityName] = useState("")
   const [manageExamSubjectName, setManageExamSubjectName] = useState("")
 
@@ -140,7 +140,7 @@ export function ExamsTab() {
   }, [draft, selectedCorrect])
 
   const canCreateExam = useMemo(() => {
-    return !!examForm.title && !!examForm.universityId && !!examForm.subjectId && !!examForm.year && !!examForm.price
+    return !!examForm.title && !!examForm.universityId && !!examForm.subjectId && !!examForm.year && !!examForm.price && !!examForm.questionCount
   }, [examForm])
 
   const canReadPdfFront = useMemo(() => {
@@ -164,8 +164,10 @@ export function ExamsTab() {
     if (!manageBankId || !title) return false
     const y = Number(manageExamYear)
     const p = Number(manageExamPrice)
+    const qc = Number(manageExamQuestionCount)
     if (!Number.isInteger(y) || y < 1900 || y > 3000) return false
     if (!Number.isFinite(p) || p < 0) return false
+    if (!Number.isInteger(qc) || qc < 1) return false
     return true
   }, [manageBankId, manageExamTitle, manageExamYear, manageExamPrice])
 
@@ -184,6 +186,7 @@ export function ExamsTab() {
         subjectId: examForm.subjectId,
         year: Number(examForm.year),
         price: Number.parseFloat(examForm.price),
+        questionCount: Number.parseInt(examForm.questionCount, 10) || 25,
       })
 
       setSelectedExamId(created.id)
@@ -193,6 +196,7 @@ export function ExamsTab() {
         subjectId: "",
         year: new Date().getFullYear().toString(),
         price: "5.00",
+        questionCount: "25",
       })
 
       toastSuccess(t("exams.success.exam_created"))
@@ -305,7 +309,6 @@ export function ExamsTab() {
     }
   }
 
-  // ✅ Open Manage Questions + fill exam edit fields
   async function openManageQuestions(bankId: string) {
     try {
       setQBusy(true)
@@ -315,6 +318,7 @@ export function ExamsTab() {
       setManageExamTitle(ex?.title || "")
       setManageExamYear(String(ex?.year ?? ""))
       setManageExamPrice(String(ex?.price ?? ""))
+      setManageExamQuestionCount(String(ex?.questionCount ?? 25))
       setManageExamUniversityName(ex?.university?.name || "")
       setManageExamSubjectName(ex?.subject?.name || "")
 
@@ -329,7 +333,6 @@ export function ExamsTab() {
     }
   }
 
-  // ✅ Save exam edit INSIDE Manage modal
   async function handleSaveManageExam() {
     if (!manageBankId) return
 
@@ -338,17 +341,22 @@ export function ExamsTab() {
 
     const yearNum = Number(manageExamYear)
     const priceNum = Number(manageExamPrice)
-
+    const qcNum = Number(manageExamQuestionCount)
     if (!Number.isInteger(yearNum) || yearNum < 1900 || yearNum > 3000) {
       return toastError(t("exams.errors.year_invalid"))
     }
     if (!Number.isFinite(priceNum) || priceNum < 0) {
       return toastError(t("exams.errors.price_invalid"))
     }
-
+    if (!Number.isInteger(qcNum) || qcNum < 1) return toastError(t("exams.errors.question_count_invalid") || "Sual sayı düzgün deyil")
     try {
       setQBusy(true)
-      await api.updateExam(manageBankId, { title, year: yearNum, price: priceNum })
+      await api.updateExam(manageBankId, {
+        title,
+        year: yearNum,
+        price: priceNum,
+        questionCount: qcNum,
+      })
       toastSuccess(t("exams.success.exam_updated") || "İmtahan yeniləndi")
       await loadData()
     } catch (err) {
@@ -395,37 +403,37 @@ export function ExamsTab() {
   function handleDeleteExam(bankId: string) {
     if (!window.confirm(t("exams.confirm.delete_exam") || "İmtahanı silmək istəyirsən?")) return
 
-    ;(async () => {
-      try {
-        setBusy(true)
-        await api.deleteBank(bankId)
-        toastSuccess(t("exams.success.deleted"))
-        await loadData()
-        if (manageBankId === bankId) setManageModalOpen(false)
-      } catch (err) {
-        toastError(err instanceof Error ? err.message : t("exams.errors.delete_failed"))
-      } finally {
-        setBusy(false)
-      }
-    })()
+      ; (async () => {
+        try {
+          setBusy(true)
+          await api.deleteBank(bankId)
+          toastSuccess(t("exams.success.deleted"))
+          await loadData()
+          if (manageBankId === bankId) setManageModalOpen(false)
+        } catch (err) {
+          toastError(err instanceof Error ? err.message : t("exams.errors.delete_failed"))
+        } finally {
+          setBusy(false)
+        }
+      })()
   }
 
   function handleDeleteQuestion(questionId: string) {
     if (!window.confirm(t("exams.confirm.delete_question") || "Sualı silmək istəyirsən?")) return
 
-    ;(async () => {
-      try {
-        setQBusy(true)
-        await api.deleteQuestion(questionId)
-        setBankQuestions((prev) => prev.filter((x) => x.id !== questionId))
-        toastSuccess(t("exams.success.question_deleted"))
-        await loadData()
-      } catch (err) {
-        toastError(err instanceof Error ? err.message : t("exams.errors.delete_failed"))
-      } finally {
-        setQBusy(false)
-      }
-    })()
+      ; (async () => {
+        try {
+          setQBusy(true)
+          await api.deleteQuestion(questionId)
+          setBankQuestions((prev) => prev.filter((x) => x.id !== questionId))
+          toastSuccess(t("exams.success.question_deleted"))
+          await loadData()
+        } catch (err) {
+          toastError(err instanceof Error ? err.message : t("exams.errors.delete_failed"))
+        } finally {
+          setQBusy(false)
+        }
+      })()
   }
 
   async function handleSaveQuestion(q: AdminQuestion) {
@@ -664,6 +672,19 @@ export function ExamsTab() {
               <Label>{t("price")} (AZN)</Label>
               <Input type="number" step="0.01" value={examForm.price} onChange={(e) => setExamForm({ ...examForm, price: e.target.value })} disabled={busy} />
             </div>
+
+            <div className="space-y-2">
+              <Label>{t("exams.ui.question_count") || "Random sual sayı"}</Label>
+              <Input
+                type="number"
+                min={1}
+                value={examForm.questionCount}
+                onChange={(e) => setExamForm({ ...examForm, questionCount: e.target.value })}
+                disabled={busy}
+                placeholder="25"
+              />
+            </div>
+
           </div>
 
           <Button onClick={handleCreateExam} disabled={busy || !canCreateExam} type="button">
@@ -772,9 +793,6 @@ export function ExamsTab() {
         </CardContent>
       </Card>
 
-      {/* ==========================
-          DRAFT MODAL (EDITABLE)
-         ========================== */}
       <Dialog open={draftModalOpen} onOpenChange={setDraftModalOpen}>
         <DialogContent
           ref={draftScrollRef as any}
@@ -993,7 +1011,6 @@ export function ExamsTab() {
                   </div>
 
                   <div className="flex gap-2 flex-wrap justify-end">
-                    {/* ✅ Edit button removed; everything is in Manage */}
                     <Button variant="outline" onClick={() => openManageQuestions(exam.id)} disabled={busy || qBusy} type="button">
                       <Pencil className="h-4 w-4 mr-2" />
                       {t("exams.ui.manage_questions")}
@@ -1011,7 +1028,6 @@ export function ExamsTab() {
         </CardContent>
       </Card>
 
-      {/* ✅ Manage modal now also edits exam */}
       <Dialog open={manageModalOpen} onOpenChange={setManageModalOpen}>
         <DialogContent className="!w-[98vw] !h-[96vh] max-w-none max-h-none overflow-y-auto rounded-2xl">
           <DialogHeader>
@@ -1019,7 +1035,6 @@ export function ExamsTab() {
             <DialogDescription>{t("exams.ui.manage_modal_desc")}</DialogDescription>
           </DialogHeader>
 
-          {/* ✅ Exam edit section */}
           <Card className="border-muted">
             <CardHeader>
               <CardTitle className="text-base">{t("exams.ui.edit_exam_modal_title") || "İmtahanı redaktə et"}</CardTitle>
@@ -1048,6 +1063,17 @@ export function ExamsTab() {
                   <Label>{t("exams.ui.price_label") || "Qiymət"} (AZN)</Label>
                   <Input type="number" step="0.01" value={manageExamPrice} onChange={(e) => setManageExamPrice(e.target.value)} disabled={qBusy} />
                 </div>
+                <div className="space-y-2">
+                  <Label>{t("exams.ui.question_count") || "Random sual sayı"}</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={manageExamQuestionCount}
+                    onChange={(e) => setManageExamQuestionCount(e.target.value)}
+                    disabled={qBusy}
+                    placeholder="25"
+                  />
+                </div>
               </div>
 
               <div className="flex gap-2 flex-wrap">
@@ -1064,7 +1090,6 @@ export function ExamsTab() {
             </CardContent>
           </Card>
 
-          {/* Questions tools */}
           <div className="flex items-center justify-between gap-2 pt-3 pb-2">
             <Button variant="outline" onClick={() => setAddModalOpen(true)} disabled={qBusy || !manageBankId} type="button">
               <Plus className="h-4 w-4 mr-2" />

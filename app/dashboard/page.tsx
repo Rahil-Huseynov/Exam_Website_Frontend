@@ -196,17 +196,17 @@ export default function DashboardPage() {
 
   useEffect(() => {
     let cancelled = false
-    ;(async () => {
-      try {
-        setUniLoading(true)
-        const list = await api.getUniversities()
-        if (!cancelled) setUniversities(Array.isArray(list) ? list : [])
-      } catch (e: any) {
-        toastError(e?.message || t("errUniversitiesLoad"))
-      } finally {
-        if (!cancelled) setUniLoading(false)
-      }
-    })()
+      ; (async () => {
+        try {
+          setUniLoading(true)
+          const list = await api.getUniversities()
+          if (!cancelled) setUniversities(Array.isArray(list) ? list : [])
+        } catch (e: any) {
+          toastError(e?.message || t("errUniversitiesLoad"))
+        } finally {
+          if (!cancelled) setUniLoading(false)
+        }
+      })()
 
     return () => {
       cancelled = true
@@ -224,22 +224,22 @@ export default function DashboardPage() {
 
     if (didLoadRef.current) return
     didLoadRef.current = true
-    ;(async () => {
-      try {
-        setLoading(true)
-        const data = await api.getUserAttempts(user.id)
-        setAttempts(Array.isArray((data as any)?.attempts) ? (data as any).attempts : [])
-        lastErrorRef.current = ""
-      } catch (err: any) {
-        const msg = err instanceof Error ? err.message : t("errDataLoad")
-        if (lastErrorRef.current !== msg) {
-          lastErrorRef.current = msg
-          toastError(msg)
+      ; (async () => {
+        try {
+          setLoading(true)
+          const data = await api.getUserAttempts(user.id)
+          setAttempts(Array.isArray((data as any)?.attempts) ? (data as any).attempts : [])
+          lastErrorRef.current = ""
+        } catch (err: any) {
+          const msg = err instanceof Error ? err.message : t("errDataLoad")
+          if (lastErrorRef.current !== msg) {
+            lastErrorRef.current = msg
+            toastError(msg)
+          }
+        } finally {
+          setLoading(false)
         }
-      } finally {
-        setLoading(false)
-      }
-    })()
+      })()
   }, [authLoading, user, router, t])
 
   async function onSelectUniversity(u: University) {
@@ -312,10 +312,10 @@ export default function DashboardPage() {
   const averageScore =
     completedAttempts.length > 0
       ? completedAttempts.reduce((sum, a) => {
-          const score = Number(a?.score || 0)
-          const total = Number(a?.totalQuestions || a?.total || 1)
-          return sum + (score / (total || 1)) * 100
-        }, 0) / completedAttempts.length
+        const score = Number(a?.score || 0)
+        const total = Number(a?.totalQuestions || a?.total || 1)
+        return sum + (score / (total || 1)) * 100
+      }, 0) / completedAttempts.length
       : 0
 
   const totalSpent = useMemo(
@@ -667,8 +667,14 @@ export default function DashboardPage() {
                         >
                           <div className="min-w-0 flex-1">
                             <div className="font-medium text-sm">{exam.title || exam.name}</div>
-                            <div className="text-xs text-muted-foreground mt-1">
-                              {exam.subject?.name || exam.subject} · {exam.questionCount || 0} {t("questions")}
+                            <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
+                              <BookOpen className="h-3.5 w-3.5 text-primary/70" />
+                              <span>
+                                {t("exam.card.questions_preview", {
+                                  count: exam.questionCount ?? 0,
+                                  total: exam.questionsTotal ?? exam.totalQuestions ?? 0,
+                                })}
+                              </span>
                             </div>
                           </div>
                           <div className="flex items-center gap-3 ml-4">

@@ -219,7 +219,7 @@ export default function ExamsPage() {
             </Select>
 
           </div>
-          
+
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-16 w-16 border-4 border-violet-200 dark:border-violet-900 border-t-violet-600" />
@@ -254,10 +254,20 @@ export default function ExamsPage() {
 
                     <CardContent className="flex-1">
                       <div className="space-y-3">
-                        <div className="flex items-center justify-between text-sm p-3 rounded-lg bg-gradient-to-r from-violet-50 to-blue-50 dark:from-violet-950/20 dark:to-blue-950/20">
-                          <span className="text-muted-foreground">{t("questionsLabel")}:</span>
+                        <div className="flex items-center justify-between text-sm p-3 rounded-lg 
+  bg-gradient-to-r from-emerald-50 to-teal-50 
+  dark:from-emerald-950/20 dark:to-teal-950/20">
+                          <span className="text-muted-foreground">{t("examTotalQuestions")}:</span>
+                          <span className="font-bold text-emerald-600">{(exam as any).questionsTotal ?? "-"}</span>
+                        </div>
+
+                        <div className="flex items-center justify-between text-sm p-3 rounded-lg 
+  bg-gradient-to-r from-violet-50 to-indigo-50 
+  dark:from-violet-950/20 dark:to-indigo-950/20">
+                          <span className="text-muted-foreground">{t("examGivenQuestions")}:</span>
                           <span className="font-bold text-violet-600">{(exam as any).questionCount ?? "-"}</span>
                         </div>
+
                         <div className="flex items-center justify-between text-sm p-3 rounded-lg bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20">
                           <span className="text-muted-foreground">{t("priceLabel")}:</span>
                           <span className="font-bold text-blue-600">{Number(exam.price).toFixed(2)} AZN</span>

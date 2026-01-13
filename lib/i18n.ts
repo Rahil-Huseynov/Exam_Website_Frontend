@@ -730,6 +730,12 @@ export const translations = {
     "searchResultsPlaceholder": "Email, ad/soyad, publicId, exam title...",
     "startedAt": "Başlama",
     "finishedAt": "Bitmə",
+    "exams.ui.question_count": "Random sual sayı",
+    "exams.errors.question_count_invalid": "Sual sayı düzgün deyil",
+    "exam.card.questions_preview": "Bu imtahanda {{count}} sual çıxacaq (bankda cəmi {{total}} sual var)",
+    examTotalQuestions: "Ümumi sual sayı",
+    examGivenQuestions: "Verilən sual sayı",
+
   },
   en: {
     login: "Login",
@@ -1459,6 +1465,12 @@ export const translations = {
     "searchResultsPlaceholder": "Email, name, publicId, exam title...",
     "startedAt": "Started",
     "finishedAt": "Finished",
+    "exams.ui.question_count": "Question count",
+    "exams.errors.question_count_invalid": "Invalid question count",
+    "exam.card.questions_preview": "{{count}} questions will appear in this exam ({{total}} total in the bank)",
+    examTotalQuestions: "Total questions",
+    examGivenQuestions: "Questions shown",
+
   },
   ru: {
     login: "Войти",
@@ -2201,6 +2213,12 @@ export const translations = {
     "searchResultsPlaceholder": "Email, имя, publicId, название экзамена...",
     "startedAt": "Начало",
     "finishedAt": "Окончание",
+    "exams.ui.question_count": "Количество вопросов",
+    "exams.errors.question_count_invalid": "Некорректное количество вопросов",
+    "exam.card.questions_preview": "В этом экзамене будет {{count}} вопросов (в банке всего {{total}})",
+    examTotalQuestions: "Всего вопросов",
+    examGivenQuestions: "Показано вопросов",
+
   },
 }
 
