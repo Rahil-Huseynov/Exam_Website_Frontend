@@ -732,13 +732,20 @@ class ApiClient {
       `/attempts/${encodeURIComponent(attemptId)}/review?userId=${encodeURIComponent(String(userId))}`,
     )
   }
-  async getExamYears(params?: { universityId?: string; subjectId?: string }) {
-    const qs = new URLSearchParams()
-    if (params?.universityId) qs.append("universityId", params.universityId)
-    if (params?.subjectId) qs.append("subjectId", params.subjectId)
-    const q = qs.toString()
-    const data = await this.request<{ years: number[] }>(`/questions/years${q ? `?${q}` : ""}`)
-    return { years: Array.isArray(data?.years) ? data.years : [] }
+  async getExamYears(params: { universityId?: string; subjectId?: string } = {}) {
+    const sp = new URLSearchParams()
+    if (params.universityId) sp.set("universityId", params.universityId)
+    if (params.subjectId) sp.set("subjectId", params.subjectId)
+    const query = sp.toString()
+    const data = await this.request<{ years: number[] }>("/questions/years" + (query ? "?" + query : ""))
+    return data.years || []
+  }
+  
+  async getExamYearsByUniversity(universityId: string, subjectId?: string) {
+    const params: { universityId?: string; subjectId?: string } = {};
+    if (universityId) params.universityId = universityId;
+    if (subjectId) params.subjectId = subjectId;
+    return this.getExamYears(params);
   }
 
   async createExam(data: { title: string; universityId: string; subjectId: string; year: number; price: number; questionCount: number }) {
@@ -815,23 +822,31 @@ class ApiClient {
     return this.request<UserAttemptsResponse>(`/users/${userId}/attempts`)
   }
 
-  async getExams(params?: { universityId?: string; subjectId?: string; year?: number; search?: string; page?: number; limit?: number }) {
+  async getExams(params: {
+    universityId?: string
+    subjectId?: string
+    year?: number
+    search?: string
+    page?: number
+    limit?: number
+  } = {}) {
     const sp = new URLSearchParams()
-    if (params?.universityId) sp.set("universityId", params.universityId)
-    if (params?.subjectId) sp.set("subjectId", params.subjectId)
-    if (typeof params?.year === "number") sp.set("year", String(params.year))
-    if (params?.search) sp.set("search", params.search)
-    if (typeof params?.page === "number") sp.set("page", String(params.page))
-    if (typeof params?.limit === "number") sp.set("limit", String(params.limit))
-    const q = sp.toString()
-    return this.request<Exam[]>(`/questions/exams${q ? `?${q}` : ""}`)
+    if (params.universityId) sp.set("universityId", params.universityId)
+    if (params.subjectId) sp.set("subjectId", params.subjectId)
+    if (params.year) sp.set("year", String(params.year))
+    if (params.search) sp.set("search", params.search)
+    if (params.page) sp.set("page", String(params.page))
+    if (params.limit) sp.set("limit", String(params.limit))
+
+    const query = sp.toString()
+    return this.request<Exam[]>(`/questions/exams${query ? "?" + query : ""}`)
   }
 
-  async createExamToken(bankId: string, userId: number) {
-    return this.request<CreateExamTokenResponse>(`/banks/${encodeURIComponent(bankId)}/exam-token`, {
-      method: "POST",
-      json: { userId },
-    })
+  async createExamToken(bankId: string, userId: number | string) {
+    return this.request<{ ok: true; token: string; expiresAt: string }>(
+      `/banks/${bankId}/exam-token`,
+      { method: "POST", json: { userId } }
+    )
   }
 
   async createAttemptWithToken(bankId: string, userId: number, token: string) {

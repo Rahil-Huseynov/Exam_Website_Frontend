@@ -118,14 +118,16 @@ export default function ExamsPage() {
   }, [])
 
   useEffect(() => {
-    (async () => {
+    ; (async () => {
       try {
         const uniId = selectedUniversity !== "all" ? selectedUniversity : undefined
         const subId = selectedSubject !== "all" ? selectedSubject : undefined
-        const yd = await api.getExamYears({ universityId: uniId, subjectId: subId })
-        setYears(Array.isArray(yd.years) ? yd.years.sort((a, b) => b - a) : [])
+
+        const yearsData = await api.getExamYears({ universityId: uniId, subjectId: subId })
+        setYears(Array.isArray(yearsData) ? [...yearsData].sort((a, b) => b - a) : [])
       } catch (err: any) {
         toast.error(err?.message || t("errLoadYears"))
+        setYears([])
       }
     })()
   }, [selectedUniversity, selectedSubject])
