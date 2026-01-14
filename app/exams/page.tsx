@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { BookOpen, Search, Filter, Sparkles } from "lucide-react"
 import { toast, ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
+import { PublicNavbar } from "@/components/public-navbar"
 
 function tokenBankKey(token: string) {
   return `exam_token_bank_${token}`
@@ -23,6 +24,13 @@ function tokenBankKey(token: string) {
 function setTokenBank(token: string, bankId: string) {
   if (typeof window === "undefined") return
   window.sessionStorage.setItem(tokenBankKey(token), bankId)
+}
+
+function approxCount(value?: number) {
+  if (value === undefined || value === null || value <= 0) return "-"
+
+  const rounded = Math.floor(value / 10) * 10
+  return `${rounded}+`
 }
 
 function tUniName(u: any, locale: string) {
@@ -141,7 +149,7 @@ export default function ExamsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/5 to-accent/5 flex flex-col">
-      <Navbar />
+      {user ? <Navbar /> : <PublicNavbar />}
       <ToastContainer position="top-right" autoClose={2200} newestOnTop closeOnClick pauseOnHover theme="colored" />
 
       <main className="container mx-auto px-4 py-8 flex-1">
@@ -258,7 +266,9 @@ export default function ExamsPage() {
   bg-gradient-to-r from-emerald-50 to-teal-50 
   dark:from-emerald-950/20 dark:to-teal-950/20">
                           <span className="text-muted-foreground">{t("examTotalQuestions")}:</span>
-                          <span className="font-bold text-emerald-600">{(exam as any).questionsTotal ?? "-"}</span>
+                          <span className="font-bold text-emerald-600">
+                            {approxCount((exam as any).questionsTotal)}
+                          </span>
                         </div>
 
                         <div className="flex items-center justify-between text-sm p-3 rounded-lg 

@@ -64,6 +64,13 @@ function setTokenBank(token: string, bankId: string) {
   window.sessionStorage.setItem(tokenBankKey(token), bankId)
 }
 
+function approxCount(value?: number) {
+  if (value === undefined || value === null || value <= 0) return "-"
+
+  const rounded = Math.floor(value / 10) * 10
+  return `${rounded}+`
+}
+
 export default function DashboardPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
@@ -672,7 +679,7 @@ export default function DashboardPage() {
                               <span>
                                 {t("exam.card.questions_preview", {
                                   count: exam.questionCount ?? 0,
-                                  total: exam.questionsTotal ?? exam.totalQuestions ?? 0,
+                                  total: approxCount((exam as any).questionsTotal),
                                 })}
                               </span>
                             </div>

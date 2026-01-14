@@ -63,6 +63,9 @@ export function PublicNavbar() {
             <Link href="/about" className="text-sm font-medium hover:text-primary transition-colors">
               {t("about")}
             </Link>
+            <Link href="/exams" className="px-4 py-2 text-sm font-medium rounded-full hover:bg-muted transition-colors">
+              {t("takeExam")}
+            </Link>
             <Link href="/faq" className="text-sm font-medium hover:text-primary transition-colors">
               {t("faq")}
             </Link>
@@ -178,6 +181,13 @@ export function PublicNavbar() {
                 onClick={closeMobile}
               >
                 {t("about")}
+              </Link>
+              <Link
+                href="/exams"
+                className="text-lg font-medium hover:text-primary transition-colors py-2"
+                onClick={closeMobile}
+              >
+                {t("takeExam")}
               </Link>
               <Link
                 href="/faq"
