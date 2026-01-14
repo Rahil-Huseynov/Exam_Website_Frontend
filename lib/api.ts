@@ -732,10 +732,13 @@ class ApiClient {
       `/attempts/${encodeURIComponent(attemptId)}/review?userId=${encodeURIComponent(String(userId))}`,
     )
   }
-  async getExamYearsByUniversity(universityId: string) {
-    const qs = new URLSearchParams({ universityId }).toString()
-    const data = await this.request<{ years: number[] }>(`/questions/years?${qs}`)
-    return Array.isArray(data?.years) ? data.years : []
+  async getExamYears(params?: { universityId?: string; subjectId?: string }) {
+    const qs = new URLSearchParams()
+    if (params?.universityId) qs.append("universityId", params.universityId)
+    if (params?.subjectId) qs.append("subjectId", params.subjectId)
+    const q = qs.toString()
+    const data = await this.request<{ years: number[] }>(`/questions/years${q ? `?${q}` : ""}`)
+    return { years: Array.isArray(data?.years) ? data.years : [] }
   }
 
   async createExam(data: { title: string; universityId: string; subjectId: string; year: number; price: number; questionCount: number }) {
@@ -812,11 +815,14 @@ class ApiClient {
     return this.request<UserAttemptsResponse>(`/users/${userId}/attempts`)
   }
 
-  async getExams(params?: { universityId?: string; subjectId?: string; year?: number }) {
+  async getExams(params?: { universityId?: string; subjectId?: string; year?: number; search?: string; page?: number; limit?: number }) {
     const sp = new URLSearchParams()
     if (params?.universityId) sp.set("universityId", params.universityId)
     if (params?.subjectId) sp.set("subjectId", params.subjectId)
     if (typeof params?.year === "number") sp.set("year", String(params.year))
+    if (params?.search) sp.set("search", params.search)
+    if (typeof params?.page === "number") sp.set("page", String(params.page))
+    if (typeof params?.limit === "number") sp.set("limit", String(params.limit))
     const q = sp.toString()
     return this.request<Exam[]>(`/questions/exams${q ? `?${q}` : ""}`)
   }

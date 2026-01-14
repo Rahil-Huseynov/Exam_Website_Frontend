@@ -735,6 +735,7 @@ export const translations = {
     "exam.card.questions_preview": "Bu imtahanda {{count}} sual çıxacaq (bankda cəmi {{total}} sual var)",
     examTotalQuestions: "Ümumi sual sayı",
     examGivenQuestions: "Verilən sual sayı",
+    errLoadYears: "İllərin yüklənməsi xətası",
 
   },
   en: {
@@ -1470,6 +1471,7 @@ export const translations = {
     "exam.card.questions_preview": "{{count}} questions will appear in this exam ({{total}} total in the bank)",
     examTotalQuestions: "Total questions",
     examGivenQuestions: "Questions shown",
+    errLoadYears: "Error loading years",
 
   },
   ru: {
@@ -2218,7 +2220,7 @@ export const translations = {
     "exam.card.questions_preview": "В этом экзамене будет {{count}} вопросов (в банке всего {{total}})",
     examTotalQuestions: "Всего вопросов",
     examGivenQuestions: "Показано вопросов",
-
+    errLoadYears: "Ошибка загрузки лет",
   },
 }
 

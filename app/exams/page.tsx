@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { api, type Exam, type University, type Subject } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
@@ -25,6 +25,20 @@ function setTokenBank(token: string, bankId: string) {
   if (typeof window === "undefined") return
   window.sessionStorage.setItem(tokenBankKey(token), bankId)
 }
+
+function useIsMobile(breakpoint = 640) {
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < breakpoint)
+    check()
+    window.addEventListener("resize", check)
+    return () => window.removeEventListener("resize", check)
+  }, [breakpoint])
+
+  return isMobile
+}
+
 
 function approxCount(value?: number) {
   if (value === undefined || value === null || value <= 0) return "-"
@@ -51,10 +65,12 @@ export default function ExamsPage() {
   const { user } = useAuth()
   const { locale } = useLocale()
   const { t } = useTranslation(locale)
+  const isMobile = useIsMobile()
 
   const [exams, setExams] = useState<Exam[]>([])
   const [universities, setUniversities] = useState<University[]>([])
   const [subjects, setSubjects] = useState<Subject[]>([])
+  const [years, setYears] = useState<number[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
@@ -65,6 +81,13 @@ export default function ExamsPage() {
 
   const [startingId, setStartingId] = useState<string>("")
 
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [isInitialLoading, setIsInitialLoading] = useState(true)
+
+  const loaderRef = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
     let cancelled = false
 
@@ -72,13 +95,11 @@ export default function ExamsPage() {
         try {
           setLoading(true)
           setError("")
-          const [examsData, universitiesData, subjectsData] = await Promise.all([
-            api.getExams(),
+          const [universitiesData, subjectsData] = await Promise.all([
             api.getUniversities(),
             api.getSubjects(),
           ])
           if (cancelled) return
-          setExams(Array.isArray(examsData) ? examsData : [])
           setUniversities(Array.isArray(universitiesData) ? universitiesData : [])
           setSubjects(Array.isArray(subjectsData) ? subjectsData : [])
         } catch (err: any) {
@@ -96,23 +117,77 @@ export default function ExamsPage() {
     }
   }, [])
 
-  const years = useMemo(() => Array.from(new Set(exams.map((e) => e.year))).sort((a, b) => b - a), [exams])
+  useEffect(() => {
+    (async () => {
+      try {
+        const uniId = selectedUniversity !== "all" ? selectedUniversity : undefined
+        const subId = selectedSubject !== "all" ? selectedSubject : undefined
+        const yd = await api.getExamYears({ universityId: uniId, subjectId: subId })
+        setYears(Array.isArray(yd.years) ? yd.years.sort((a, b) => b - a) : [])
+      } catch (err: any) {
+        toast.error(err?.message || t("errLoadYears"))
+      }
+    })()
+  }, [selectedUniversity, selectedSubject])
 
-  const filteredExams = useMemo(() => {
-    return exams.filter((exam) => {
-      const matchesSearch =
-        searchTerm === "" ||
-        exam.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        exam.subject.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        exam.university.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const loadExams = async (p: number) => {
+    setLoadingMore(true)
+    try {
+      const params: any = {
+        page: p,
+        limit: 10,
+      }
+      if (selectedUniversity !== "all") params.universityId = selectedUniversity
+      if (selectedSubject !== "all") params.subjectId = selectedSubject
+      if (selectedYear !== "all") params.year = Number(selectedYear)
+      if (searchTerm) params.search = searchTerm
 
-      const matchesUniversity = selectedUniversity === "all" || String(exam.university.id) === selectedUniversity
-      const matchesSubject = selectedSubject === "all" || String(exam.subject.id) === selectedSubject
-      const matchesYear = selectedYear === "all" || String(exam.year) === selectedYear
+      const newExams = await api.getExams(params)
+      setExams((prev) => (p === 1 ? newExams : [...prev, ...newExams]))
+      setHasMore(newExams.length === 10)
+    } catch (err: any) {
+      setError(err?.message || t("errLoadExams"))
+      toast.error(err?.message || t("errLoadExams"))
+    } finally {
+      setLoadingMore(false)
+      if (p === 1) setIsInitialLoading(false)
+    }
+  }
 
-      return matchesSearch && matchesUniversity && matchesSubject && matchesYear
-    })
-  }, [exams, searchTerm, selectedUniversity, selectedSubject, selectedYear])
+  useEffect(() => {
+    setExams([])
+    setPage(1)
+    setHasMore(true)
+    setIsInitialLoading(true)
+    loadExams(1)
+  }, [searchTerm, selectedUniversity, selectedSubject, selectedYear])
+
+  useEffect(() => {
+    if (page > 1 && hasMore && !loadingMore) {
+      loadExams(page)
+    }
+  }, [page])
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore) {
+          setPage((prev) => prev + 1)
+        }
+      },
+      { threshold: 1.0 },
+    )
+
+    if (loaderRef.current) {
+      observer.observe(loaderRef.current)
+    }
+
+    return () => {
+      if (loaderRef.current) {
+        observer.unobserve(loaderRef.current)
+      }
+    }
+  }, [hasMore, loadingMore])
 
   async function startExam(exam: Exam) {
     try {
@@ -146,6 +221,44 @@ export default function ExamsPage() {
       setStartingId("")
     }
   }
+  const truncateText = (text: string) => {
+    const limit = isMobile ? 10 : 40
+    return text.length > limit ? text.slice(0, limit) + "..." : text
+  }
+
+  const selectedUniversityLabel = useMemo(() => {
+    if (selectedUniversity === "all") return t("filterUniversity")
+    const uni = universities.find(u => String(u.id) === selectedUniversity)
+    return uni ? truncateText(tUniName(uni, locale)) : t("filterUniversity")
+  }, [selectedUniversity, universities, locale])
+
+  const selectedUniversityFull = useMemo(() => {
+    if (selectedUniversity === "all") return t("filterUniversity")
+    const uni = universities.find(u => String(u.id) === selectedUniversity)
+    return uni ? tUniName(uni, locale) : t("filterUniversity")
+  }, [selectedUniversity, universities, locale])
+
+  const selectedSubjectLabel = useMemo(() => {
+    if (selectedSubject === "all") return t("filterSubject")
+    const subj = subjects.find(s => String(s.id) === selectedSubject)
+    return subj ? truncateText(tSubjName(subj, locale)) : t("filterSubject")
+  }, [selectedSubject, subjects, locale])
+
+  const selectedSubjectFull = useMemo(() => {
+    if (selectedSubject === "all") return t("filterSubject")
+    const subj = subjects.find(s => String(s.id) === selectedSubject)
+    return subj ? tSubjName(subj, locale) : t("filterSubject")
+  }, [selectedSubject, subjects, locale])
+
+  const selectedYearLabel = useMemo(() => {
+    if (selectedYear === "all") return t("filterYear")
+    return truncateText(String(selectedYear))
+  }, [selectedYear])
+
+  const selectedYearFull = useMemo(() => {
+    if (selectedYear === "all") return t("filterYear")
+    return String(selectedYear)
+  }, [selectedYear])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/5 to-accent/5 flex flex-col">
@@ -181,41 +294,63 @@ export default function ExamsPage() {
             </div>
           </div>
           <div className="grid grid-cols-2 gap-6 w-full sm:flex sm:justify-between sm:items-center">
+
             <Select value={selectedUniversity} onValueChange={setSelectedUniversity}>
               <SelectTrigger className="h-12 bg-white/80 backdrop-blur-sm border-white/20 shadow-md">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder={t("filterUniversity")} />
+                <Filter className="h-4 w-4 mr-2 shrink-0" />
+                <span title={selectedUniversityFull} className="block truncate max-w-[240px]">
+                  {selectedUniversityLabel}
+                </span>
               </SelectTrigger>
+
               <SelectContent>
                 <SelectItem value="all">{t("filterAll")}</SelectItem>
-                {universities.map((uni) => (
-                  <SelectItem key={uni.id} value={String(uni.id)}>
-                    {tUniName(uni, locale)}
-                  </SelectItem>
-                ))}
+                {universities.map((uni) => {
+                  const full = tUniName(uni, locale)
+                  return (
+                    <SelectItem key={uni.id} value={String(uni.id)}>
+                      <span title={full} className="block truncate max-w-[400px]">
+                        {truncateText(full)}
+                      </span>
+                    </SelectItem>
+                  )
+                })}
               </SelectContent>
             </Select>
+
 
             <Select value={selectedSubject} onValueChange={setSelectedSubject}>
               <SelectTrigger className="h-12 bg-white/80 backdrop-blur-sm border-white/20 shadow-md">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder={t("filterSubject")} />
+                <Filter className="h-4 w-4 mr-2 shrink-0" />
+                <span title={selectedSubjectFull} className="block truncate max-w-[240px]">
+                  {selectedSubjectLabel}
+                </span>
               </SelectTrigger>
+
               <SelectContent>
                 <SelectItem value="all">{t("filterAll")}</SelectItem>
-                {subjects.map((subj) => (
-                  <SelectItem key={subj.id} value={String(subj.id)}>
-                    {tSubjName(subj, locale)}
-                  </SelectItem>
-                ))}
+                {subjects.map((subj) => {
+                  const full = tSubjName(subj, locale)
+                  return (
+                    <SelectItem key={subj.id} value={String(subj.id)}>
+                      <span title={full} className="block truncate max-w-[400px]">
+                        {truncateText(full)}
+                      </span>
+                    </SelectItem>
+                  )
+                })}
               </SelectContent>
             </Select>
 
+
             <Select value={selectedYear} onValueChange={setSelectedYear}>
               <SelectTrigger className="h-12 bg-white/80 backdrop-blur-sm border-white/20 shadow-md">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder={t("filterYear")} />
+                <Filter className="h-4 w-4 mr-2 shrink-0" />
+                <span title={selectedYearFull} className="block truncate max-w-[240px]">
+                  {selectedYearLabel}
+                </span>
               </SelectTrigger>
+
               <SelectContent>
                 <SelectItem value="all">{t("filterAll")}</SelectItem>
                 {years.map((year) => (
@@ -226,20 +361,21 @@ export default function ExamsPage() {
               </SelectContent>
             </Select>
 
+
           </div>
 
-          {loading ? (
+          {loading || isInitialLoading ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-16 w-16 border-4 border-violet-200 dark:border-violet-900 border-t-violet-600" />
             </div>
-          ) : filteredExams.length === 0 ? (
+          ) : exams.length === 0 ? (
             <div className="text-center py-12">
               <BookOpen className="h-16 w-16 text-violet-400 mx-auto mb-4" />
               <p className="text-muted-foreground text-lg">{t("noExamsFound")}</p>
             </div>
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {filteredExams.map((exam) => {
+              {exams.map((exam) => {
                 const isStarting = startingId === String(exam.id)
                 return (
                   <Card
@@ -299,6 +435,12 @@ export default function ExamsPage() {
               })}
             </div>
           )}
+          {loadingMore && (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-16 w-16 border-4 border-violet-200 dark:border-violet-900 border-t-violet-600" />
+            </div>
+          )}
+          <div ref={loaderRef} className="h-1" />
         </div>
       </main>
 
