@@ -57,6 +57,9 @@ export function PublicNavbar() {
 
           {/* Desktop Menu */}
           <div className="hidden lg:flex items-center gap-8">
+            <Link href="/#" className="text-sm font-medium hover:text-primary transition-colors">
+              {t("home")}
+            </Link>
             <Link href="/#features" className="text-sm font-medium hover:text-primary transition-colors">
               {t("features")}
             </Link>
@@ -142,10 +145,10 @@ export function PublicNavbar() {
           <div
             className={[
               "absolute inset-y-0 right-0 w-64 bg-card shadow-lg",
-              "transform transition-transform duration-300 ease-in-out",
+              "transform transition-transform duration-300 ease-in-out", "overflow-y-auto",
               mobileMenuOpen ? "translate-x-0" : "translate-x-full",
             ].join(" ")}
-            style={{ height: "100vh" }}
+            style={{ height: "100dvh" }}
             onClick={(e) => e.stopPropagation()}
             onTransitionEnd={() => {
               if (!mobileMenuOpen) setIsMounted(false)
@@ -153,21 +156,30 @@ export function PublicNavbar() {
             role="dialog"
             aria-modal="true"
           >
-            <div className="flex justify-between items-center px-4 py-6">
+            <div className="py-6">
+              <div className="flex justify-between items-center px-4">
+                <Link
+                  href="/"
+                  className="text-2xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent"
+                  onClick={closeMobile}
+                >
+                  {/* <img className="w-30" src="/Logo.png" alt="İmtahanVer.net logosu" /> */}
+                </Link>
+
+                <Button variant="ghost" size="icon" onClick={closeMobile} aria-label="Close menu">
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+              <div className="bg-[#E3E4EB] w-full h-[1px] mt-5"></div>
+            </div>
+            <div className="flex flex-col gap-8 px-4">
               <Link
                 href="/"
-                className="text-2xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent"
+                className="text-lg font-medium hover:text-primary transition-colors py-2"
                 onClick={closeMobile}
               >
-                {/* <img className="w-30" src="/Logo.png" alt="İmtahanVer.net logosu" /> */}
+                {t("home")}
               </Link>
-
-              <Button variant="ghost" size="icon" onClick={closeMobile} aria-label="Close menu">
-                <X className="h-5 w-5" />
-              </Button>
-            </div>
-
-            <div className="flex flex-col gap-16 px-4 py-16">
               <Link
                 href="/#features"
                 className="text-lg font-medium hover:text-primary transition-colors py-2"
