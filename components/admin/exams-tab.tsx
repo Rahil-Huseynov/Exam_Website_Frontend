@@ -354,7 +354,7 @@ export function ExamsTab() {
     if (!Number.isFinite(priceNum) || priceNum < 0) {
       return toastError(t("exams.errors.price_invalid"))
     }
-    if (!Number.isInteger(qcNum) || qcNum < 1) return toastError(t("exams.errors.question_count_invalid") || "Sual sayı düzgün deyil")
+    if (!Number.isInteger(qcNum) || qcNum < 1) return toastError(t("exams.errors.question_count_invalid"))
     try {
       setQBusy(true)
       await api.updateExam(manageBankId, {
@@ -364,7 +364,7 @@ export function ExamsTab() {
         questionCount: qcNum,
         random: Boolean(manageExamRandom),
       })
-      toastSuccess(t("exams.success.exam_updated") || "İmtahan yeniləndi")
+      toastSuccess(t("exams.success.exam_updated"))
       await loadData()
     } catch (err) {
       toastError(err instanceof Error ? err.message : t("exams.errors.update_failed"))
@@ -408,7 +408,7 @@ export function ExamsTab() {
   }
 
   function handleDeleteExam(bankId: string) {
-    if (!window.confirm(t("exams.confirm.delete_exam") || "İmtahanı silmək istəyirsən?")) return
+    if (!window.confirm(t("exams.confirm.delete_exam"))) return
 
       ; (async () => {
         try {
@@ -426,7 +426,7 @@ export function ExamsTab() {
   }
 
   function handleDeleteQuestion(questionId: string) {
-    if (!window.confirm(t("exams.confirm.delete_question") || "Sualı silmək istəyirsən?")) return
+    if (!window.confirm(t("exams.confirm.delete_question"))) return
 
       ; (async () => {
         try {
@@ -585,10 +585,10 @@ export function ExamsTab() {
   }
 
   function applyBulkPicks() {
-    if (!draft.length) return toastError(t("exams.errors.no_draft") || "Draft boşdur")
+    if (!draft.length) return toastError(t("exams.errors.no_draft"))
 
     const picks = parseBulkPicks(bulkPickText)
-    if (!picks.length) return toastError(t("exams.errors.bulk_invalid") || "Format düzgün deyil. Məs: 1-a, 2-b, 3-c")
+    if (!picks.length) return toastError(t("exams.errors.bulk_invalid"))
 
     const letterToIdx = (l: string) => l.charCodeAt(0) - 65
 
@@ -605,7 +605,7 @@ export function ExamsTab() {
       return next
     })
 
-    toastSuccess(t("exams.success.bulk_applied") || "Seçimlər tətbiq olundu")
+    toastSuccess(t("exams.success.bulk_applied"))
   }
 
   const missing5VariantNumbers = useMemo(() => {
@@ -681,7 +681,7 @@ export function ExamsTab() {
             </div>
 
             <div className="space-y-2">
-              <Label>{t("exams.ui.question_count") || "Random sual sayı"}</Label>
+              <Label>{t("exams.ui.question_count")}</Label>
               <Input
                 type="number"
                 min={1}
@@ -693,7 +693,7 @@ export function ExamsTab() {
             </div>
 
             <div className="space-y-2">
-              <Label>{t("exams.ui.random_mode") || "Sual seçimi"}</Label>
+              <Label>{t("exams.ui.random_mode")}</Label>
               <Select
                 value={examForm.random ? "true" : "false"}
                 onValueChange={(v) => setExamForm({ ...examForm, random: v === "true" })}
@@ -702,8 +702,8 @@ export function ExamsTab() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="true">🎲 Random</SelectItem>
-                  <SelectItem value="false">📄 Sıra ilə</SelectItem>
+                  <SelectItem value="true">🎲 {t("exams.ui.random")}</SelectItem>
+                  <SelectItem value="false">📄 {t("exams.ui.sequential")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -797,7 +797,7 @@ export function ExamsTab() {
             {busy && pdfProgress > 0 && (
               <div className="mt-3 space-y-2">
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>PDF yüklənir...</span>
+                  <span>{t("exams.ui.pdf_loading")}</span>
                   <span>{pdfProgress}%</span>
                 </div>
                 <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
@@ -824,12 +824,12 @@ export function ExamsTab() {
           onCloseAutoFocus={(e) => e.preventDefault()}
         >
           <DialogHeader>
-            <DialogTitle>{t("exams.ui.draft_modal_title") || "Draft"}</DialogTitle>
-            <DialogDescription>{t("exams.ui.draft_modal_desc") || "PDF-dən çıxan sualları yoxla və düzgün cavabları seç."}</DialogDescription>
+            <DialogTitle>{t("exams.ui.draft_modal_title")}</DialogTitle>
+            <DialogDescription>{t("exams.ui.draft_modal_desc")}</DialogDescription>
           </DialogHeader>
 
           {total === 0 ? (
-            <div className="text-sm text-muted-foreground">{t("exams.ui.no_draft_yet") || "Hələ draft yoxdur."}</div>
+            <div className="text-sm text-muted-foreground">{t("exams.ui.no_draft_yet")}</div>
           ) : (
             <div className="space-y-4">
               {(draft as any[]).map((q, idx) => {
@@ -848,9 +848,16 @@ export function ExamsTab() {
                         <CardTitle className="text-base">{no}.</CardTitle>
 
                         <div className="flex gap-2">
-                          <Button type="button" variant="outline" size="sm" onClick={() => addDraftQuestion(idx + 1)} disabled={busy} title="Bu sualdan sonra əlavə et">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => addDraftQuestion(idx + 1)}
+                            disabled={busy}
+                            title={t("exams.ui.add_question_after_this")}
+                          >
                             <Plus className="h-4 w-4 mr-2" />
-                            Əlavə et
+                            {t("exams.ui.add_after")}
                           </Button>
 
                           <Button
@@ -858,14 +865,14 @@ export function ExamsTab() {
                             variant="destructive"
                             size="sm"
                             onClick={() => {
-                              const ok = window.confirm("Bu sualı silmək istəyirsən?")
+                              const ok = window.confirm(t("exams.confirm.delete_draft_question"))
                               if (ok) removeDraftQuestionCascade(q.tempId)
                             }}
                             disabled={busy}
-                            title="Sualı sil"
+                            title={t("exams.ui.delete_question")}
                           >
                             <Trash2 className="h-4 w-4 mr-2" />
-                            Sil
+                            {t("common.delete")}
                           </Button>
                         </div>
                       </CardHeader>
@@ -873,7 +880,7 @@ export function ExamsTab() {
                       <CardContent className="space-y-4">
                         {Array.isArray(q.clipUrls) && q.clipUrls.length > 0 && (
                           <div className="space-y-2">
-                            <Label>{t("exams.ui.figures") || "Qrafik / Cədvəl"}</Label>
+                            <Label>{t("exams.ui.figures")}</Label>
                             <div className="grid gap-3 md:grid-cols-2">
                               {q.clipUrls.map((u: string, i: number) => (
                                 <img key={i} src={u} alt={`q-figure-${i}`} className="w-full rounded-lg border bg-white" />
@@ -883,21 +890,21 @@ export function ExamsTab() {
                         )}
 
                         <div className="space-y-2">
-                          <Label>{t("exams.ui.question_text") || "Sual"}</Label>
+                          <Label>{t("exams.ui.question_text")}</Label>
                           <textarea
                             className="w-full min-h-[90px] rounded-md border bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-primary"
                             value={q.text || ""}
                             onChange={(e) => updateDraftQuestion(q.tempId, { text: e.target.value })}
-                            placeholder={t("exams.ui.question_placeholder") || "Sual mətnini yaz..."}
+                            placeholder={t("exams.ui.question_placeholder")}
                           />
                         </div>
 
                         <div className="space-y-2">
-                          <Label>{t("exams.ui.options") || "Variantlar"}</Label>
+                          <Label>{t("exams.ui.options")}</Label>
 
                           {(!Array.isArray(q.options) || q.options.length === 0) && (
                             <div className="text-sm text-muted-foreground">
-                              {t("exams.ui.no_options_found") || "Bu sualda variantlar avtomatik tapılmadı (əl ilə əlavə edə bilərsən)."}
+                              {t("exams.ui.no_options_found")}
                             </div>
                           )}
 
@@ -913,14 +920,14 @@ export function ExamsTab() {
                                       checked={checked}
                                       onChange={() => setSelectedCorrect((prev) => ({ ...prev, [q.tempId]: opt.tempOptionId }))}
                                       className="mt-2"
-                                      title={t("exams.ui.correct_answer") || "Düzgün cavab"}
+                                      title={t("exams.ui.correct_answer")}
                                     />
 
                                     <div className="flex-1 space-y-2">
                                       <Input
                                         value={opt.text || ""}
                                         onChange={(e) => updateDraftOption(q.tempId, opt.tempOptionId, e.target.value)}
-                                        placeholder={`${String.fromCharCode(65 + oi)}) ${t("exams.ui.option_n", { n: oi + 1 }) || "Variant"}`}
+                                        placeholder={`${String.fromCharCode(65 + oi)}) ${t("exams.ui.option_n", { n: oi + 1 })}`}
                                       />
 
                                       {Array.isArray(opt.clipUrls) && opt.clipUrls.length > 0 && (
@@ -937,9 +944,9 @@ export function ExamsTab() {
                                       variant="outline"
                                       onClick={() => removeDraftOption(q.tempId, opt.tempOptionId)}
                                       disabled={(q.options || []).length <= 2}
-                                      title={t("exams.ui.remove_last_option") || "Sil"}
+                                      title={t("exams.ui.remove_option")}
                                     >
-                                      {t("common.delete") || "Sil"}
+                                      {t("common.delete")}
                                     </Button>
                                   </div>
                                 </div>
@@ -950,10 +957,10 @@ export function ExamsTab() {
                           <div className="flex gap-2 pt-2 items-center">
                             <Button type="button" variant="outline" onClick={() => addDraftOption(q.tempId)}>
                               <Plus className="h-4 w-4 mr-2" />
-                              {t("exams.ui.add_option") || "Variant əlavə et"}
+                              {t("exams.ui.add_option")}
                             </Button>
 
-                            <div className="text-xs text-muted-foreground">{t("exams.ui.note_min_2_unique") || "Minimum 2 fərqli variant saxla."}</div>
+                            <div className="text-xs text-muted-foreground">{t("exams.ui.note_min_2_unique")}</div>
                           </div>
                         </div>
                       </CardContent>
@@ -965,20 +972,20 @@ export function ExamsTab() {
           )}
 
           <div className="mt-4 border-t pt-4 space-y-2">
-            <Label>{t("exams.ui.bulk_pick_label") || "Toplu düzgün cavab seçimi (məs: 1-a, 2-b, 3-c)"}</Label>
+            <Label>{t("exams.ui.bulk_pick_label")}</Label>
             <div className="flex gap-2">
-              <Input value={bulkPickText} onChange={(e) => setBulkPickText(e.target.value)} placeholder={t("exams.ui.bulk_pick_placeholder") || "1-a, 2-b, 3-c"} />
+              <Input value={bulkPickText} onChange={(e) => setBulkPickText(e.target.value)} placeholder={t("exams.ui.bulk_pick_placeholder")} />
               <Button type="button" variant="outline" onClick={applyBulkPicks} disabled={busy || total === 0}>
-                {t("exams.ui.apply") || "Apply"}
+                {t("exams.ui.apply")}
               </Button>
             </div>
 
             {total > 0 && missing5VariantNumbers.length > 0 && (
               <div className="text-sm text-destructive">
-                5 variantı olmayan suallar:
+                {t("exams.ui.questions_without_5_variants")}:
                 <span className="flex flex-wrap gap-2 mt-1">
                   {missing5VariantNumbers.map((no) => (
-                    <button key={no} type="button" className="underline underline-offset-2 hover:opacity-80" onClick={() => scrollToQuestionNo(no)} title={`Sual ${no}-a get`}>
+                    <button key={no} type="button" className="underline underline-offset-2 hover:opacity-80" onClick={() => scrollToQuestionNo(no)} title={t("exams.ui.jump_to_question", { no })}>
                       {no}
                     </button>
                   ))}
@@ -989,17 +996,17 @@ export function ExamsTab() {
 
           <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:justify-between">
             <div className="text-sm text-muted-foreground">
-              {total > 0 && <>{t("exams.ui.selected_count", { selected: totalHasAnswered, total }) || `Seçilən: ${totalHasAnswered} / ${total}`}</>}
+              {total > 0 && <>{t("exams.ui.selected_count", { selected: totalHasAnswered, total })}</>}
             </div>
 
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setDraftModalOpen(false)} disabled={busy} type="button">
-                {t("common.close") || "Bağla"}
+                {t("common.close")}
               </Button>
 
               <Button onClick={handleCommit} disabled={busy || !canCommit} type="button">
                 <CheckCircle2 className="h-4 w-4 mr-2" />
-                {busy ? (t("exams.ui.sending") || "Göndərilir...") : (t("exams.ui.save_selected") || "Seçilənləri yadda saxla")}
+                {busy ? t("exams.ui.sending") : t("exams.ui.save_selected")}
               </Button>
             </div>
           </DialogFooter>
@@ -1026,7 +1033,10 @@ export function ExamsTab() {
                   <div className="space-y-1">
                     <p className="font-medium">{exam.title}</p>
                     <p className="text-sm text-muted-foreground">
-                      {exam.university.name} • {exam.subject.name} • {exam.year}
+                      {exam.university.name} • {exam.subject.name} • {exam.year} • <span className="text-sm font-medium">
+                        {exam.random ? t("exams.ui.random") : t("exams.ui.sequential")}
+                      </span>
+
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {t("exams.ui.question_count_price", { count: exam.questionCount, price: exam.price.toFixed(2) })}
@@ -1060,7 +1070,7 @@ export function ExamsTab() {
 
           <Card className="border-muted">
             <CardHeader>
-              <CardTitle className="text-base">{t("exams.ui.edit_exam_modal_title") || "İmtahanı redaktə et"}</CardTitle>
+              <CardTitle className="text-base">{t("exams.ui.edit_exam_modal_title")}</CardTitle>
               <CardDescription className="text-sm">
                 {(manageExamUniversityName || manageExamSubjectName) && (
                   <>
@@ -1073,7 +1083,7 @@ export function ExamsTab() {
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-3">
                 <div className="space-y-2 md:col-span-1">
-                  <Label>{t("exams.ui.exam_title_label") || "Başlıq"}</Label>
+                  <Label>{t("exams.ui.exam_title_label")}</Label>
                   <Input value={manageExamTitle} onChange={(e) => setManageExamTitle(e.target.value)} disabled={qBusy} />
                 </div>
 
@@ -1083,11 +1093,11 @@ export function ExamsTab() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>{t("exams.ui.price_label") || "Qiymət"} (AZN)</Label>
+                  <Label>{t("exams.ui.price_label")} (AZN)</Label>
                   <Input type="number" step="0.01" value={manageExamPrice} onChange={(e) => setManageExamPrice(e.target.value)} disabled={qBusy} />
                 </div>
                 <div className="space-y-2">
-                  <Label>{t("exams.ui.question_count") || "Random sual sayı"}</Label>
+                  <Label>{t("exams.ui.question_count")}</Label>
                   <Input
                     type="number"
                     min={1}
@@ -1100,7 +1110,7 @@ export function ExamsTab() {
               </div>
 
               <div className="space-y-2">
-                <Label>{t("exams.ui.random_mode") || "Sual seçimi"}</Label>
+                <Label>{t("exams.ui.random_mode")}</Label>
                 <Select
                   value={manageExamRandom ? "true" : "false"}
                   onValueChange={(v) => setManageExamRandom(v === "true")}
@@ -1109,8 +1119,8 @@ export function ExamsTab() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="true">🎲 Random</SelectItem>
-                    <SelectItem value="false">📄 Sıra ilə</SelectItem>
+                    <SelectItem value="true">🎲 {t("exams.ui.random")}</SelectItem>
+                    <SelectItem value="false">📄 {t("exams.ui.sequential")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1118,12 +1128,12 @@ export function ExamsTab() {
               <div className="flex gap-2 flex-wrap">
                 <Button onClick={handleSaveManageExam} disabled={qBusy || !canSaveManageExam} type="button">
                   <Save className="h-4 w-4 mr-2" />
-                  {qBusy ? (t("exams.ui.saving") || "Yadda saxlanır...") : (t("common.save") || "Yadda saxla")}
+                  {qBusy ? t("exams.ui.saving") : t("common.save")}
                 </Button>
 
                 <Button variant="destructive" onClick={() => handleDeleteExam(manageBankId)} disabled={qBusy || !manageBankId} type="button">
                   <Trash2 className="h-4 w-4 mr-2" />
-                  {t("common.delete") || "Sil"}
+                  {t("common.delete")}
                 </Button>
               </div>
             </CardContent>

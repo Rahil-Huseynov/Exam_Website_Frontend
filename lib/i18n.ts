@@ -737,8 +737,16 @@ export const translations = {
     examGivenQuestions: "Verilən sual sayı",
     errLoadYears: "İllərin yüklənməsi xətası",
     "exams.ui.random_mode": "Sual seçimi",
-    "exams.ui.random": "🎲 Random",
     "exams.ui.ordered": "📄 Sıra ilə",
+    "exams.ui.random": "Random",
+    "exams.ui.sequential": "Sıra ilə",
+    "exams.ui.add_after": "Sonra əlavə et",
+    "exams.ui.pdf_loading": "PDF yüklənir...",
+    "exams.ui.questions_without_5_variants": "5 variantı olmayan suallar",
+    "exams.ui.jump_to_question": "Sual {no}-a keç",
+    "exams.ui.remove_option": "Sil",
+    "exams.ui.add_question_after_this": "Bu sualdan sonra əlavə et",
+    "exams.confirm.delete_draft_question": "Bu sualı silmək istəyirsən?"
   },
   en: {
     login: "Login",
@@ -1475,8 +1483,16 @@ export const translations = {
     examGivenQuestions: "Questions shown",
     errLoadYears: "Error loading years",
     "exams.ui.random_mode": "Question selection",
-    "exams.ui.random": "🎲 Random",
-    "exams.ui.ordered": "📄 Ordered",
+    "exams.ui.random": "Random",
+    "exams.ui.sequential": "Sequential",
+    "exams.ui.add_after": "Add after",
+    "exams.ui.pdf_loading": "PDF is loading...",
+    "exams.ui.questions_without_5_variants": "Questions without 5 options",
+    "exams.ui.jump_to_question": "Go to question {no}",
+    "exams.ui.remove_option": "Delete",
+    "exams.ui.add_question_after_this": "Add a question after this one",
+    "exams.confirm.delete_draft_question": "Are you sure you want to delete this question?"
+ 
   },
   ru: {
     login: "Войти",
@@ -2226,8 +2242,16 @@ export const translations = {
     examGivenQuestions: "Показано вопросов",
     errLoadYears: "Ошибка загрузки лет",
     "exams.ui.random_mode": "Выбор вопросов",
-    "exams.ui.random": "🎲 Случайно",
-    "exams.ui.ordered": "📄 По порядку",
+    "exams.ui.random": "Случайно",
+    "exams.ui.sequential": "По порядку",
+    "exams.ui.add_after": "Добавить после",
+    "exams.ui.pdf_loading": "PDF загружается...",
+    "exams.ui.questions_without_5_variants": "Вопросы без 5 вариантов",
+    "exams.ui.jump_to_question": "Перейти к вопросу {no}",
+    "exams.ui.remove_option": "Удалить",
+    "exams.ui.add_question_after_this": "Добавить вопрос после этого",
+    "exams.confirm.delete_draft_question": "Вы уверены, что хотите удалить этот вопрос?"
+
 
   },
 }
