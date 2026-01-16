@@ -730,13 +730,15 @@ export const translations = {
     "searchResultsPlaceholder": "Email, ad/soyad, publicId, exam title...",
     "startedAt": "Başlama",
     "finishedAt": "Bitmə",
-    "exams.ui.question_count": "Random sual sayı",
+    "exams.ui.question_count": "Sual sayı",
     "exams.errors.question_count_invalid": "Sual sayı düzgün deyil",
     "exam.card.questions_preview": "Bu imtahanda {{count}} sual çıxacaq (bankda cəmi {{total}} sual var)",
     examTotalQuestions: "Ümumi sual sayı",
     examGivenQuestions: "Verilən sual sayı",
     errLoadYears: "İllərin yüklənməsi xətası",
-
+    "exams.ui.random_mode": "Sual seçimi",
+    "exams.ui.random": "🎲 Random",
+    "exams.ui.ordered": "📄 Sıra ilə",
   },
   en: {
     login: "Login",
@@ -1472,7 +1474,9 @@ export const translations = {
     examTotalQuestions: "Total questions",
     examGivenQuestions: "Questions shown",
     errLoadYears: "Error loading years",
-
+    "exams.ui.random_mode": "Question selection",
+    "exams.ui.random": "🎲 Random",
+    "exams.ui.ordered": "📄 Ordered",
   },
   ru: {
     login: "Войти",
@@ -2221,6 +2225,10 @@ export const translations = {
     examTotalQuestions: "Всего вопросов",
     examGivenQuestions: "Показано вопросов",
     errLoadYears: "Ошибка загрузки лет",
+    "exams.ui.random_mode": "Выбор вопросов",
+    "exams.ui.random": "🎲 Случайно",
+    "exams.ui.ordered": "📄 По порядку",
+
   },
 }
 

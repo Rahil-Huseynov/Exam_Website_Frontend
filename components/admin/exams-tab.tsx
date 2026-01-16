@@ -44,6 +44,7 @@ export function ExamsTab() {
     year: new Date().getFullYear().toString(),
     price: "5.00",
     questionCount: "25",
+    random: true,
   })
 
   const [selectedExamId, setSelectedExamId] = useState<string>("")
@@ -66,6 +67,7 @@ export function ExamsTab() {
   const [manageExamQuestionCount, setManageExamQuestionCount] = useState("25")
   const [manageExamUniversityName, setManageExamUniversityName] = useState("")
   const [manageExamSubjectName, setManageExamSubjectName] = useState("")
+  const [manageExamRandom, setManageExamRandom] = useState<boolean>(true)
 
   const [addModalOpen, setAddModalOpen] = useState(false)
   const [newQText, setNewQText] = useState("")
@@ -169,7 +171,7 @@ export function ExamsTab() {
     if (!Number.isFinite(p) || p < 0) return false
     if (!Number.isInteger(qc) || qc < 1) return false
     return true
-  }, [manageBankId, manageExamTitle, manageExamYear, manageExamPrice])
+  }, [manageBankId, manageExamTitle, manageExamYear, manageExamPrice, manageExamQuestionCount])
 
   async function handleCreateExam() {
     if (!canCreateExam) {
@@ -187,6 +189,7 @@ export function ExamsTab() {
         year: Number(examForm.year),
         price: Number.parseFloat(examForm.price),
         questionCount: Number.parseInt(examForm.questionCount, 10) || 25,
+        random: Boolean(examForm.random),
       })
 
       setSelectedExamId(created.id)
@@ -197,6 +200,7 @@ export function ExamsTab() {
         year: new Date().getFullYear().toString(),
         price: "5.00",
         questionCount: "25",
+        random: true,
       })
 
       toastSuccess(t("exams.success.exam_created"))
@@ -312,15 +316,17 @@ export function ExamsTab() {
   async function openManageQuestions(bankId: string) {
     try {
       setQBusy(true)
-      setManageBankId(bankId)
 
       const ex = exams.find((x) => x.id === bankId)
+
+      setManageBankId(bankId)
       setManageExamTitle(ex?.title || "")
       setManageExamYear(String(ex?.year ?? ""))
       setManageExamPrice(String(ex?.price ?? ""))
       setManageExamQuestionCount(String(ex?.questionCount ?? 25))
       setManageExamUniversityName(ex?.university?.name || "")
       setManageExamSubjectName(ex?.subject?.name || "")
+      setManageExamRandom(typeof ex?.random === "boolean" ? ex.random : true)
 
       const res = await api.listBankQuestions(bankId)
       setBankQuestions(res.questions)
@@ -356,6 +362,7 @@ export function ExamsTab() {
         year: yearNum,
         price: priceNum,
         questionCount: qcNum,
+        random: Boolean(manageExamRandom),
       })
       toastSuccess(t("exams.success.exam_updated") || "İmtahan yeniləndi")
       await loadData()
@@ -683,6 +690,22 @@ export function ExamsTab() {
                 disabled={busy}
                 placeholder="25"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label>{t("exams.ui.random_mode") || "Sual seçimi"}</Label>
+              <Select
+                value={examForm.random ? "true" : "false"}
+                onValueChange={(v) => setExamForm({ ...examForm, random: v === "true" })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="true">🎲 Random</SelectItem>
+                  <SelectItem value="false">📄 Sıra ilə</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
           </div>
@@ -1074,6 +1097,22 @@ export function ExamsTab() {
                     placeholder="25"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>{t("exams.ui.random_mode") || "Sual seçimi"}</Label>
+                <Select
+                  value={manageExamRandom ? "true" : "false"}
+                  onValueChange={(v) => setManageExamRandom(v === "true")}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="true">🎲 Random</SelectItem>
+                    <SelectItem value="false">📄 Sıra ilə</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="flex gap-2 flex-wrap">

@@ -196,6 +196,7 @@ export interface Exam {
   year: number
   price: number
   questionCount: number
+  random: boolean
 }
 
 
@@ -328,7 +329,7 @@ export type CreateQuestionPayload = {
 }
 
 
-export type UpdateExamPayload = { title?: string; year?: number; price?: number; questionCount?: number }
+export type UpdateExamPayload = { title?: string; year?: number; price?: number; questionCount?: number; random?: boolean }
 export type DeleteOkResponse = { ok: boolean }
 export type CreateExamTokenResponse = { ok: true; token: string; expiresAt: string }
 export type CreateAttemptResponse = { attemptId: string }
@@ -748,7 +749,7 @@ class ApiClient {
     return this.getExamYears(params);
   }
 
-  async createExam(data: { title: string; universityId: string; subjectId: string; year: number; price: number; questionCount: number }) {
+  async createExam(data: { title: string; universityId: string; subjectId: string; year: number; price: number; questionCount: number; random: boolean }) {
     return this.request<Exam>("/questions/exam", {
       method: "POST",
       body: JSON.stringify(data),
