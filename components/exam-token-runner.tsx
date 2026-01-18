@@ -11,17 +11,18 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { CheckCircle2, ChevronLeft, ChevronRight, Flag, Loader2, XCircle, Clock } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { deleteCookie_EXAM_DURATION_COOKIE, EXAM_DURATION_COOKIE, getCookie_EXAM_DURATION_COOKIE } from "@/lib/ExamDurationMinutesHelper"
 
-const EXAM_DURATION_SEC = 60 * 60
-
-function formatTime(totalSec: number) {
-  const sec = Math.max(0, totalSec)
-  const mm = Math.floor(sec / 60)
-  const ss = sec % 60
-  return `${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`
-}
 
 export default function ExamTokenRunner({ attemptId, userId, onFinished, }: { attemptId: string; userId: number; onFinished?: () => void }) {
+  const duration = getCookie_EXAM_DURATION_COOKIE(EXAM_DURATION_COOKIE)
+  const EXAM_DURATION_SEC = Number(duration) * 60
+  function formatTime(totalSec: number) {
+    const sec = Math.max(0, totalSec)
+    const mm = Math.floor(sec / 60)
+    const ss = sec % 60
+    return `${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`
+  }
   const { locale } = useLocale()
   const { t } = useTranslation(locale)
   const router = useRouter()
@@ -207,6 +208,13 @@ export default function ExamTokenRunner({ attemptId, userId, onFinished, }: { at
       setActiveIndex(0)
 
       toast.success(t("examRunner.toast.finished_showing_results"))
+      deleteCookie_EXAM_DURATION_COOKIE(EXAM_DURATION_COOKIE)
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.clear()
+          sessionStorage.clear()
+        } catch { }
+      }
     } catch (e: any) {
       toast.error(e?.message || t("examRunner.toast.finish_failed"))
     } finally {

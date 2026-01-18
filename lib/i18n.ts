@@ -746,7 +746,11 @@ export const translations = {
     "exams.ui.jump_to_question": "Sual {no}-a keç",
     "exams.ui.remove_option": "Sil",
     "exams.ui.add_question_after_this": "Bu sualdan sonra əlavə et",
-    "exams.confirm.delete_draft_question": "Bu sualı silmək istəyirsən?"
+    "exams.confirm.delete_draft_question": "Bu sualı silmək istəyirsən?",
+    "examDuration": "İmtahan vaxtı",
+    "minutes": "dəqiqə",
+    "exams.errors.duration_invalid": "Yanlış müddət",
+    "exams.ui.duration_minutes": "Müddət (dəqiqə)"
   },
   en: {
     login: "Login",
@@ -1491,8 +1495,11 @@ export const translations = {
     "exams.ui.jump_to_question": "Go to question {no}",
     "exams.ui.remove_option": "Delete",
     "exams.ui.add_question_after_this": "Add a question after this one",
-    "exams.confirm.delete_draft_question": "Are you sure you want to delete this question?"
- 
+    "exams.confirm.delete_draft_question": "Are you sure you want to delete this question?",
+    "examDuration": "Exam duration",
+    "minutes": "minutes",
+    "exams.errors.duration_invalid": "Invalid duration",
+    "exams.ui.duration_minutes": "Duration (minutes)",
   },
   ru: {
     login: "Войти",
@@ -2250,9 +2257,11 @@ export const translations = {
     "exams.ui.jump_to_question": "Перейти к вопросу {no}",
     "exams.ui.remove_option": "Удалить",
     "exams.ui.add_question_after_this": "Добавить вопрос после этого",
-    "exams.confirm.delete_draft_question": "Вы уверены, что хотите удалить этот вопрос?"
-
-
+    "exams.confirm.delete_draft_question": "Вы уверены, что хотите удалить этот вопрос?",
+    "examDuration": "Время экзамена",
+    "minutes": "минут",
+    "exams.errors.duration_invalid": "Неверная продолжительность",
+    "exams.ui.duration_minutes": "Продолжительность (минуты)",
   },
 }
 

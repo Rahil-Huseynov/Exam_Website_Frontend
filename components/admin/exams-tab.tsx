@@ -44,6 +44,7 @@ export function ExamsTab() {
     year: new Date().getFullYear().toString(),
     price: "5.00",
     questionCount: "25",
+    durationMinutes: "60",
     random: true,
   })
 
@@ -65,6 +66,7 @@ export function ExamsTab() {
   const [manageExamYear, setManageExamYear] = useState("")
   const [manageExamPrice, setManageExamPrice] = useState("")
   const [manageExamQuestionCount, setManageExamQuestionCount] = useState("25")
+  const [manageExamDurationMinutes, setManageExamDurationMinutes] = useState("60")
   const [manageExamUniversityName, setManageExamUniversityName] = useState("")
   const [manageExamSubjectName, setManageExamSubjectName] = useState("")
   const [manageExamRandom, setManageExamRandom] = useState<boolean>(true)
@@ -142,7 +144,7 @@ export function ExamsTab() {
   }, [draft, selectedCorrect])
 
   const canCreateExam = useMemo(() => {
-    return !!examForm.title && !!examForm.universityId && !!examForm.subjectId && !!examForm.year && !!examForm.price && !!examForm.questionCount
+    return !!examForm.title && !!examForm.universityId && !!examForm.subjectId && !!examForm.year && !!examForm.price && !!examForm.questionCount && !!examForm.durationMinutes
   }, [examForm])
 
   const canReadPdfFront = useMemo(() => {
@@ -167,11 +169,13 @@ export function ExamsTab() {
     const y = Number(manageExamYear)
     const p = Number(manageExamPrice)
     const qc = Number(manageExamQuestionCount)
+    const dm = Number(manageExamDurationMinutes)
     if (!Number.isInteger(y) || y < 1900 || y > 3000) return false
     if (!Number.isFinite(p) || p < 0) return false
     if (!Number.isInteger(qc) || qc < 1) return false
+    if (!Number.isInteger(dm) || dm < 1) return false
     return true
-  }, [manageBankId, manageExamTitle, manageExamYear, manageExamPrice, manageExamQuestionCount])
+  }, [manageBankId, manageExamTitle, manageExamYear, manageExamPrice, manageExamQuestionCount, manageExamDurationMinutes])
 
   async function handleCreateExam() {
     if (!canCreateExam) {
@@ -189,6 +193,7 @@ export function ExamsTab() {
         year: Number(examForm.year),
         price: Number.parseFloat(examForm.price),
         questionCount: Number.parseInt(examForm.questionCount, 10) || 25,
+        durationMinutes: Number.parseInt(examForm.durationMinutes, 10) || 60,
         random: Boolean(examForm.random),
       })
 
@@ -200,6 +205,7 @@ export function ExamsTab() {
         year: new Date().getFullYear().toString(),
         price: "5.00",
         questionCount: "25",
+        durationMinutes: "60",
         random: true,
       })
 
@@ -324,6 +330,7 @@ export function ExamsTab() {
       setManageExamYear(String(ex?.year ?? ""))
       setManageExamPrice(String(ex?.price ?? ""))
       setManageExamQuestionCount(String(ex?.questionCount ?? 25))
+      setManageExamDurationMinutes(String(ex?.durationMinutes ?? 60))
       setManageExamUniversityName(ex?.university?.name || "")
       setManageExamSubjectName(ex?.subject?.name || "")
       setManageExamRandom(typeof ex?.random === "boolean" ? ex.random : true)
@@ -348,6 +355,7 @@ export function ExamsTab() {
     const yearNum = Number(manageExamYear)
     const priceNum = Number(manageExamPrice)
     const qcNum = Number(manageExamQuestionCount)
+    const dmNum = Number(manageExamDurationMinutes)
     if (!Number.isInteger(yearNum) || yearNum < 1900 || yearNum > 3000) {
       return toastError(t("exams.errors.year_invalid"))
     }
@@ -355,6 +363,7 @@ export function ExamsTab() {
       return toastError(t("exams.errors.price_invalid"))
     }
     if (!Number.isInteger(qcNum) || qcNum < 1) return toastError(t("exams.errors.question_count_invalid"))
+    if (!Number.isInteger(dmNum) || dmNum < 1) return toastError(t("exams.errors.duration_invalid"))
     try {
       setQBusy(true)
       await api.updateExam(manageBankId, {
@@ -362,6 +371,7 @@ export function ExamsTab() {
         year: yearNum,
         price: priceNum,
         questionCount: qcNum,
+        durationMinutes: dmNum,
         random: Boolean(manageExamRandom),
       })
       toastSuccess(t("exams.success.exam_updated"))
@@ -689,6 +699,18 @@ export function ExamsTab() {
                 onChange={(e) => setExamForm({ ...examForm, questionCount: e.target.value })}
                 disabled={busy}
                 placeholder="25"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>{t("exams.ui.duration_minutes")}</Label>
+              <Input
+                type="number"
+                min={1}
+                value={examForm.durationMinutes}
+                onChange={(e) => setExamForm({ ...examForm, durationMinutes: e.target.value })}
+                disabled={busy}
+                placeholder="60"
               />
             </div>
 
@@ -1033,9 +1055,8 @@ export function ExamsTab() {
                   <div className="space-y-1">
                     <p className="font-medium">{exam.title}</p>
                     <p className="text-sm text-muted-foreground">
-                      {exam.university.name} • {exam.subject.name} • {exam.year} • <span className="text-sm font-medium">
-                        {exam.random ? t("exams.ui.random") : t("exams.ui.sequential")}
-                      </span>
+                      {exam.university.name} • {exam.subject.name} • {exam.year} • <span className="text-sm text-muted-foreground">
+                        {exam.random ? t("exams.ui.random") : t("exams.ui.sequential")}</span> • <span className="text-sm text-muted-foreground">{exam.durationMinutes} {t("minutes")}</span>
 
                     </p>
                     <p className="text-sm text-muted-foreground">
@@ -1105,6 +1126,17 @@ export function ExamsTab() {
                     onChange={(e) => setManageExamQuestionCount(e.target.value)}
                     disabled={qBusy}
                     placeholder="25"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>{t("exams.ui.duration_minutes")}</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={manageExamDurationMinutes}
+                    onChange={(e) => setManageExamDurationMinutes(e.target.value)}
+                    disabled={qBusy}
+                    placeholder="60"
                   />
                 </div>
               </div>
@@ -1281,4 +1313,4 @@ export function ExamsTab() {
       </Dialog>
     </div>
   )
-}
+} 

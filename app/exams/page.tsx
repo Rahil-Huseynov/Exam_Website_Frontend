@@ -17,6 +17,7 @@ import { BookOpen, Search, Filter, Sparkles } from "lucide-react"
 import { toast, ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 import { PublicNavbar } from "@/components/public-navbar"
+import { deleteCookie_EXAM_DURATION_COOKIE, EXAM_DURATION_COOKIE, setCookie_EXAM_DURATION_COOKIE } from "@/lib/ExamDurationMinutesHelper"
 
 function tokenBankKey(token: string) {
   return `exam_token_bank_${token}`
@@ -207,6 +208,13 @@ export default function ExamsPage() {
         return
       }
 
+      deleteCookie_EXAM_DURATION_COOKIE(EXAM_DURATION_COOKIE)
+
+      const duration = (exam as any).durationMinutes
+      if (duration !== undefined && duration !== null && !Number.isNaN(Number(duration))) {
+        setCookie_EXAM_DURATION_COOKIE(EXAM_DURATION_COOKIE, String(duration), Number(EXAM_DURATION_COOKIE)) 
+      }
+
       const tok = await api.createExamToken(bankId, user.id)
       const token = String((tok as any)?.token || "")
 
@@ -223,6 +231,7 @@ export default function ExamsPage() {
       setStartingId("")
     }
   }
+
   const truncateText = (text: string) => {
     const limit = isMobile ? 10 : 40
     return text.length > limit ? text.slice(0, limit) + "..." : text
@@ -414,6 +423,16 @@ export default function ExamsPage() {
   dark:from-violet-950/20 dark:to-indigo-950/20">
                           <span className="text-muted-foreground">{t("examGivenQuestions")}:</span>
                           <span className="font-bold text-violet-600">{(exam as any).questionCount ?? "-"}</span>
+                        </div>
+
+                        <div className="flex items-center justify-between text-sm p-3 rounded-lg
+      bg-gradient-to-r from-purple-100 to-indigo-100
+      dark:from-purple-900/20 dark:to-indigo-900/20">
+
+                          <span className="text-muted-foreground">{t("examDuration")}:</span>
+                          <span className="font-bold text-violet-600">
+                            {exam.durationMinutes ?? "-"} {t("minutes")}
+                          </span>
                         </div>
 
                         <div className="flex items-center justify-between text-sm p-3 rounded-lg bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20">

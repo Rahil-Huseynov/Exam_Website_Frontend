@@ -234,6 +234,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     deleteCookie("accessToken")
+    deleteCookie("exam_durationMinutes")
+    
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.clear()
+        sessionStorage.clear()
+      } catch { }
+    }
 
     if (typeof window !== "undefined") window.location.reload()
   }, [user?.id])

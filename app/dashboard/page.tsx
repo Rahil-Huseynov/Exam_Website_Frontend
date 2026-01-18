@@ -33,6 +33,7 @@ import {
 
 import { toastError } from "@/lib/toast"
 import { fromCents, toCents } from "@/lib/utils"
+import { deleteCookie_EXAM_DURATION_COOKIE, EXAM_DURATION_COOKIE, setCookie_EXAM_DURATION_COOKIE } from "@/lib/ExamDurationMinutesHelper"
 
 type Attempt = any
 type Step = 1 | 2 | 3
@@ -354,6 +355,14 @@ export default function DashboardPage() {
       const tok = await api.createExamToken(bankId, user.id)
       const token = String((tok as any)?.token || "")
       const url = String((tok as any)?.url || `/exam-token/${token}`)
+
+
+      deleteCookie_EXAM_DURATION_COOKIE(EXAM_DURATION_COOKIE)
+
+      const duration = (exam as any).durationMinutes
+      if (duration !== undefined && duration !== null && !Number.isNaN(Number(duration))) {
+        setCookie_EXAM_DURATION_COOKIE(EXAM_DURATION_COOKIE, String(duration), Number(EXAM_DURATION_COOKIE))
+      }
 
       if (!token) {
         toastError(t("errTokenFail"))
@@ -681,6 +690,12 @@ export default function DashboardPage() {
                                   count: exam.questionCount ?? 0,
                                   total: approxCount((exam as any).questionsTotal),
                                 })}
+                              </span>
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                              <span>{t("examDuration")}:</span>
+                              <span>
+                                {exam.durationMinutes ?? "-"} {t("minutes")}
                               </span>
                             </div>
                           </div>
