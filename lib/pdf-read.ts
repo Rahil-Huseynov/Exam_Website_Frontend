@@ -1,9 +1,8 @@
-// /src/lib/pdf-read.ts
 "use client"
 
 import { getDocument, GlobalWorkerOptions, type PDFDocumentProxy, type PDFPageProxy } from "pdfjs-dist"
 import "pdfjs-dist/build/pdf.worker.min.mjs"
-import { createWorker, type Worker as TesseractWorker } from "tesseract.js"
+import { createWorker } from "tesseract.js"
 
 GlobalWorkerOptions.workerSrc = "/pdfjs/pdf.worker.min.mjs"
 
@@ -34,7 +33,6 @@ function clamp(v: number, a: number, b: number): number {
   return Math.max(a, Math.min(b, v))
 }
 
-/** ---------- ✅ FALSE-POSITIVE FILTER (şəkil olmayanı kəssin) ---------- */
 type FigureQuality = {
   darkRatio: number
   longH: number
@@ -67,7 +65,6 @@ function calcFigureQuality(c: HTMLCanvasElement): FigureQuality {
 
   const darkRatio = dark / Math.max(1, total)
 
-  // uzun xəttlər: cədvəl/grid/oxlar üçün yaxşı siqnaldır
   const minRunH = Math.floor(w * 0.62)
   const minRunV = Math.floor(h * 0.50)
 
@@ -109,19 +106,12 @@ function isValidFigureCrop(c: HTMLCanvasElement): boolean {
 
   const q = calcFigureQuality(c)
 
-  // Çox qara bloklar (məs: böyük qara fon, qalın marker) çox vaxt false-positive olur
   if (q.darkRatio > 0.33) return false
-
-  // Heç bir uzun xətt yoxdursa, çox vaxt “sadə mətn parçası” olur
   if (q.longH + q.longV < 1) return false
 
   return true
 }
 
-/**
- * ✅ Figure detector + valid crop filter
- * Məqsəd: cədvəl/qrafik/diagram kimi “şəkil” bloklarını tapmaq.
- */
 function extractFiguresFromCanvas(canvas: HTMLCanvasElement): PdfFigure[] {
   const ctx = canvas.getContext("2d")
   if (!ctx) return []
@@ -131,7 +121,6 @@ function extractFiguresFromCanvas(canvas: HTMLCanvasElement): PdfFigure[] {
   const img = ctx.getImageData(0, 0, w, h)
   const data = img.data
 
-  // 1) grayscale + mean
   const gray = new Uint8Array(w * h)
   let sum = 0
   let k = 0
@@ -143,7 +132,6 @@ function extractFiguresFromCanvas(canvas: HTMLCanvasElement): PdfFigure[] {
   const mean = sum / Math.max(1, w * h)
   const darkThr = Math.max(185, Math.min(235, mean - 10))
 
-  // 2) Sobel edge
   const edge = new Uint8Array(w * h)
   const gxK = [-1, 0, 1, -2, 0, 2, -1, 0, 1]
   const gyK = [1, 2, 1, 0, 0, 0, -1, -2, -1]
@@ -167,7 +155,6 @@ function extractFiguresFromCanvas(canvas: HTMLCanvasElement): PdfFigure[] {
     }
   }
 
-  // 3) binary = dark OR edge
   const bin = new Uint8Array(w * h)
   for (let i = 0; i < w * h; i++) {
     const isDark = gray[i] < darkThr
@@ -175,7 +162,6 @@ function extractFiguresFromCanvas(canvas: HTMLCanvasElement): PdfFigure[] {
     bin[i] = isDark || isEdge ? 1 : 0
   }
 
-  // 4) dilate x4 (daha aqressiv: qrafik/cədvəl parçalanmasın)
   const dil1 = new Uint8Array(w * h)
   const dil2 = new Uint8Array(w * h)
   const dil3 = new Uint8Array(w * h)
@@ -206,11 +192,10 @@ function extractFiguresFromCanvas(canvas: HTMLCanvasElement): PdfFigure[] {
   dilateOnce(dil2, dil3)
   dilateOnce(dil3, dil4)
 
-  // 5) connected components
   const seen = new Uint8Array(w * h)
   const figs: PdfFigure[] = []
 
-  const minArea = Math.floor(w * h * 0.0032) // azca yumşaq
+  const minArea = Math.floor(w * h * 0.0032)
   const minW = Math.floor(w * 0.10)
   const minH = Math.floor(h * 0.022)
 
@@ -283,8 +268,6 @@ function extractFiguresFromCanvas(canvas: HTMLCanvasElement): PdfFigure[] {
 
       if (area < minArea) continue
       if (bw < minW || bh < minH) continue
-
-      // səhifənin ən üstündəki header xəttlərini çox vaxt istəmirik
       if (miny < h * 0.02) continue
 
       const pad = 18
@@ -313,18 +296,98 @@ function extractFiguresFromCanvas(canvas: HTMLCanvasElement): PdfFigure[] {
   }
 
   figs.sort((a, b) => b.area - a.area)
-
-  // daha çox saxla (dəqiqlik üçün)
   return figs.slice(0, 40)
 }
 
-async function ensureOcrWorker(): Promise<TesseractWorker> {
-  // prioritet: aze, fallback: eng
+function normalizeDigitsToAscii(s: string) {
+  return s
+    .replace(/[\u0660-\u0669]/g, (d) => String(d.charCodeAt(0) - 0x0660))
+    .replace(/[\u06F0-\u06F9]/g, (d) => String(d.charCodeAt(0) - 0x06F0))
+}
+
+
+function detectScriptsFromText(s: string) {
+  const txt = (s || "").slice(0, 5000)
+  const out: string[] = []
+
   try {
-    return await createWorker("aze")
+    if (/\p{Script=Cyrillic}/u.test(txt)) out.push("rus")
+    if (/\p{Script=Arabic}/u.test(txt)) out.push("ara")
+    if (/\p{Script=Devanagari}/u.test(txt)) out.push("hin")
+    if (/\p{Script=Han}/u.test(txt)) out.push("chi_sim")
+    if (/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(txt)) out.push("jpn")
+    if (/\p{Script=Hangul}/u.test(txt)) out.push("kor")
+    if (/\p{Script=Hebrew}/u.test(txt)) out.push("heb")
+    if (/\p{Script=Thai}/u.test(txt)) out.push("tha")
   } catch {
-    return await createWorker("eng")
   }
+
+  if (/[A-Za-zÀ-ÖØ-öø-ÿ]/u.test(txt)) {
+    out.push("eng", "spa", "fra", "deu", "por", "ita", "vie")
+  }
+
+  if (!out.includes("eng")) out.push("eng")
+  return Array.from(new Set(out))
+}
+
+async function ensureOcrWorker(preferTextSample?: string) {
+  const __KEY = "__EXAM_PARSER_OCR_WORKER__" as any
+  const globalAny: any = typeof window !== "undefined" ? window : globalThis
+
+  if (!globalAny[__KEY]) {
+    try {
+      const worker = await createWorker()
+      globalAny[__KEY] = { worker, lang: null }
+    } catch (e) {
+      return null
+    }
+  }
+
+  const entry = globalAny[__KEY]
+  const worker: any = entry.worker
+
+  const candidates = detectScriptsFromText(preferTextSample || "")
+  const tryLangSet = (arr: string[]) => arr.join("+")
+
+  const attempts = [
+    tryLangSet(candidates.slice(0, Math.min(6, candidates.length))),
+    tryLangSet(["eng", "spa", "fra", "deu", "por", "rus", "chi_sim", "jpn", "kor", "ara"]),
+    "eng",
+  ]
+
+  if (entry.lang && attempts.includes(entry.lang)) {
+    return worker
+  }
+
+  for (const lang of attempts) {
+    try {
+      if (typeof worker.reinitialize === "function") {
+        await worker.reinitialize(lang)
+        entry.lang = lang
+        return worker
+      }
+
+      if (typeof worker.loadLanguage === "function" && typeof worker.initialize === "function") {
+        await worker.loadLanguage(lang)
+        await worker.initialize(lang)
+        entry.lang = lang
+        return worker
+      }
+
+      if (typeof worker.load === "function") {
+        await worker.load()
+        if (typeof worker.reinitialize === "function") {
+          await worker.reinitialize(lang)
+          entry.lang = lang
+          return worker
+        }
+      }
+    } catch {
+      continue
+    }
+  }
+
+  return worker
 }
 
 export async function readPdfPagesSmart(
@@ -335,7 +398,7 @@ export async function readPdfPagesSmart(
   const pdf: PDFDocumentProxy = await getDocument({ data: buf }).promise
 
   const pages: PdfPageData[] = []
-  const ocrWorker = await ensureOcrWorker()
+  let ocrWorker: any = null
 
   for (let p = 1; p <= pdf.numPages; p++) {
     const page: PDFPageProxy = await pdf.getPage(p)
@@ -351,11 +414,9 @@ export async function readPdfPagesSmart(
     await (page.render({ canvasContext: ctx, viewport } as any).promise as Promise<unknown>)
     const imageUrl = canvas.toDataURL("image/png")
 
-    // -------- TEXT CONTENT (pdfjs) --------
     const content = await page.getTextContent()
     const items = content.items as any[]
 
-    // daha stabil: yKey=2px bucket, xKey=2px bucket
     const rows = new Map<number, Array<{ x: number; s: string }>>()
 
     for (const it of items) {
@@ -393,27 +454,28 @@ export async function readPdfPagesSmart(
     }
 
     const pageText = lines.map((l) => l.text).join("\n").trim()
-
-    // -------- FIGURES --------
     const figures = extractFiguresFromCanvas(canvas)
 
-    // -------- OCR (dəqiqlik üçün daha aqressiv) --------
-    // Performans ikinci plandadır: mətndə boşluq/çatışmazlıq varsa OCR ilə tamamlayırıq.
     let finalText = pageText
-
     const isTextWeak = finalText.trim().length < 400
     const isLinesWeak = lines.length < 14
     const isProbablyScanned = items.length < 30 || (isLinesWeak && isTextWeak)
 
     if (isProbablyScanned || isTextWeak) {
       try {
-        const res = await ocrWorker.recognize(imageUrl)
-        const ocrText = res?.data?.text ? String(res.data.text) : ""
-        // OCR daha uzun / daha informativdirsə götür
-        if (ocrText.trim().length > finalText.trim().length) {
-          finalText = ocrText.trim()
+        if (!ocrWorker) {
+          ocrWorker = await ensureOcrWorker(pageText)
         }
-      } catch {}
+
+        if (ocrWorker) {
+          const res = await ocrWorker.recognize(imageUrl)
+          const ocrText = res?.data?.text ? String(res.data.text) : ""
+          if (ocrText.trim().length > finalText.trim().length) {
+            finalText = ocrText.trim()
+          }
+        }
+      } catch {
+      }
     }
 
     pages.push({
@@ -430,7 +492,12 @@ export async function readPdfPagesSmart(
   }
 
   try {
-    await ocrWorker.terminate()
+    const globalAny: any = typeof window !== "undefined" ? window : globalThis
+    const entry = globalAny["__EXAM_PARSER_OCR_WORKER__"]
+    if (entry?.worker && typeof entry.worker.terminate === "function") {
+      await entry.worker.terminate()
+      delete globalAny["__EXAM_PARSER_OCR_WORKER__"]
+    }
   } catch {}
 
   return pages
