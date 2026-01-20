@@ -304,13 +304,19 @@ export type PublicNewsListResponse = {
 }
 
 
-export type AdminQuestion = {
-  id: string
-  text: string
-  correctAnswerText?: string | null
-  correctOptionId?: string | null
-  options: { id: string; text: string }[]
+export interface AdminQuestion {
+  id: string;
+  text: string;
+  html?: string;
+  options: Array<{
+    id: string;
+    text: string;
+    html?: string;
+  }>;
+  correctAnswerText: string;
+  correctAnswerHtml?: string;
 }
+
 
 export type ListBankQuestionsResponse = {
   bankId: string
@@ -327,6 +333,17 @@ export type CreateQuestionPayload = {
   text: string
   options: Array<{ text: string }>
   correctAnswerText?: string
+}
+
+export interface CreateQuestionRequest {
+  text: string;
+  html?: string;
+  options: Array<{
+    text: string;
+    html?: string;
+  }>;
+  correctAnswerText: string;
+  correctAnswerHtml?: string;
 }
 
 

@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { CheckCircle2, ChevronLeft, ChevronRight, Flag, Loader2, XCircle, Clock } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { deleteCookie_EXAM_DURATION_COOKIE, EXAM_DURATION_COOKIE, getCookie_EXAM_DURATION_COOKIE } from "@/lib/ExamDurationMinutesHelper"
+import { deleteCookie_EXAM_DURATION_COOKIE, EXAM_DURATION_COOKIE, getCookie_EXAM_DURATION_COOKIE } from "@/helper/ExamDurationMinutesHelper"
+import HTMLEncodedReader from "@/lib/HTML-encodedReader"
 
 
 export default function ExamTokenRunner({ attemptId, userId, onFinished, }: { attemptId: string; userId: number; onFinished?: () => void }) {
@@ -400,7 +401,14 @@ export default function ExamTokenRunner({ attemptId, userId, onFinished, }: { at
           <Card className="backdrop-blur-xl bg-white/90 dark:bg-gray-950/85 border-white/20 shadow-xl">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg">
-                {activeIndex + 1}. {currentQ.text}
+                <div className="flex items-center gap-2">
+                  <div>
+                    {activeIndex + 1}.
+                  </div>
+                  <div>
+                    <HTMLEncodedReader content={currentQ.text} />
+                  </div>
+                </div>
               </CardTitle>
 
               <div className="text-xs text-muted-foreground">
@@ -479,7 +487,9 @@ export default function ExamTokenRunner({ attemptId, userId, onFinished, }: { at
                     )}
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <div className="text-sm leading-relaxed">{o.text}</div>
+                      <div className="text-sm leading-relaxed">
+                        <HTMLEncodedReader content={o.text} />
+                      </div>
 
                       {isFinished ? (
                         <>

@@ -33,7 +33,7 @@ import {
 
 import { toastError } from "@/lib/toast"
 import { fromCents, toCents } from "@/lib/utils"
-import { deleteCookie_EXAM_DURATION_COOKIE, EXAM_DURATION_COOKIE, setCookie_EXAM_DURATION_COOKIE } from "@/lib/ExamDurationMinutesHelper"
+import { deleteCookie_EXAM_DURATION_COOKIE, EXAM_DURATION_COOKIE, setCookie_EXAM_DURATION_COOKIE } from "@/helper/ExamDurationMinutesHelper"
 
 type Attempt = any
 type Step = 1 | 2 | 3

@@ -8,7 +8,8 @@ import { Instagram, InstagramIcon } from "lucide-react"
 export function Footer() {
   const { locale } = useLocale()
   const { t } = useTranslation(locale)
-
+  const date = new Date();
+  const year = date.getFullYear();
   return (
     <footer className="border-t bg-card/50 backdrop-blur-sm mt-auto">
       <div className="container mx-auto px-4 py-12">
@@ -80,7 +81,7 @@ export function Footer() {
         </div>
 
         <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
-          © 2025 İmtahanVer.net. {t("footer.rights")}
+          © {year} İmtahanVer.net. {t("footer.rights")}
         </div>
       </div>
     </footer>

@@ -17,7 +17,7 @@ import { BookOpen, Search, Filter, Sparkles } from "lucide-react"
 import { toast, ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 import { PublicNavbar } from "@/components/public-navbar"
-import { deleteCookie_EXAM_DURATION_COOKIE, EXAM_DURATION_COOKIE, setCookie_EXAM_DURATION_COOKIE } from "@/lib/ExamDurationMinutesHelper"
+import { deleteCookie_EXAM_DURATION_COOKIE, EXAM_DURATION_COOKIE, setCookie_EXAM_DURATION_COOKIE } from "@/helper/ExamDurationMinutesHelper"
 
 function tokenBankKey(token: string) {
   return `exam_token_bank_${token}`

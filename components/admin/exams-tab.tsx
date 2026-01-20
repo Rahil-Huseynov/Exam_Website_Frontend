@@ -12,11 +12,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { FileText, CheckCircle2, Eye, Trash2, Pencil, Plus, Save } from "lucide-react"
+import { FileText, CheckCircle2, Eye, Trash2, Pencil, Plus, Save, X } from "lucide-react"
+import { SimpleMathEditor } from '@/components/simple-math-editor';
 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 import { toastError, toastSuccess } from "@/lib/toast"
+import { latexToHtml } from "../latex-preview"
+import { OptionContent, QuestionContent } from "@/types/editor-types"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
@@ -72,8 +75,13 @@ export function ExamsTab() {
   const [manageExamRandom, setManageExamRandom] = useState<boolean>(true)
 
   const [addModalOpen, setAddModalOpen] = useState(false)
-  const [newQText, setNewQText] = useState("")
-  const [newOptions, setNewOptions] = useState<string[]>(["", "", "", ""])
+  const [newQContent, setNewQContent] = useState<QuestionContent>({ text: "" })
+  const [newOptions, setNewOptions] = useState<OptionContent[]>([
+    { text: "" },
+    { text: "" },
+    { text: "" },
+    { text: "" }
+  ])
   const [newCorrectIndex, setNewCorrectIndex] = useState<number>(0)
 
   const total = useMemo(() => (Array.isArray(draft) ? draft.length : 0), [draft])
@@ -132,8 +140,8 @@ export function ExamsTab() {
   }
 
   function resetAddState() {
-    setNewQText("")
-    setNewOptions(["", "", "", ""])
+    setNewQContent({ text: "" })
+    setNewOptions([{ text: "" }, { text: "" }, { text: "" }, { text: "" }])
     setNewCorrectIndex(0)
     setAddModalOpen(false)
   }
@@ -157,11 +165,11 @@ export function ExamsTab() {
   }, [selectedExamId, draft, selectedCorrect])
 
   const canAddQuestion = useMemo(() => {
-    const qText = normText(newQText)
-    const opts = newOptions.map(normText).filter(Boolean)
+    const qText = normText(newQContent.text)
+    const opts = newOptions.map(opt => normText(opt.text)).filter(Boolean)
     const uniq = new Set(opts.map((x) => x.toLowerCase()))
     return qText.length > 0 && opts.length >= 2 && uniq.size >= 2 && newCorrectIndex >= 0 && newCorrectIndex < newOptions.length
-  }, [newQText, newOptions, newCorrectIndex])
+  }, [newQContent, newOptions, newCorrectIndex])
 
   const canSaveManageExam = useMemo(() => {
     const title = (manageExamTitle || "").trim()
@@ -234,14 +242,28 @@ export function ExamsTab() {
 
       if (!parsed.length) throw new Error(t("exams.errors.pdf_no_questions"))
 
-      setDraft(parsed as any)
+      // Convert parsed questions to new format
+      const newDraft = parsed.map((q: any, index) => ({
+        tempId: q.tempId || `q_${Date.now()}_${index}`,
+        content: { text: q.text || "" } as QuestionContent,
+        options: (q.options || []).map((opt: any, optIndex: number) => ({
+          tempOptionId: opt.tempOptionId || `o_${Date.now()}_${index}_${optIndex}`,
+          content: { text: opt.text || "" } as OptionContent,
+          clipUrls: opt.clipUrls || [],
+        })),
+        page: q.page,
+        qNo: q.qNo || index + 1,
+        clipUrls: q.clipUrls || [],
+      }))
+
+      setDraft(newDraft as any)
       setSelectedCorrect({})
       setBulkPickText("")
       setDraftModalOpen(true)
 
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          const badId = findFirstBadTempId(parsed as any[])
+          const badId = findFirstBadTempId(newDraft as any[])
           if (badId) scrollToTempId(badId)
           else draftScrollRef.current?.scrollTo({ top: 0, behavior: "auto" })
         })
@@ -297,9 +319,11 @@ export function ExamsTab() {
             ].filter(Boolean)
 
             return {
-              text: q.text,
-              options: q.options.map((o: any) => ({ text: o.text })),
-              correctAnswerText: correctOpt.text,
+              text: latexToHtml(q.content.text),
+              options: q.options.map((o: any) => ({
+                text: latexToHtml(o.content.text)
+              })),
+              correctAnswerText: latexToHtml(correctOpt.content.text),
               imageUrls,
             }
           }),
@@ -388,14 +412,14 @@ export function ExamsTab() {
     const tempId = `q_${base}_${Math.random().toString(16).slice(2)}`
     const mkOpt = (i: number) => ({
       tempOptionId: `o_${base}_${tempId}_${i}`,
-      text: "",
+      content: { text: "" } as OptionContent,
       clipUrls: [],
     })
 
     return {
       tempId,
       qNo: nextNo,
-      text: "",
+      content: { text: "" } as QuestionContent,
       clipUrls: [],
       options: [mkOpt(0), mkOpt(1), mkOpt(2), mkOpt(3), mkOpt(4)],
     }
@@ -453,14 +477,16 @@ export function ExamsTab() {
       })()
   }
 
-  async function handleSaveQuestion(q: AdminQuestion) {
+  async function handleSaveQuestion(q: any) {
     try {
       setQBusy(true)
 
       const payload = {
-        text: q.text,
-        options: q.options.map((o) => ({ text: o.text })),
-        correctAnswerText: q.correctAnswerText || "",
+        text: latexToHtml(q.text),
+        options: q.options.map((o: any) => ({
+          text: latexToHtml(o.text)
+        })),
+        correctAnswerText: latexToHtml(q.correctAnswerText),
       }
 
       const updated = await api.updateQuestion(q.id, payload)
@@ -479,22 +505,27 @@ export function ExamsTab() {
     if (!manageBankId) return toastError(t("exams.errors.bank_not_selected"))
     if (!canAddQuestion) return toastError(t("exams.errors.add_question_invalid"))
 
-    const qText = normText(newQText)
-    const opts = newOptions.map(normText).filter(Boolean)
+    const qText = normText(newQContent.text)
+    const opts = newOptions.map(opt => normText(opt.text)).filter(Boolean)
 
     const seen = new Set<string>()
-    const finalOpts: string[] = []
-    for (const o of opts) {
-      const k = o.toLowerCase()
+    const finalOpts: OptionContent[] = []
+    for (const o of newOptions) {
+      const text = normText(o.text)
+      if (!text) continue
+      const k = text.toLowerCase()
       if (seen.has(k)) continue
       seen.add(k)
-      finalOpts.push(o)
+      finalOpts.push({
+        text: text,
+        html: o.html
+      })
     }
 
-    const correctText = normText(newOptions[newCorrectIndex] || "")
+    const correctText = normText(newOptions[newCorrectIndex]?.text || "")
     if (!correctText) return toastError(t("exams.errors.select_correct"))
 
-    const correctIn = finalOpts.find((x) => x.toLowerCase() === correctText.toLowerCase())
+    const correctIn = finalOpts.find((x) => x.text.toLowerCase() === correctText.toLowerCase())
     if (!correctIn) return toastError(t("exams.errors.correct_not_in_options"))
 
     try {
@@ -510,9 +541,11 @@ export function ExamsTab() {
         headers,
         credentials: "include",
         body: JSON.stringify({
-          text: qText,
-          options: finalOpts.map((x) => ({ text: x })),
-          correctAnswerText: correctIn,
+          text: latexToHtml(qText),
+          options: finalOpts.map((x) => ({
+            text: latexToHtml(x.text)
+          })),
+          correctAnswerText: latexToHtml(correctIn.text),
         }),
       })
 
@@ -521,7 +554,7 @@ export function ExamsTab() {
         throw new Error(msg || t("exams.errors.add_failed"))
       }
 
-      const created = (await res.json()) as AdminQuestion
+      const created = (await res.json()) as any
 
       setBankQuestions((prev) => [created, ...prev])
       toastSuccess(t("exams.success.question_added"))
@@ -534,15 +567,20 @@ export function ExamsTab() {
     }
   }
 
-  function updateDraftQuestion(tempId: string, patch: Partial<any>) {
-    setDraft((prev: any) => prev.map((q: any) => (q.tempId === tempId ? { ...q, ...patch } : q)))
+  function updateDraftQuestion(tempId: string, content: QuestionContent) {
+    setDraft((prev: any) => prev.map((q: any) => (q.tempId === tempId ? { ...q, content } : q)))
   }
 
-  function updateDraftOption(qTempId: string, optTempId: string, text: string) {
+  function updateDraftOption(qTempId: string, optTempId: string, content: OptionContent) {
     setDraft((prev: any) =>
       prev.map((q: any) => {
         if (q.tempId !== qTempId) return q
-        return { ...q, options: q.options.map((o: any) => (o.tempOptionId === optTempId ? { ...o, text } : o)) }
+        return {
+          ...q,
+          options: q.options.map((o: any) =>
+            o.tempOptionId === optTempId ? { ...o, content } : o
+          )
+        }
       }),
     )
   }
@@ -553,7 +591,13 @@ export function ExamsTab() {
         if (q.tempId !== qTempId) return q
         const nextIndex = q.options.length
         const idBase = Date.now()
-        return { ...q, options: [...q.options, { tempOptionId: `o_${idBase}_${qTempId}_${nextIndex}`, text: "" }] }
+        return {
+          ...q,
+          options: [...q.options, {
+            tempOptionId: `o_${idBase}_${qTempId}_${nextIndex}`,
+            content: { text: "" } as OptionContent
+          }]
+        }
       }),
     )
   }
@@ -913,11 +957,11 @@ export function ExamsTab() {
 
                         <div className="space-y-2">
                           <Label>{t("exams.ui.question_text")}</Label>
-                          <textarea
-                            className="w-full min-h-[90px] rounded-md border bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-primary"
-                            value={q.text || ""}
-                            onChange={(e) => updateDraftQuestion(q.tempId, { text: e.target.value })}
+                          <SimpleMathEditor
+                            value={q.content.text}
+                            onChange={(text) => updateDraftQuestion(q.tempId, { text })}
                             placeholder={t("exams.ui.question_placeholder")}
+                            className="min-h-[120px]"
                           />
                         </div>
 
@@ -946,10 +990,11 @@ export function ExamsTab() {
                                     />
 
                                     <div className="flex-1 space-y-2">
-                                      <Input
-                                        value={opt.text || ""}
-                                        onChange={(e) => updateDraftOption(q.tempId, opt.tempOptionId, e.target.value)}
+                                      <SimpleMathEditor
+                                        value={opt.content.text}
+                                        onChange={(text) => updateDraftOption(q.tempId, opt.tempOptionId, { text })}
                                         placeholder={`${String.fromCharCode(65 + oi)}) ${t("exams.ui.option_n", { n: oi + 1 })}`}
+                                        className="min-h-[80px]"
                                       />
 
                                       {Array.isArray(opt.clipUrls) && opt.clipUrls.length > 0 && (
@@ -968,7 +1013,7 @@ export function ExamsTab() {
                                       disabled={(q.options || []).length <= 2}
                                       title={t("exams.ui.remove_option")}
                                     >
-                                      {t("common.delete")}
+                                      <X className="h-4 w-4" />
                                     </Button>
                                   </div>
                                 </div>
@@ -1191,37 +1236,56 @@ export function ExamsTab() {
                   <CardHeader>
                     <CardTitle className="text-base">
                       {idx + 1}.{" "}
-                      <Input value={q.text} onChange={(e) => setBankQuestions((prev) => prev.map((x) => (x.id === q.id ? { ...x, text: e.target.value } : x)))} />
+                      <div className="mt-2">
+                        <SimpleMathEditor
+                          value={q.text}
+                          onChange={(text) => setBankQuestions(prev =>
+                            prev.map(x => x.id === q.id ? { ...x, text } : x)
+                          )}
+                          placeholder={t("exams.ui.question_placeholder")}
+                          className="min-h-[120px]"
+                        />
+                      </div>
                     </CardTitle>
-                    <CardDescription className="text-sm">{t("exams.ui.select_correct")}</CardDescription>
+                    <CardDescription className="text-sm mt-2">{t("exams.ui.select_correct")}</CardDescription>
                   </CardHeader>
 
                   <CardContent className="space-y-2">
                     {q.options.map((opt) => {
                       const checked = (q.correctAnswerText || "").trim() === (opt.text || "").trim()
                       return (
-                        <div key={opt.id} className="flex gap-2 items-start">
-                          <input
-                            type="radio"
-                            checked={checked}
-                            onChange={() => setBankQuestions((prev) => prev.map((x) => (x.id === q.id ? { ...x, correctAnswerText: opt.text } : x)))}
-                          />
+                        <div key={opt.id} className="flex flex-col gap-2">
+                          <div className="flex gap-2 items-start">
+                            <input
+                              type="radio"
+                              checked={checked}
+                              onChange={() => setBankQuestions((prev) => prev.map((x) => (x.id === q.id ? { ...x, correctAnswerText: opt.text } : x)))}
+                              className="mt-3"
+                            />
 
-                          <Input
-                            value={opt.text}
-                            onChange={(e) => {
-                              const v = e.target.value
-                              setBankQuestions((prev) =>
-                                prev.map((x) => {
-                                  if (x.id !== q.id) return x
-                                  const oldText = opt.text
-                                  const newOpts = x.options.map((o) => (o.id === opt.id ? { ...o, text: v } : o))
-                                  const wasCorrect = (x.correctAnswerText || "").trim() === (oldText || "").trim()
-                                  return { ...x, options: newOpts, correctAnswerText: wasCorrect ? v : x.correctAnswerText }
-                                }),
-                              )
-                            }}
-                          />
+                            <div className="flex-1">
+                              <SimpleMathEditor
+                                value={opt.text}
+                                onChange={(text) => {
+                                  setBankQuestions((prev) =>
+                                    prev.map((x) => {
+                                      if (x.id !== q.id) return x
+                                      const oldText = opt.text
+                                      const newOpts = x.options.map((o) => (o.id === opt.id ? { ...o, text } : o))
+                                      const wasCorrect = (x.correctAnswerText || "").trim() === (oldText || "").trim()
+                                      return {
+                                        ...x,
+                                        options: newOpts,
+                                        correctAnswerText: wasCorrect ? text : x.correctAnswerText
+                                      }
+                                    }),
+                                  )
+                                }}
+                                placeholder="Variant mətni"
+                                className="min-h-[80px]"
+                              />
+                            </div>
+                          </div>
                         </div>
                       )
                     })}
@@ -1259,22 +1323,43 @@ export function ExamsTab() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>{t("exams.ui.question_text")}</Label>
-              <Input value={newQText} onChange={(e) => setNewQText(e.target.value)} placeholder={t("exams.ui.question_placeholder")} />
+              <SimpleMathEditor
+                value={newQContent.text}
+                onChange={(text) => setNewQContent({ text })}
+                placeholder={t("exams.ui.question_placeholder")}
+                className="min-h-[120px]"
+              />
             </div>
 
             <div className="space-y-2">
               <Label>{t("exams.ui.options")}</Label>
               <div className="space-y-2">
                 {newOptions.map((opt, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <input type="radio" checked={newCorrectIndex === i} onChange={() => setNewCorrectIndex(i)} title={t("exams.ui.correct_answer")} />
-                    <Input value={opt} onChange={(e) => setNewOptions((prev) => prev.map((x, idx) => (idx === i ? e.target.value : x)))} placeholder={t("exams.ui.option_n", { n: i + 1 })} />
+                  <div key={i} className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        checked={newCorrectIndex === i}
+                        onChange={() => setNewCorrectIndex(i)}
+                        title={t("exams.ui.correct_answer")}
+                      />
+                      <div className="flex-1">
+                        <SimpleMathEditor
+                          value={opt.text}
+                          onChange={(text) => setNewOptions((prev) =>
+                            prev.map((x, idx) => (idx === i ? { text } : x))
+                          )}
+                          placeholder={t("exams.ui.option_n", { n: i + 1 })}
+                          className="min-h-[80px]"
+                        />
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
 
               <div className="flex gap-2">
-                <Button type="button" variant="outline" onClick={() => setNewOptions((prev) => [...prev, ""])}>
+                <Button type="button" variant="outline" onClick={() => setNewOptions((prev) => [...prev, { text: "" }])}>
                   <Plus className="h-4 w-4 mr-2" />
                   {t("exams.ui.add_option")}
                 </Button>
@@ -1313,4 +1398,4 @@ export function ExamsTab() {
       </Dialog>
     </div>
   )
-} 
+}
