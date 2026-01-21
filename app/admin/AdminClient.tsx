@@ -49,6 +49,7 @@ export default function AdminPage() {
   if (!user || (user.role !== "admin" && user.role !== "superadmin")) {
     return null
   }
+  const isSuperAdmin = user?.role === "superadmin"
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cyan-50">
@@ -163,28 +164,42 @@ export default function AdminPage() {
                 <TabsTrigger value="exams" className="text-xs sm:text-sm whitespace-nowrap">
                   {t("manageExams")}
                 </TabsTrigger>
+
                 <TabsTrigger value="universities" className="text-xs sm:text-sm whitespace-nowrap">
                   {t("manageUniversities")}
                 </TabsTrigger>
+
                 <TabsTrigger value="subjects" className="text-xs sm:text-sm whitespace-nowrap">
                   {t("manageSubjects")}
                 </TabsTrigger>
-                <TabsTrigger value="balance" className="text-xs sm:text-sm whitespace-nowrap">
-                  {t("balance")}
-                </TabsTrigger>
-                <TabsTrigger value="admin" className="text-xs sm:text-sm whitespace-nowrap">
-                  {t("admin")}
-                </TabsTrigger>
+
+                {isSuperAdmin && (
+                  <TabsTrigger value="balance" className="text-xs sm:text-sm whitespace-nowrap">
+                    {t("balance")}
+                  </TabsTrigger>
+                )}
+
+                {isSuperAdmin && (
+                  <TabsTrigger value="admin" className="text-xs sm:text-sm whitespace-nowrap">
+                    {t("admin")}
+                  </TabsTrigger>
+                )}
+
                 <TabsTrigger value="news" className="text-xs sm:text-sm whitespace-nowrap">
                   {t("news")}
                 </TabsTrigger>
-                <TabsTrigger value="logs" className="text-xs sm:text-sm whitespace-nowrap">
-                  {t("logsTitle")}
-                </TabsTrigger>
+
+                {isSuperAdmin && (
+                  <TabsTrigger value="logs" className="text-xs sm:text-sm whitespace-nowrap">
+                    {t("logsTitle")}
+                  </TabsTrigger>
+                )}
+
                 <TabsTrigger value="results" className="text-xs sm:text-sm whitespace-nowrap">
                   {t("resultsTitle")}
                 </TabsTrigger>
               </TabsList>
+
             </div>
 
             <TabsContent value="exams" className="overflow-x-auto">
