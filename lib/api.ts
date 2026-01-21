@@ -53,7 +53,7 @@ export type AttemptReviewItem = {
   question: {
     id: string
     text: string
-    options: { id: string; text: string }[]
+    options: { id: string; text: string ;}[]
     correctOptionId: string | null
     correctOptionText: string | null
   }
@@ -264,7 +264,7 @@ export type BalanceHistoryResponse = {
 
 
 export type DraftOption = { tempOptionId: string; text: string }
-export type DraftQuestion = { tempId: string; text: string; options: DraftOption[] }
+export type DraftQuestion = { tempId: string; text: string; options: DraftOption[]; clipUrls?: string[]; correctAnswerText?: string }
 
 export type ImportDirectPayload = {
   questions: Array<{
@@ -312,9 +312,12 @@ export interface AdminQuestion {
     id: string;
     text: string;
     html?: string;
+    imageUrls: string[];
   }>;
+  images: string[];
   correctAnswerText: string;
   correctAnswerHtml?: string;
+  imageUrls: string[];
 }
 
 
@@ -759,7 +762,7 @@ class ApiClient {
     const data = await this.request<{ years: number[] }>("/questions/years" + (query ? "?" + query : ""))
     return data.years || []
   }
-  
+
   async getExamYearsByUniversity(universityId: string, subjectId?: string) {
     const params: { universityId?: string; subjectId?: string } = {};
     if (universityId) params.universityId = universityId;
@@ -767,7 +770,7 @@ class ApiClient {
     return this.getExamYears(params);
   }
 
-  async createExam(data: { title: string; universityId: string; subjectId: string; year: number; price: number; questionCount: number; random: boolean; durationMinutes:number }) {
+  async createExam(data: { title: string; universityId: string; subjectId: string; year: number; price: number; questionCount: number; random: boolean; durationMinutes: number }) {
     return this.request<Exam>("/questions/exam", {
       method: "POST",
       body: JSON.stringify(data),

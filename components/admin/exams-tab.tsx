@@ -29,6 +29,10 @@ function normText(s: string) {
   return (s || "").trim().replace(/\s+/g, " ")
 }
 
+function getImageSrc(u: string) {
+  return u.startsWith('/') ? (process.env.NEXT_PUBLIC_API_URL_FOR_IMAGE || '') + u : u
+}
+
 export function ExamsTab() {
   const { locale } = useLocale()
   const { t } = useTranslation(locale)
@@ -83,6 +87,8 @@ export function ExamsTab() {
     { text: "" }
   ])
   const [newCorrectIndex, setNewCorrectIndex] = useState<number>(0)
+  const [newQImages, setNewQImages] = useState<string[]>([])
+  const [newOptImages, setNewOptImages] = useState<string[][]>([[], [], [], []])
 
   const total = useMemo(() => (Array.isArray(draft) ? draft.length : 0), [draft])
   const [pdfProgress, setPdfProgress] = useState<number>(0)
@@ -93,6 +99,19 @@ export function ExamsTab() {
   useEffect(() => {
     loadData()
   }, [])
+
+  useEffect(() => {
+    const len = newOptions.length
+    setNewOptImages((prev) => {
+      if (len > prev.length) {
+        return [...prev, ...Array(len - prev.length).fill([])]
+      }
+      if (len < prev.length) {
+        return prev.slice(0, len)
+      }
+      return prev
+    })
+  }, [newOptions.length])
 
   function findFirstBadTempId(list: any[]) {
     const bad = (Array.isArray(list) ? list : []).find((q) => (q?.options?.length ?? 0) !== 5)
@@ -143,6 +162,8 @@ export function ExamsTab() {
     setNewQContent({ text: "" })
     setNewOptions([{ text: "" }, { text: "" }, { text: "" }, { text: "" }])
     setNewCorrectIndex(0)
+    setNewQImages([])
+    setNewOptImages([[], [], [], []])
     setAddModalOpen(false)
   }
 
@@ -313,18 +334,14 @@ export function ExamsTab() {
             const correctOpt = q.options.find((o: any) => o.tempOptionId === correctTempId)
             if (!correctOpt) throw new Error(t("exams.errors.correct_option_missing"))
 
-            const imageUrls = [
-              ...(Array.isArray(q.clipUrls) ? q.clipUrls : []),
-              ...((q.options || []).flatMap((o: any) => (Array.isArray(o.clipUrls) ? o.clipUrls : []))),
-            ].filter(Boolean)
-
             return {
               text: latexToHtml(q.content.text),
               options: q.options.map((o: any) => ({
-                text: latexToHtml(o.content.text)
+                text: latexToHtml(o.content.text),
+                imageUrls: o.clipUrls || [],
               })),
               correctAnswerText: latexToHtml(correctOpt.content.text),
-              imageUrls,
+              imageUrls: q.clipUrls || [],
             }
           }),
       }
@@ -360,7 +377,11 @@ export function ExamsTab() {
       setManageExamRandom(typeof ex?.random === "boolean" ? ex.random : true)
 
       const res = await api.listBankQuestions(bankId)
-      setBankQuestions(res.questions)
+      setBankQuestions(res.questions.map((q: any) => ({
+        ...q,
+        imageUrls: q.images ? q.images.sort((a: any, b: any) => a.sort - b.sort).map((img: any) => img.url) : [],
+        options: q.options.map((o: any) => ({ ...o, imageUrls: o.images ? o.images.sort((a: any, b: any) => a.sort - b.sort).map((img: any) => img.url) : [] }))
+      })))
 
       setManageModalOpen(true)
     } catch (err) {
@@ -484,13 +505,19 @@ export function ExamsTab() {
       const payload = {
         text: latexToHtml(q.text),
         options: q.options.map((o: any) => ({
-          text: latexToHtml(o.text)
+          text: latexToHtml(o.text),
+          imageUrls: o.imageUrls || [],
         })),
         correctAnswerText: latexToHtml(q.correctAnswerText),
+        imageUrls: q.imageUrls || [],
       }
 
       const updated = await api.updateQuestion(q.id, payload)
-      setBankQuestions((prev) => prev.map((x) => (x.id === updated.id ? updated : x)))
+      setBankQuestions((prev) => prev.map((x) => (x.id === updated.id ? { 
+        ...updated, 
+        imageUrls: updated.images ? updated.images.sort((a: any, b: any) => a.sort - b.sort).map((img: any) => img.url) : [], 
+        options: updated.options.map((o: any) => ({ ...o, imageUrls: o.images ? o.images.sort((a: any, b: any) => a.sort - b.sort).map((img: any) => img.url) : [] })) 
+      } : x)))
       toastSuccess(t("exams.success.saved"))
       await loadData()
     } catch (err) {
@@ -542,10 +569,12 @@ export function ExamsTab() {
         credentials: "include",
         body: JSON.stringify({
           text: latexToHtml(qText),
-          options: finalOpts.map((x) => ({
-            text: latexToHtml(x.text)
+          options: finalOpts.map((x, i) => ({
+            text: latexToHtml(x.text),
+            imageUrls: newOptImages[i] || [],
           })),
           correctAnswerText: latexToHtml(correctIn.text),
+          imageUrls: newQImages,
         }),
       })
 
@@ -556,7 +585,11 @@ export function ExamsTab() {
 
       const created = (await res.json()) as any
 
-      setBankQuestions((prev) => [created, ...prev])
+      setBankQuestions((prev) => [{ 
+        ...created, 
+        imageUrls: created.images ? created.images.sort((a: any, b: any) => a.sort - b.sort).map((img: any) => img.url) : [], 
+        options: created.options.map((o: any) => ({ ...o, imageUrls: o.images ? o.images.sort((a: any, b: any) => a.sort - b.sort).map((img: any) => img.url) : [] })) 
+      }, ...prev])
       toastSuccess(t("exams.success.question_added"))
       resetAddState()
       await loadData()
@@ -944,17 +977,6 @@ export function ExamsTab() {
                       </CardHeader>
 
                       <CardContent className="space-y-4">
-                        {Array.isArray(q.clipUrls) && q.clipUrls.length > 0 && (
-                          <div className="space-y-2">
-                            <Label>{t("exams.ui.figures")}</Label>
-                            <div className="grid gap-3 md:grid-cols-2">
-                              {q.clipUrls.map((u: string, i: number) => (
-                                <img key={i} src={u} alt={`q-figure-${i}`} className="w-full rounded-lg border bg-white" />
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
                         <div className="space-y-2">
                           <Label>{t("exams.ui.question_text")}</Label>
                           <SimpleMathEditor
@@ -962,6 +984,49 @@ export function ExamsTab() {
                             onChange={(text) => updateDraftQuestion(q.tempId, { text })}
                             placeholder={t("exams.ui.question_placeholder")}
                             className="min-h-[120px]"
+                          />
+                        </div>
+
+                        {(q.clipUrls || []).length > 0 && (
+                          <div className="space-y-2">
+                            <Label>{t("exams.ui.figures")}</Label>
+                            <div className="grid gap-3 md:grid-cols-2">
+                              {(q.clipUrls || []).map((u: string, i: number) => (
+                                <div key={i} className="relative">
+                                  <img src={getImageSrc(u)} alt={`q-figure-${i}`} className="w-full rounded-lg border bg-white" />
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    className="absolute top-1 right-1"
+                                    onClick={() => {
+                                      setDraft(prev => prev.map(pq => pq.tempId === q.tempId ? {...pq, clipUrls: (pq.clipUrls || []).filter((_, j) => j !== i)} : pq))
+                                    }}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="space-y-2">
+                          <Label>{t("exams.ui.add_more_images")}</Label>
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={(e) => {
+                              const files = e.target.files
+                              if (!files) return
+                              Array.from(files).forEach(f => {
+                                const reader = new FileReader()
+                                reader.onload = () => {
+                                  setDraft(prev => prev.map(pq => pq.tempId === q.tempId ? {...pq, clipUrls: [...(pq.clipUrls || []), reader.result as string]} : pq))
+                                }
+                                reader.readAsDataURL(f)
+                              })
+                            }}
                           />
                         </div>
 
@@ -997,13 +1062,70 @@ export function ExamsTab() {
                                         className="min-h-[80px]"
                                       />
 
-                                      {Array.isArray(opt.clipUrls) && opt.clipUrls.length > 0 && (
-                                        <div className="grid gap-2 md:grid-cols-2">
-                                          {opt.clipUrls.map((u: string, i: number) => (
-                                            <img key={i} src={u} alt={`opt-figure-${oi}-${i}`} className="w-full rounded-lg border bg-white" />
-                                          ))}
+                                      {(opt.clipUrls || []).length > 0 && (
+                                        <div className="space-y-2">
+                                          <Label>Images for this Option</Label>
+                                          <div className="grid gap-3 md:grid-cols-2">
+                                            {opt.clipUrls.map((u: string, j: number) => (
+                                              <div key={j} className="relative">
+                                                <img src={getImageSrc(u)} alt={`opt-figure-${oi}-${j}`} className="w-full rounded-lg border bg-white" />
+                                                <Button
+                                                  variant="destructive"
+                                                  size="sm"
+                                                  className="absolute top-1 right-1"
+                                                  onClick={() => {
+                                                    setDraft(prev =>
+                                                      prev.map(pq => {
+                                                        if (pq.tempId !== q.tempId) return pq
+                                                        return {
+                                                          ...pq,
+                                                          options: pq.options.map((po: any) => {
+                                                            if (po.tempOptionId !== opt.tempOptionId) return po
+                                                            return { ...po, clipUrls: (po.clipUrls || []).filter((_: any, m:any) => m !== j) }
+                                                          })
+                                                        }
+                                                      })
+                                                    )
+                                                  }}
+                                                >
+                                                  <X className="h-4 w-4" />
+                                                </Button>
+                                              </div>
+                                            ))}
+                                          </div>
                                         </div>
                                       )}
+
+                                      <div className="space-y-2">
+                                        <Label>Add Image to this Option</Label>
+                                        <Input
+                                          type="file"
+                                          accept="image/*"
+                                          multiple
+                                          onChange={(e) => {
+                                            const files = e.target.files
+                                            if (!files) return
+                                            Array.from(files).forEach(f => {
+                                              const reader = new FileReader()
+                                              reader.onload = () => {
+                                                setDraft(prev =>
+                                                  prev.map(pq => {
+                                                    if (pq.tempId !== q.tempId) return pq
+                                                    return {
+                                                      ...pq,
+                                                      options: pq.options.map((po: any) => {
+                                                        if (po.tempOptionId !== opt.tempOptionId) return po
+                                                        return { ...po, clipUrls: [...(po.clipUrls || []), reader.result as string] }
+                                                      })
+                                                    }
+                                                  })
+                                                )
+                                              }
+                                              reader.readAsDataURL(f)
+                                            })
+                                          }}
+                                        />
+                                      </div>
                                     </div>
 
                                     <Button
@@ -1251,7 +1373,50 @@ export function ExamsTab() {
                   </CardHeader>
 
                   <CardContent className="space-y-2">
-                    {q.options.map((opt) => {
+                    {(q.imageUrls || []).length > 0 && (
+                      <div className="space-y-2">
+                        <Label>{t("exams.ui.figures")}</Label>
+                        <div className="grid gap-3 md:grid-cols-2">
+                          {(q.imageUrls || []).map((u: string, i: number) => (
+                            <div key={i} className="relative">
+                              <img src={getImageSrc(u)} alt={`q-figure-${i}`} className="w-full rounded-lg border bg-white" />
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                className="absolute top-1 right-1"
+                                onClick={() => {
+                                  setBankQuestions(prev => prev.map(pq => pq.id === q.id ? {...pq, imageUrls: (pq.imageUrls || []).filter((_, j) => j !== i)} : pq))
+                                }}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="space-y-2">
+                      <Label>{t("exams.ui.add_more_images")}</Label>
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={(e) => {
+                          const files = e.target.files
+                          if (!files) return
+                          Array.from(files).forEach(f => {
+                            const reader = new FileReader()
+                            reader.onload = () => {
+                              setBankQuestions(prev => prev.map(pq => pq.id === q.id ? {...pq, imageUrls: [...(pq.imageUrls || []), reader.result as string]} : pq))
+                            }
+                            reader.readAsDataURL(f)
+                          })
+                        }}
+                      />
+                    </div>
+
+                    {q.options.map((opt, oi) => {
                       const checked = (q.correctAnswerText || "").trim() === (opt.text || "").trim()
                       return (
                         <div key={opt.id} className="flex flex-col gap-2">
@@ -1263,7 +1428,7 @@ export function ExamsTab() {
                               className="mt-3"
                             />
 
-                            <div className="flex-1">
+                            <div className="flex-1 space-y-2">
                               <SimpleMathEditor
                                 value={opt.text}
                                 onChange={(text) => {
@@ -1284,6 +1449,71 @@ export function ExamsTab() {
                                 placeholder="Variant mətni"
                                 className="min-h-[80px]"
                               />
+
+                              {(opt.imageUrls || []).length > 0 && (
+                                <div className="space-y-2">
+                                  <Label>Images for this Option</Label>
+                                  <div className="grid gap-3 md:grid-cols-2">
+                                    {opt.imageUrls.map((u: string, j: number) => (
+                                      <div key={j} className="relative">
+                                        <img src={getImageSrc(u)} alt={`opt-figure-${oi}-${j}`} className="w-full rounded-lg border bg-white" />
+                                        <Button
+                                          variant="destructive"
+                                          size="sm"
+                                          className="absolute top-1 right-1"
+                                          onClick={() => {
+                                            setBankQuestions(prev =>
+                                              prev.map(pq => {
+                                                if (pq.id !== q.id) return pq
+                                                return {
+                                                  ...pq,
+                                                  options: pq.options.map((po: any) => {
+                                                    if (po.id !== opt.id) return po
+                                                    return { ...po, imageUrls: (po.imageUrls || []).filter((_: any, m: any) => m !== j) }
+                                                  })
+                                                }
+                                              })
+                                            )
+                                          }}
+                                        >
+                                          <X className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              <div className="space-y-2">
+                                <Label>Add Image to this Option</Label>
+                                <Input
+                                  type="file"
+                                  accept="image/*"
+                                  multiple
+                                  onChange={(e) => {
+                                    const files = e.target.files
+                                    if (!files) return
+                                    Array.from(files).forEach(f => {
+                                      const reader = new FileReader()
+                                      reader.onload = () => {
+                                        setBankQuestions(prev =>
+                                          prev.map(pq => {
+                                            if (pq.id !== q.id) return pq
+                                            return {
+                                              ...pq,
+                                              options: pq.options.map((po: any) => {
+                                                if (po.id !== opt.id) return po
+                                                return { ...po, imageUrls: [...(po.imageUrls || []), reader.result as string] }
+                                              })
+                                            }
+                                          })
+                                        )
+                                      }
+                                      reader.readAsDataURL(f)
+                                    })
+                                  }}
+                                />
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -1331,11 +1561,50 @@ export function ExamsTab() {
               />
             </div>
 
+            {newQImages.length > 0 && (
+              <div className="space-y-2">
+                <Label>{t("exams.ui.figures")}</Label>
+                <div className="grid gap-3 md:grid-cols-2">
+                  {newQImages.map((u, i) => (
+                    <div key={i} className="relative">
+                      <img src={getImageSrc(u)} alt={`q-img-${i}`} className="w-full rounded-lg border bg-white" />
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-1 right-1"
+                        onClick={() => setNewQImages(prev => prev.filter((_, j) => j !== i))}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label>{t("exams.ui.add_more_images")}</Label>
+              <Input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => {
+                  const files = e.target.files
+                  if (!files) return
+                  Array.from(files).forEach(f => {
+                    const reader = new FileReader()
+                    reader.onload = () => setNewQImages(prev => [...prev, reader.result as string])
+                    reader.readAsDataURL(f)
+                  })
+                }}
+              />
+            </div>
+
             <div className="space-y-2">
               <Label>{t("exams.ui.options")}</Label>
               <div className="space-y-2">
                 {newOptions.map((opt, i) => (
-                  <div key={i} className="flex flex-col gap-2">
+                  <div key={i} className="flex flex-col gap-2 rounded-lg border p-3">
                     <div className="flex items-center gap-2">
                       <input
                         type="radio"
@@ -1343,7 +1612,7 @@ export function ExamsTab() {
                         onChange={() => setNewCorrectIndex(i)}
                         title={t("exams.ui.correct_answer")}
                       />
-                      <div className="flex-1">
+                      <div className="flex-1 space-y-2">
                         <SimpleMathEditor
                           value={opt.text}
                           onChange={(text) => setNewOptions((prev) =>
@@ -1352,6 +1621,45 @@ export function ExamsTab() {
                           placeholder={t("exams.ui.option_n", { n: i + 1 })}
                           className="min-h-[80px]"
                         />
+
+                        {newOptImages[i].length > 0 && (
+                          <div className="space-y-2">
+                            <Label>Images for this Option</Label>
+                            <div className="grid gap-3 md:grid-cols-2">
+                              {newOptImages[i].map((u, j) => (
+                                <div key={j} className="relative">
+                                  <img src={getImageSrc(u)} alt={`opt-${i}-img-${j}`} className="w-full rounded-lg border bg-white" />
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    className="absolute top-1 right-1"
+                                    onClick={() => setNewOptImages(prev => prev.map((arr, k) => k === i ? arr.filter((_, m) => m !== j) : arr))}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="space-y-2">
+                          <Label>Add Image to this Option</Label>
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={(e) => {
+                              const files = e.target.files
+                              if (!files) return
+                              Array.from(files).forEach(f => {
+                                const reader = new FileReader()
+                                reader.onload = () => setNewOptImages(prev => prev.map((arr, k) => k === i ? [...arr, reader.result as string] : arr))
+                                reader.readAsDataURL(f)
+                              })
+                            }}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
