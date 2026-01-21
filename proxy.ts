@@ -23,7 +23,6 @@ export function proxy(request: NextRequest) {
     "/admin",
     "/packages",
     "/payments",
-    "/news",
   ]
 
   // 🔓 Auth-only routes

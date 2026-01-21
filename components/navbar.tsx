@@ -30,7 +30,7 @@ export function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 border-b bg-white ">
-      <div className="container mx-auto px-4">
+      <div className="mx-auto px-4">
         <div className="flex h-20 items-center justify-between">
           <Link
             href={user ? "/dashboard" : "/"}
@@ -40,7 +40,7 @@ export function Navbar() {
           </Link>
 
           {user && (
-            <div className="hidden xl:flex items-center gap-2">
+            <div className="hidden 2xl:flex items-center gap-2">
               <Link href="/dashboard" className="px-4 py-2 text-sm font-medium rounded-full hover:bg-muted transition-colors">
                 {t("home")}
               </Link>
@@ -106,7 +106,7 @@ export function Navbar() {
                 {/* Mobile menu */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="xl:hidden rounded-full">
+                    <Button variant="ghost" size="icon" className="2xl:hidden rounded-full">
                       <Menu className="h-5 w-5" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -178,7 +178,7 @@ export function Navbar() {
                   <Button
                     asChild
                     variant="outline"
-                    className="hidden xl:inline-flex rounded-full border-primary/30 hover:bg-primary/10 bg-transparent"
+                    className="hidden 2xl:inline-flex rounded-full border-primary/30 hover:bg-primary/10 bg-transparent"
                   >
                     <Link href="/admin" className="flex items-center gap-2">
                       <Shield className="h-4 w-4" />
@@ -190,7 +190,7 @@ export function Navbar() {
                 <Button
                   onClick={logout}
                   variant="outline"
-                  className="hidden xl:inline-flex rounded-full hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 bg-transparent"
+                  className="hidden 2xl:inline-flex rounded-full hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 bg-transparent"
                 >
                   <LogOut className="h-4 w-4 mr-2" />
                   {t("logout")}

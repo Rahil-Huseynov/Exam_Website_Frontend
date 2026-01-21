@@ -56,7 +56,7 @@ export function PublicNavbar() {
           </Link>
 
           {/* Desktop Menu */}
-          <div className="hidden lg:flex items-center gap-8">
+          <div className="hidden xl:flex items-center gap-8">
             <Link href="/#" className="text-sm font-medium hover:text-primary transition-colors">
               {t("home")}
             </Link>
@@ -71,6 +71,9 @@ export function PublicNavbar() {
             </Link>
             <Link href="/faq" className="text-sm font-medium hover:text-primary transition-colors">
               {t("faq")}
+            </Link>
+            <Link href="/news" className="text-sm font-medium hover:text-primary transition-colors">
+              {t("news")}
             </Link>
             <Link href="/contact" className="text-sm font-medium hover:text-primary transition-colors">
               {t("contact")}
@@ -98,12 +101,12 @@ export function PublicNavbar() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Button asChild variant="ghost" className="rounded-full hidden lg:flex">
+            <Button asChild variant="ghost" className="rounded-full hidden xl:flex">
               <Link href="/login">{t("login")}</Link>
             </Button>
             <Button
               asChild
-              className="rounded-full bg-gradient-to-r from-primary via-secondary to-accent hover:opacity-90 transition-opacity hidden lg:flex"
+              className="rounded-full bg-gradient-to-r from-primary via-secondary to-accent hover:opacity-90 transition-opacity hidden xl:flex"
             >
               <Link href="/register">{t("register")}</Link>
             </Button>
@@ -112,7 +115,7 @@ export function PublicNavbar() {
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden rounded-full"
+              className="xl:hidden rounded-full"
               onClick={openMobile}
               aria-label="Open menu"
               aria-expanded={mobileMenuOpen}
@@ -127,7 +130,7 @@ export function PublicNavbar() {
       {isMounted && (
         <div
           className={[
-            "fixed inset-0 z-50 lg:hidden",
+            "fixed inset-0 z-50 xl:hidden",
             mobileMenuOpen ? "pointer-events-auto" : "pointer-events-none",
           ].join(" ")}
           aria-hidden={!mobileMenuOpen}
@@ -207,6 +210,13 @@ export function PublicNavbar() {
                 onClick={closeMobile}
               >
                 {t("faq")}
+              </Link>
+              <Link
+                href="/news"
+                className="text-lg font-medium hover:text-primary transition-colors py-2"
+                onClick={closeMobile}
+              >
+                {t("news")}
               </Link>
               <Link
                 href="/contact"
