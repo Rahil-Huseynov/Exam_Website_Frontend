@@ -137,7 +137,7 @@ export function ExamsTab() {
     try {
       setLoading(true)
       const [examsData, universitiesData, subjectsData] = await Promise.all([
-        api.getExams(),
+        api.getExamsForAdmin(),
         api.getUniversities(),
         api.getSubjects(),
       ])

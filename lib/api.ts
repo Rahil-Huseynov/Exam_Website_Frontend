@@ -864,6 +864,26 @@ class ApiClient {
     return this.request<Exam[]>(`/questions/exams${query ? "?" + query : ""}`)
   }
 
+    async getExamsForAdmin(params: {
+    universityId?: string
+    subjectId?: string
+    year?: number
+    search?: string
+    page?: number
+    limit?: number
+  } = {}) {
+    const sp = new URLSearchParams()
+    if (params.universityId) sp.set("universityId", params.universityId)
+    if (params.subjectId) sp.set("subjectId", params.subjectId)
+    if (params.year) sp.set("year", String(params.year))
+    if (params.search) sp.set("search", params.search)
+    if (params.page) sp.set("page", String(params.page))
+    if (params.limit) sp.set("limit", String(params.limit))
+
+    const query = sp.toString()
+    return this.request<Exam[]>(`/questions/exams-admin${query ? "?" + query : ""}`)
+  }
+
   async createExamToken(bankId: string, userId: number | string) {
     return this.request<{ ok: true; token: string; expiresAt: string }>(
       `/banks/${bankId}/exam-token`,
