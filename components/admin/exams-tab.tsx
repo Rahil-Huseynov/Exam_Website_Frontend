@@ -710,113 +710,114 @@ export function ExamsTab() {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("exams.ui.create_exam_title")}</CardTitle>
-          <CardDescription>{t("exams.ui.create_exam_desc")}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label>{t("common.title")}</Label>
-              <Input
-                value={examForm.title}
-                onChange={(e) => setExamForm({ ...examForm, title: e.target.value })}
-                disabled={busy}
-                placeholder={t("exams.ui.title_placeholder")}
-              />
+      {isSuperAdmin && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("exams.ui.create_exam_title")}</CardTitle>
+            <CardDescription>{t("exams.ui.create_exam_desc")}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>{t("common.title")}</Label>
+                <Input
+                  value={examForm.title}
+                  onChange={(e) => setExamForm({ ...examForm, title: e.target.value })}
+                  disabled={busy}
+                  placeholder={t("exams.ui.title_placeholder")}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>{t("year")}</Label>
+                <Input type="number" value={examForm.year} onChange={(e) => setExamForm({ ...examForm, year: e.target.value })} disabled={busy} />
+              </div>
+
+              <div className="space-y-2">
+                <Label>{t("university")}</Label>
+                <Select value={examForm.universityId} onValueChange={(v) => setExamForm({ ...examForm, universityId: v })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("university")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {universities.map((u) => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>{t("subject")}</Label>
+                <Select value={examForm.subjectId} onValueChange={(v) => setExamForm({ ...examForm, subjectId: v })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("subject")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {subjects.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>{t("price")} (AZN)</Label>
+                <Input type="number" step="0.01" value={examForm.price} onChange={(e) => setExamForm({ ...examForm, price: e.target.value })} disabled={busy} />
+              </div>
+
+              <div className="space-y-2">
+                <Label>{t("exams.ui.question_count")}</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={examForm.questionCount}
+                  onChange={(e) => setExamForm({ ...examForm, questionCount: e.target.value })}
+                  disabled={busy}
+                  placeholder="25"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>{t("exams.ui.duration_minutes")}</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={examForm.durationMinutes}
+                  onChange={(e) => setExamForm({ ...examForm, durationMinutes: e.target.value })}
+                  disabled={busy}
+                  placeholder="60"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>{t("exams.ui.random_mode")}</Label>
+                <Select
+                  value={examForm.random ? "true" : "false"}
+                  onValueChange={(v) => setExamForm({ ...examForm, random: v === "true" })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="true">🎲 {t("exams.ui.random")}</SelectItem>
+                    <SelectItem value="false">📄 {t("exams.ui.sequential")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
             </div>
 
-            <div className="space-y-2">
-              <Label>{t("year")}</Label>
-              <Input type="number" value={examForm.year} onChange={(e) => setExamForm({ ...examForm, year: e.target.value })} disabled={busy} />
-            </div>
-
-            <div className="space-y-2">
-              <Label>{t("university")}</Label>
-              <Select value={examForm.universityId} onValueChange={(v) => setExamForm({ ...examForm, universityId: v })}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t("university")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {universities.map((u) => (
-                    <SelectItem key={u.id} value={u.id}>
-                      {u.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>{t("subject")}</Label>
-              <Select value={examForm.subjectId} onValueChange={(v) => setExamForm({ ...examForm, subjectId: v })}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t("subject")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {subjects.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
-                      {s.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>{t("price")} (AZN)</Label>
-              <Input type="number" step="0.01" value={examForm.price} onChange={(e) => setExamForm({ ...examForm, price: e.target.value })} disabled={busy} />
-            </div>
-
-            <div className="space-y-2">
-              <Label>{t("exams.ui.question_count")}</Label>
-              <Input
-                type="number"
-                min={1}
-                value={examForm.questionCount}
-                onChange={(e) => setExamForm({ ...examForm, questionCount: e.target.value })}
-                disabled={busy}
-                placeholder="25"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>{t("exams.ui.duration_minutes")}</Label>
-              <Input
-                type="number"
-                min={1}
-                value={examForm.durationMinutes}
-                onChange={(e) => setExamForm({ ...examForm, durationMinutes: e.target.value })}
-                disabled={busy}
-                placeholder="60"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>{t("exams.ui.random_mode")}</Label>
-              <Select
-                value={examForm.random ? "true" : "false"}
-                onValueChange={(v) => setExamForm({ ...examForm, random: v === "true" })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="true">🎲 {t("exams.ui.random")}</SelectItem>
-                  <SelectItem value="false">📄 {t("exams.ui.sequential")}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-          </div>
-
-          <Button onClick={handleCreateExam} disabled={busy || !canCreateExam} type="button">
-            {busy ? t("processing") : t("common.create")}
-          </Button>
-        </CardContent>
-      </Card>
-
+            <Button onClick={handleCreateExam} disabled={busy || !canCreateExam} type="button">
+              {busy ? t("processing") : t("common.create")}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
       <Card>
         <CardHeader>
           <CardTitle>{t("exams.ui.pdf_title")}</CardTitle>
