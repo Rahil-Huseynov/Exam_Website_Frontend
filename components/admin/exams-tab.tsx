@@ -20,6 +20,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { toastError, toastSuccess } from "@/lib/toast"
 import { latexToHtml } from "../latex-preview"
 import { OptionContent, QuestionContent } from "@/types/editor-types"
+import { useAuth } from "@/contexts/auth-context"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
@@ -54,7 +55,8 @@ export function ExamsTab() {
     durationMinutes: "60",
     random: true,
   })
-
+  const { user } = useAuth()
+  const isSuperAdmin = user?.role === "superadmin"
   const [selectedExamId, setSelectedExamId] = useState<string>("")
   const [file, setFile] = useState<File | null>(null)
 
@@ -513,10 +515,10 @@ export function ExamsTab() {
       }
 
       const updated = await api.updateQuestion(q.id, payload)
-      setBankQuestions((prev) => prev.map((x) => (x.id === updated.id ? { 
-        ...updated, 
-        imageUrls: updated.images ? updated.images.sort((a: any, b: any) => a.sort - b.sort).map((img: any) => img.url) : [], 
-        options: updated.options.map((o: any) => ({ ...o, imageUrls: o.images ? o.images.sort((a: any, b: any) => a.sort - b.sort).map((img: any) => img.url) : [] })) 
+      setBankQuestions((prev) => prev.map((x) => (x.id === updated.id ? {
+        ...updated,
+        imageUrls: updated.images ? updated.images.sort((a: any, b: any) => a.sort - b.sort).map((img: any) => img.url) : [],
+        options: updated.options.map((o: any) => ({ ...o, imageUrls: o.images ? o.images.sort((a: any, b: any) => a.sort - b.sort).map((img: any) => img.url) : [] }))
       } : x)))
       toastSuccess(t("exams.success.saved"))
       await loadData()
@@ -585,10 +587,10 @@ export function ExamsTab() {
 
       const created = (await res.json()) as any
 
-      setBankQuestions((prev) => [{ 
-        ...created, 
-        imageUrls: created.images ? created.images.sort((a: any, b: any) => a.sort - b.sort).map((img: any) => img.url) : [], 
-        options: created.options.map((o: any) => ({ ...o, imageUrls: o.images ? o.images.sort((a: any, b: any) => a.sort - b.sort).map((img: any) => img.url) : [] })) 
+      setBankQuestions((prev) => [{
+        ...created,
+        imageUrls: created.images ? created.images.sort((a: any, b: any) => a.sort - b.sort).map((img: any) => img.url) : [],
+        options: created.options.map((o: any) => ({ ...o, imageUrls: o.images ? o.images.sort((a: any, b: any) => a.sort - b.sort).map((img: any) => img.url) : [] }))
       }, ...prev])
       toastSuccess(t("exams.success.question_added"))
       resetAddState()
@@ -999,7 +1001,7 @@ export function ExamsTab() {
                                     size="sm"
                                     className="absolute top-1 right-1"
                                     onClick={() => {
-                                      setDraft(prev => prev.map(pq => pq.tempId === q.tempId ? {...pq, clipUrls: (pq.clipUrls || []).filter((_, j) => j !== i)} : pq))
+                                      setDraft(prev => prev.map(pq => pq.tempId === q.tempId ? { ...pq, clipUrls: (pq.clipUrls || []).filter((_, j) => j !== i) } : pq))
                                     }}
                                   >
                                     <X className="h-4 w-4" />
@@ -1022,7 +1024,7 @@ export function ExamsTab() {
                               Array.from(files).forEach(f => {
                                 const reader = new FileReader()
                                 reader.onload = () => {
-                                  setDraft(prev => prev.map(pq => pq.tempId === q.tempId ? {...pq, clipUrls: [...(pq.clipUrls || []), reader.result as string]} : pq))
+                                  setDraft(prev => prev.map(pq => pq.tempId === q.tempId ? { ...pq, clipUrls: [...(pq.clipUrls || []), reader.result as string] } : pq))
                                 }
                                 reader.readAsDataURL(f)
                               })
@@ -1081,7 +1083,7 @@ export function ExamsTab() {
                                                           ...pq,
                                                           options: pq.options.map((po: any) => {
                                                             if (po.tempOptionId !== opt.tempOptionId) return po
-                                                            return { ...po, clipUrls: (po.clipUrls || []).filter((_: any, m:any) => m !== j) }
+                                                            return { ...po, clipUrls: (po.clipUrls || []).filter((_: any, m: any) => m !== j) }
                                                           })
                                                         }
                                                       })
@@ -1236,11 +1238,12 @@ export function ExamsTab() {
                       <Pencil className="h-4 w-4 mr-2" />
                       {t("exams.ui.manage_questions")}
                     </Button>
-
-                    <Button variant="destructive" onClick={() => handleDeleteExam(exam.id)} disabled={busy || qBusy} type="button">
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      {t("common.delete")}
-                    </Button>
+                    {isSuperAdmin && (
+                      <Button variant="destructive" onClick={() => handleDeleteExam(exam.id)} disabled={busy || qBusy} type="button">
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        {t("common.delete")}
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -1385,7 +1388,7 @@ export function ExamsTab() {
                                 size="sm"
                                 className="absolute top-1 right-1"
                                 onClick={() => {
-                                  setBankQuestions(prev => prev.map(pq => pq.id === q.id ? {...pq, imageUrls: (pq.imageUrls || []).filter((_, j) => j !== i)} : pq))
+                                  setBankQuestions(prev => prev.map(pq => pq.id === q.id ? { ...pq, imageUrls: (pq.imageUrls || []).filter((_, j) => j !== i) } : pq))
                                 }}
                               >
                                 <X className="h-4 w-4" />
@@ -1408,7 +1411,7 @@ export function ExamsTab() {
                           Array.from(files).forEach(f => {
                             const reader = new FileReader()
                             reader.onload = () => {
-                              setBankQuestions(prev => prev.map(pq => pq.id === q.id ? {...pq, imageUrls: [...(pq.imageUrls || []), reader.result as string]} : pq))
+                              setBankQuestions(prev => prev.map(pq => pq.id === q.id ? { ...pq, imageUrls: [...(pq.imageUrls || []), reader.result as string] } : pq))
                             }
                             reader.readAsDataURL(f)
                           })

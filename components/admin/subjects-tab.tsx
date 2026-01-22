@@ -10,10 +10,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Plus, Trash2, Edit3, Save, X } from "lucide-react"
 import { toastError, toastSuccess, toastConfirm } from "@/lib/toast"
+import { useAuth } from "@/contexts/auth-context"
 
 export function SubjectsTab() {
   const { locale } = useLocale()
   const { t } = useTranslation(locale)
+  const { user } = useAuth()
+  const isSuperAdmin = user?.role === "superadmin"
 
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [loading, setLoading] = useState(true)
@@ -199,14 +202,16 @@ export function SubjectsTab() {
                             <Edit3 className="h-4 w-4" />
                           </Button>
 
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-destructive"
-                            onClick={() => handleDeleteSubject(subj.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          {isSuperAdmin && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive"
+                              onClick={() => handleDeleteSubject(subj.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ) : (

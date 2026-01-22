@@ -164,10 +164,11 @@ export default function AdminPage() {
                 <TabsTrigger value="exams" className="text-xs sm:text-sm whitespace-nowrap">
                   {t("manageExams")}
                 </TabsTrigger>
-
+                {isSuperAdmin && (
                 <TabsTrigger value="universities" className="text-xs sm:text-sm whitespace-nowrap">
                   {t("manageUniversities")}
                 </TabsTrigger>
+                )}
 
                 <TabsTrigger value="subjects" className="text-xs sm:text-sm whitespace-nowrap">
                   {t("manageSubjects")}
