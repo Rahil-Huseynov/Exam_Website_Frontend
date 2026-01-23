@@ -11,14 +11,13 @@ import { api, type AttemptReviewResponse } from "@/lib/api"
 import { Navbar } from "@/components/navbar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { CheckCircle2, XCircle, ArrowLeft } from "lucide-react"
+import { CheckCircle2, XCircle, ArrowLeft, Flag, FlagOff } from "lucide-react"
 
 type AnyParams = Promise<Record<string, string | undefined>>
 
 export default function AttemptDetailsPage({ params }: { params: AnyParams }) {
   const p = use(params)
   const attemptId = useMemo(() => String(p.attemptId || p.id || ""), [p])
-
   const { user } = useAuth()
   const { locale } = useLocale()
   const { t } = useTranslation(locale)
@@ -44,10 +43,40 @@ export default function AttemptDetailsPage({ params }: { params: AnyParams }) {
     }
   }
 
+  async function toggleFlag(questionId: string, current: boolean) {
+    if (!attemptId || !user?.id) return
+    setData((prev) => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        items: prev.items.map((it) =>
+          it.question.id === questionId ? { ...it, flag: !current } : it,
+        ),
+      }
+    })
+    try {
+      await api.setAttemptFlag(attemptId, questionId, !current)
+    } catch (e: any) {
+      setData((prev) => {
+        if (!prev) return prev
+        return {
+          ...prev,
+          items: prev.items.map((it) =>
+            it.question.id === questionId ? { ...it, flag: current } : it,
+          ),
+        }
+      })
+      toast.error(t("errGeneric"))
+    }
+  }
+
+
+
   const stats = data?.stats
   const attempt = data?.attempt
   const exam = data?.exam
-
+  const flagCount =
+    data?.items.filter((it) => it.flag).length ?? 0
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-50 via-blue-50 to-cyan-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
       <Navbar />
@@ -92,33 +121,56 @@ export default function AttemptDetailsPage({ params }: { params: AnyParams }) {
                     <Stat label={t("examRunner.result.correct")} value={stats?.correct} green />
                     <Stat label={t("examRunner.result.wrong")} value={stats?.wrong} red />
                     <Stat label={t("examRunner.result.total")} value={stats?.total} />
+                    <Stat
+                      label={t("examRunner.result.total.flag")}
+                      value={flagCount}
+                      yellow
+                    />
                   </div>
                 </CardContent>
               </Card>
-
-              <div className="space-y-4">
+              <CardContent className="space-y-4">
                 {data.items.map((it, idx) => {
                   const correctId = it.question.correctOptionId
 
                   return (
-                    <Card key={it.answerId ?? it.question.id}>
+                    <Card className={`space-y-4 ${it.flag ? 'bg-yellow-100' : ''}`} key={it.answerId ?? it.question.id}>
                       <CardHeader>
-                        <CardTitle className="flex items-center justify-between">
-                          <span>
-                            {t("questionsLabel")} #{idx + 1}
-                          </span>
+                        <CardTitle className="flex items-center gap-4 ">
+                          <div>
+                            <button
+                              onClick={() => toggleFlag(it.question.id, it.flag)}
+                              className="cursor-pointer"
+                            >
+                              {it.flag ? (
+                                <Flag
+                                  className="h-5 w-5 text-red-500 cursor-pointer"
+                                />
+                              ) : (
+                                <FlagOff
+                                  className="h-5 w-5 text-gray-400 cursor-pointer"
+                                />
+                              )}
+                            </button>
 
-                          {it.isCorrect ? (
-                            <span className="inline-flex items-center gap-2 text-emerald-600 font-semibold">
-                              <CheckCircle2 className="h-5 w-5" />
-                              {t("examRunner.result.correct")}
+                          </div>
+                          <div className="flex items-center justify-between w-full">
+                            <span>
+                              {t("questionsLabel")} #{idx + 1}
                             </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-2 text-rose-600 font-semibold">
-                              <XCircle className="h-5 w-5" />
-                              {t("examRunner.result.wrong")}
-                            </span>
-                          )}
+
+                            {it.isCorrect ? (
+                              <span className="inline-flex items-center gap-2 text-emerald-600 font-semibold">
+                                <CheckCircle2 className="h-5 w-5" />
+                                {t("examRunner.result.correct")}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-2 text-rose-600 font-semibold">
+                                <XCircle className="h-5 w-5" />
+                                {t("examRunner.result.wrong")}
+                              </span>
+                            )}
+                          </div>
                         </CardTitle>
                       </CardHeader>
 
@@ -161,7 +213,7 @@ export default function AttemptDetailsPage({ params }: { params: AnyParams }) {
                     </Card>
                   )
                 })}
-              </div>
+              </CardContent>
             </>
           )}
         </div>
@@ -175,19 +227,32 @@ function Stat({
   value,
   green,
   red,
+  yellow,
 }: {
   label: string
   value?: number
   green?: boolean
   red?: boolean
+  yellow?: boolean
 }) {
   return (
     <div
-      className={`px-4 py-2 rounded-xl ${green ? "bg-emerald-50" : red ? "bg-rose-50" : "bg-violet-50"
+      className={`px-4 py-2 rounded-xl ${green
+        ? "bg-emerald-50"
+        : red
+          ? "bg-rose-50"
+          : yellow
+            ? "bg-yellow-50 border border-yellow-300"
+            : "bg-violet-50"
         }`}
     >
       <div className="text-sm text-muted-foreground">{label}</div>
-      <div className="text-2xl font-bold">{value ?? 0}</div>
+      <div
+        className={`text-2xl font-bold ${yellow ? "text-yellow-700" : ""
+          } justify-center flex`}
+      >
+        {value ?? 0}
+      </div>
     </div>
   )
 }

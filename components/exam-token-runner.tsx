@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { CheckCircle2, ChevronLeft, ChevronRight, Flag, Loader2, XCircle, Clock } from "lucide-react"
+import { CheckCircle2, ChevronLeft, ChevronRight, Flag, Loader2, XCircle, Clock, FlagOff } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { deleteCookie_EXAM_DURATION_COOKIE, EXAM_DURATION_COOKIE, getCookie_EXAM_DURATION_COOKIE } from "@/helper/ExamDurationMinutesHelper"
 import HTMLEncodedReader from "@/lib/HTML-encodedReader"
@@ -36,6 +36,7 @@ export default function ExamTokenRunner({ attemptId, userId, onFinished, }: { at
   const [selectedByQ, setSelectedByQ] = useState<Record<string, string>>({})
   const [savingAnswer, setSavingAnswer] = useState(false)
   const [finishing, setFinishing] = useState(false)
+  const [flagByQ, setFlagByQ] = useState<Record<string, boolean>>({})
 
   const [summary, setSummary] = useState<AttemptSummary | null>(null)
   const [reviewAnswers, setReviewAnswers] = useState<Record<string, AttemptAnswer>>({})
@@ -44,6 +45,7 @@ export default function ExamTokenRunner({ attemptId, userId, onFinished, }: { at
   const [remainingSec, setRemainingSec] = useState<number>(EXAM_DURATION_SEC)
   const intervalRef = useRef<number | null>(null)
   const autoFinishedRef = useRef(false)
+  const flaggedCount = Object.values(flagByQ).filter(Boolean).length
 
   const timerKey = useMemo(() => (attemptId ? `exam_timer_started_at:${attemptId}` : ""), [attemptId])
 
@@ -169,7 +171,12 @@ export default function ExamTokenRunner({ attemptId, userId, onFinished, }: { at
 
     try {
       setSavingAnswer(true)
-      await api.answerAttempt(attemptId, questionId, optionId)
+      await api.answerAttempt(
+        attemptId,
+        questionId,
+        optionId,
+        !!flagByQ[questionId]
+      )
     } catch (e: any) {
       setSelectedByQ((prev) => {
         const copy = { ...prev }
@@ -181,6 +188,24 @@ export default function ExamTokenRunner({ attemptId, userId, onFinished, }: { at
       setSavingAnswer(false)
     }
   }
+
+  async function toggleFlag(questionId: string, value: boolean) {
+    setFlagByQ((p) => ({ ...p, [questionId]: value }))
+
+    const selectedOptionId = selectedByQ[questionId]
+
+    try {
+      if (selectedOptionId) {
+        await api.answerAttempt(attemptId, questionId, selectedOptionId, value)
+      } else {
+        await api.setFlagAttempt(attemptId, questionId, value)
+      }
+    } catch (err) {
+      setFlagByQ((p) => ({ ...p, [questionId]: !value }))
+      toast.error((err as any)?.message || t("examRunner.toast.flag_failed"))
+    }
+  }
+
 
   async function finishExam() {
     if (!attemptId) {
@@ -280,6 +305,7 @@ export default function ExamTokenRunner({ attemptId, userId, onFinished, }: { at
       </Card>
     )
   }
+  const isFlagged = !!flagByQ[currentQ.id]
 
   return (
     <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
@@ -322,6 +348,12 @@ export default function ExamTokenRunner({ attemptId, userId, onFinished, }: { at
                   <span className="inline-block h-3 w-3 rounded bg-black dark:bg-white" />
                   <span>{t("examRunner.legend.not_selected")}</span>
                 </div>
+                <div className="flex items-center gap-1">
+                  <span className="h-3 w-3 rounded-full border border-primary flex items-center justify-center text-[10px] font-semibold text-primary">
+                    ⚑
+                  </span>
+                  <span>{t("examRunner.result.total.flag")}: {flaggedCount}</span>
+                </div>
               </>
             ) : (
               <>
@@ -341,7 +373,6 @@ export default function ExamTokenRunner({ attemptId, userId, onFinished, }: { at
             )}
           </div>
 
-          {/* TIMER UI (Sual siyahısının altında) */}
           {!isFinished && (
             <div className="mt-5 rounded-2xl border p-4 bg-white/60 dark:bg-gray-950/40">
               <div className="flex items-center justify-between">
@@ -401,12 +432,25 @@ export default function ExamTokenRunner({ attemptId, userId, onFinished, }: { at
           <Card className="backdrop-blur-xl bg-white/90 dark:bg-gray-950/85 border-white/20 shadow-xl">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg">
-                <div className="flex items-center gap-2">
-                  <div>
-                    {activeIndex + 1}.
-                  </div>
-                  <div>
-                    <HTMLEncodedReader content={currentQ.text} />
+                <div className="flex items-center gap-3">
+                  {isFlagged ? (
+                    <Flag
+                      className="h-5 w-5 text-red-500 cursor-pointer"
+                      onClick={() => toggleFlag(currentQ.id, false)}
+                    />
+                  ) : (
+                    <FlagOff
+                      className="h-5 w-5 text-gray-400 cursor-pointer"
+                      onClick={() => toggleFlag(currentQ.id, true)}
+                    />
+                  )}
+                  <div className="flex items-center gap-2">
+                    <div>
+                      {activeIndex + 1}.
+                    </div>
+                    <div>
+                      <HTMLEncodedReader content={currentQ.text} />
+                    </div>
                   </div>
                 </div>
               </CardTitle>

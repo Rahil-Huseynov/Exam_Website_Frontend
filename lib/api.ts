@@ -50,10 +50,11 @@ export type AttemptReviewItem = {
   answerId: string
   createdAt: string
   isCorrect: boolean
+  flag: boolean
   question: {
     id: string
     text: string
-    options: { id: string; text: string ;}[]
+    options: { id: string; text: string; }[]
     correctOptionId: string | null
     correctOptionText: string | null
   }
@@ -832,6 +833,21 @@ class ApiClient {
       json: { userId, token },
     })
   }
+  async setAttemptFlag(
+    attemptId: string,
+    questionId: string,
+    flag: boolean
+  ): Promise<void> {
+    await this.request<void>(
+      `/attempts/${attemptId}/answers/${questionId}/flag`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ flag }),
+      }
+    )
+  }
+
 
   async revokeExamToken(bankId: string, userId: number, token: string) {
     return this.request<{ ok: true; revoked: boolean }>(`/banks/${encodeURIComponent(bankId)}/exam/revoke`, {
@@ -864,7 +880,7 @@ class ApiClient {
     return this.request<Exam[]>(`/questions/exams${query ? "?" + query : ""}`)
   }
 
-    async getExamsForAdmin(params: {
+  async getExamsForAdmin(params: {
     universityId?: string
     subjectId?: string
     year?: number
@@ -912,11 +928,33 @@ class ApiClient {
     )
   }
 
-  async answerAttempt(attemptId: string, questionId: string, selectedOptionId: string) {
-    return this.request<{ isCorrect: boolean; answerId: string }>(`/attempts/${encodeURIComponent(attemptId)}/answer`, {
-      method: "POST",
-      json: { questionId, selectedOptionId },
-    })
+  async answerAttempt(
+    attemptId: string,
+    questionId: string,
+    selectedOptionId: string,
+    flag: boolean
+  ) {
+    return this.request<AnswerResponse>(
+      `/attempts/${encodeURIComponent(attemptId)}/answer`,
+      {
+        method: "POST",
+        json: {
+          questionId,
+          selectedOptionId,
+          flag,
+        },
+      }
+    )
+  }
+
+  async setFlagAttempt(attemptId: string, questionId: string, flag: boolean) {
+    return this.request(
+      `/attempts/${encodeURIComponent(attemptId)}/answers/${encodeURIComponent(questionId)}/flag`,
+      {
+        method: "POST",
+        json: { flag },
+      },
+    )
   }
 
   async finishAttempt(attemptId: string) {

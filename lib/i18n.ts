@@ -751,8 +751,9 @@ export const translations = {
     "minutes": "dəqiqə",
     "exams.errors.duration_invalid": "Yanlış müddət",
     "exams.ui.duration_minutes": "Müddət (dəqiqə)",
-    "exams.ui.add_more_images": "Daha çox şəkil əlavə et"
-
+    "exams.ui.add_more_images": "Daha çox şəkil əlavə et",
+    "examRunner.result.total.flag": "İşarələnmiş suallar",
+    "examRunner.toast.flag_failed": "Bayraq işarələmək mümkün olmadı",
   },
   en: {
     login: "Login",
@@ -1502,7 +1503,9 @@ export const translations = {
     "minutes": "minutes",
     "exams.errors.duration_invalid": "Invalid duration",
     "exams.ui.duration_minutes": "Duration (minutes)",
-    "exams.ui.add_more_images": "Add more images"
+    "exams.ui.add_more_images": "Add more images",
+    "examRunner.result.total.flag": "Flagged questions",
+    "examRunner.toast.flag_failed": "Failed to flag the question",
   },
   ru: {
     login: "Войти",
@@ -2265,7 +2268,10 @@ export const translations = {
     "minutes": "минут",
     "exams.errors.duration_invalid": "Неверная продолжительность",
     "exams.ui.duration_minutes": "Продолжительность (минуты)",
-    "exams.ui.add_more_images": "Добавить больше изображений"
+    "exams.ui.add_more_images": "Добавить больше изображений",
+    "examRunner.result.total.flag": "Отмеченные вопросы",
+    "examRunner.toast.flag_failed": "Не удалось отметить вопрос флагом",
+
   },
 }
 
