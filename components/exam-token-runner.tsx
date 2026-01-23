@@ -435,12 +435,12 @@ export default function ExamTokenRunner({ attemptId, userId, onFinished, }: { at
                 <div className="flex items-center gap-3">
                   {isFlagged ? (
                     <Flag
-                      className="h-5 w-5 text-red-500 cursor-pointer"
+                      className="h-5 w-[50px] text-red-500 cursor-pointer"
                       onClick={() => toggleFlag(currentQ.id, false)}
                     />
                   ) : (
                     <FlagOff
-                      className="h-5 w-5 text-gray-400 cursor-pointer"
+                      className="h-5 w-[50px] text-gray-400 cursor-pointer"
                       onClick={() => toggleFlag(currentQ.id, true)}
                     />
                   )}

@@ -144,11 +144,11 @@ export default function AttemptDetailsPage({ params }: { params: AnyParams }) {
                             >
                               {it.flag ? (
                                 <Flag
-                                  className="h-5 w-5 text-red-500 cursor-pointer"
+                                  className="h-5 w-[50px] text-red-500 cursor-pointer"
                                 />
                               ) : (
                                 <FlagOff
-                                  className="h-5 w-5 text-gray-400 cursor-pointer"
+                                  className="h-5 w-[50px] text-gray-400 cursor-pointer"
                                 />
                               )}
                             </button>
