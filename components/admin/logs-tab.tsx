@@ -2,28 +2,48 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { toast } from "react-toastify"
-import { api, type LogItem } from "@/lib/api"
+import { api, LogItem } from "@/lib/api"
 import { useLocale } from "@/contexts/locale-context"
 import { useTranslation } from "@/lib/i18n"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { RefreshCw, ChevronLeft, ChevronRight } from "lucide-react"
 
-function safeText(v: any) {
-  const s = String(v ?? "").trim()
-  return s.length ? s : "-"
-}
+import {
+  RefreshCw,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react"
 
-function formatDate(iso: string) {
+/* ================= HELPERS ================= */
+
+const safe = (v: any, dash = "-") =>
+  v === null || v === undefined || v === "" ? dash : String(v)
+
+const dateFmt = (d: string) => {
   try {
-    return new Date(iso).toLocaleString()
+    return new Date(d).toLocaleString()
   } catch {
-    return iso
+    return d
   }
 }
+
+const statusColor = (s: number) => {
+  if (s >= 500) return "text-red-600 bg-red-50 border-red-300"
+  if (s >= 400) return "text-orange-600 bg-orange-50 border-orange-300"
+  if (s >= 300) return "text-yellow-600 bg-yellow-50 border-yellow-300"
+  return "text-green-600 bg-green-50 border-green-300"
+}
+
+/* ================= COMPONENT ================= */
 
 export function LogsTab() {
   const { locale } = useLocale()
@@ -46,7 +66,7 @@ export function LogsTab() {
       setItems(res.data ?? [])
       setTotal(Number(res.total ?? 0))
     } catch {
-      toast.error(t("errLogsLoad"))
+      toast.error(t("logs.loadError"))
     } finally {
       setLoading(false)
     }
@@ -61,127 +81,145 @@ export function LogsTab() {
   }, [page])
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase()
+    const q = search.toLowerCase().trim()
     if (!q) return items
-
-    return items.filter((x) => {
-      const blob = [
-        x.id,
-        x.level,
-        x.action,
-        x.message,
-        x.adminId,
-        x.userId,
-        x.createdAt,
-        typeof x.meta === "string" ? x.meta : JSON.stringify(x.meta ?? {}),
-      ]
-        .join(" ")
-        .toLowerCase()
-
-      return blob.includes(q)
-    })
+    return items.filter((x) =>
+      JSON.stringify(x).toLowerCase().includes(q)
+    )
   }, [items, search])
 
-  const prevDisabled = loading || page <= 1
-  const nextDisabled = loading || page >= totalPages
-
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <CardTitle>{t("logsTitle")}</CardTitle>
-            <CardDescription>{t("logsDesc")}</CardDescription>
+    <Card>
+      <CardHeader className="flex flex-col sm:flex-row sm:justify-between gap-4">
+        <div>
+          <CardTitle>{t("logs.title")}</CardTitle>
+          <CardDescription>{t("logs.description")}</CardDescription>
+        </div>
+
+        <Button
+          variant="outline"
+          onClick={() => loadLogs(page)}
+          disabled={loading}
+          className="gap-2 bg-transparent"
+        >
+          <RefreshCw className="h-4 w-4" />
+          {t("common.refresh")}
+        </Button>
+      </CardHeader>
+
+      <CardContent className="space-y-4">
+        <div className="grid gap-2">
+          <Label>{t("common.search")}</Label>
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t("logs.searchPlaceholder")}
+          />
+        </div>
+
+        <div className="flex justify-between items-center text-xs text-muted-foreground">
+          <span>
+            {t("common.page")} {page} / {totalPages} •{" "}
+            {t("common.total")}: {total}
+          </span>
+
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => p - 1)}
+              className="bg-transparent"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              {t("common.prev")}
+            </Button>
+
+            <Button
+              variant="outline"
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => p + 1)}
+              className="bg-transparent"
+            >
+              {t("common.next")}
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
+        </div>
 
-          <Button
-            variant="outline"
-            onClick={() => loadLogs(page)}
-            disabled={loading}
-            className="gap-2 w-full sm:w-auto bg-transparent"
-          >
-            <RefreshCw className="h-4 w-4" />
-            {t("refresh")}
-          </Button>
-        </CardHeader>
-
-        <CardContent className="space-y-4">
-          <div className="grid gap-2">
-            <Label>{t("search")}</Label>
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={t("searchLogsPlaceholder")}
-            />
+        {loading ? (
+          <div className="text-sm text-muted-foreground">
+            {t("common.loading")}
           </div>
-
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="text-xs text-muted-foreground">
-              {t("page")} {page} / {totalPages} • {t("total")}: {total}
-            </div>
-
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                disabled={prevDisabled}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="gap-2 bg-transparent"
+        ) : filtered.length === 0 ? (
+          <div className="text-sm text-muted-foreground">
+            {t("logs.noResults")}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filtered.map((x) => (
+              <div
+                key={x.id}
+                className="rounded-2xl border p-4 shadow-sm hover:shadow-md transition"
               >
-                <ChevronLeft className="h-4 w-4" />
-                {t("prev")}
-              </Button>
+                <div className="flex flex-wrap justify-between gap-2">
+                  <div className="flex items-center gap-2 text-sm font-semibold">
+                    <span className="px-2 py-1 rounded bg-muted">
+                      {x.method}
+                    </span>
 
-              <Button
-                variant="outline"
-                disabled={nextDisabled}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                className="gap-2 bg-transparent"
-              >
-                {t("next")}
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+                    <span
+                      className={`px-2 py-1 rounded border text-xs ${statusColor(
+                        x.status
+                      )}`}
+                    >
+                      {x.status}
+                    </span>
 
-          {loading ? (
-            <div className="text-sm text-muted-foreground">{t("loading")}</div>
-          ) : filtered.length === 0 ? (
-            <div className="text-sm text-muted-foreground">{t("noLogsFound")}</div>
-          ) : (
-            <div className="space-y-3">
-              {filtered.map((x) => (
-                <div key={x.id} className="rounded-xl border p-3 sm:p-4">
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="space-y-1">
-                      <div className="font-semibold text-sm sm:text-base flex items-center gap-2">
-                        <span>{safeText(x.level)}</span>
-                        <span className="text-xs text-muted-foreground">•</span>
-                        <span className="text-xs text-muted-foreground">{formatDate(x.createdAt)}</span>
-                      </div>
-
-                      <div className="text-sm">{safeText(x.message || x.action)}</div>
-
-                      <div className="text-xs text-muted-foreground">
-                        {t("logId")}: {x.id}
-                      </div>
-
-                      <div className="text-xs text-muted-foreground">
-                        {t("adminId")}: {safeText(x.adminId)} • {t("userId")}: {safeText(x.userId)}
-                      </div>
-                    </div>
-
-                    {x.meta ? (
-                      <pre className="w-full sm:w-[420px] max-h-40 overflow-auto rounded-lg bg-muted p-3 text-xs">
-                        {typeof x.meta === "string" ? x.meta : JSON.stringify(x.meta, null, 2)}
-                      </pre>
-                    ) : null}
+                    <span className="text-muted-foreground text-xs">
+                      {x.duration} {t("logs.ms")}
+                    </span>
                   </div>
+
+                  <span className="text-xs text-muted-foreground">
+                    {dateFmt(x.createdAt)}
+                  </span>
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+
+                <div className="mt-2 font-mono text-sm break-all">
+                  {x.url}
+                </div>
+
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-xs">
+                  <div><b>{t("logs.ip")}:</b> {safe(x.ip)}</div>
+                  <div><b>{t("logs.isp")}:</b> {safe(x.isp)}</div>
+                  <div><b>{t("logs.asn")}:</b> {safe(x.asn)}</div>
+
+                  <div><b>{t("logs.country")}:</b> {safe(x.country)}</div>
+                  <div><b>{t("logs.region")}:</b> {safe(x.region)}</div>
+                  <div><b>{t("logs.city")}:</b> {safe(x.city)}</div>
+
+                  <div><b>{t("logs.device")}:</b> {safe(x.deviceType)}</div>
+                  <div><b>{t("logs.browser")}:</b> {safe(x.browser)} {safe(x.browserVer)}</div>
+                  <div><b>{t("logs.os")}:</b> {safe(x.os)} {safe(x.osVersion)}</div>
+
+                  <div><b>{t("logs.userId")}:</b> {safe(x.userId)}</div>
+                  <div><b>{t("logs.user")}:</b> {safe(x.userName)}</div>
+                  <div><b>{t("logs.role")}:</b> {safe(x.userRole)}</div>
+                </div>
+
+                <details className="mt-3">
+                  <summary className="cursor-pointer text-xs text-primary">
+                    {t("logs.userAgent")}
+                  </summary>
+                  <pre className="mt-2 text-xs bg-muted p-3 rounded-xl overflow-auto">
+                    {safe(x.userAgent)}
+                  </pre>
+                </details>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   )
 }

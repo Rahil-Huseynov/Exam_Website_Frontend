@@ -162,15 +162,34 @@ export type AdminListItem = {
 }
 
 export type LogItem = {
-  id: string
-  action?: string | null
-  message?: string | null
-  level?: "INFO" | "WARN" | "ERROR" | string
-  meta?: any
-  adminId?: number | null
+  id: number
+  method: string
+  url: string
+  status: number
+  duration: number
+
+  ip?: string | null
+  asn?: string | null
+  isp?: string | null
+  country?: string | null
+  region?: string | null
+  city?: string | null
+
+  deviceType?: string | null
+  browser?: string | null
+  browserVer?: string | null
+  os?: string | null
+  osVersion?: string | null
+
+  userAgent?: string | null
   userId?: number | null
+  userName?: string | null
+  userRole?: string | null
+
   createdAt: string
 }
+
+
 
 export type LogsListResponse = {
   data: LogItem[]
