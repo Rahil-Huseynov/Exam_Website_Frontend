@@ -376,6 +376,22 @@ export default function DashboardPage() {
     }
   }
 
+  async function retakeAttempt(attempt: Attempt) {
+    const bank = attempt?.bank || attempt?.exam || null
+    if (!bank) {
+      toastError(t("errBankNotFound") || "Exam bank not found")
+      return
+    }
+
+    const examLike = {
+      bankId: bank.id,
+      price: bank.price ?? 0,
+      durationMinutes: bank.durationMinutes ?? bank.duration ?? null,
+    }
+
+    await startExam(examLike as any)
+  }
+
   function goBack() {
     if (typeof window !== "undefined") {
       window.history.back()
@@ -427,6 +443,12 @@ export default function DashboardPage() {
       </div>
     )
   }
+
+  const recentAttempts = attempts
+    .filter((a) => a?.status !== "IN_PROGRESS")
+    .slice()
+    .sort((a, b) => new Date(b.startedAt || b.createdAt || 0).getTime() - new Date(a.startedAt || a.createdAt || 0).getTime())
+    .slice(0, 3)
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -494,6 +516,80 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           </div>
+          <CardContent className="p-4">
+            {recentAttempts.length === 0 ? (
+              <div className="text-sm text-muted-foreground">
+                {t("noRecentAttempts")}
+              </div>
+            ) : (
+              <div className="grid gap-3">
+                {recentAttempts.map((a: any) => (
+                  <div
+                    key={a.id}
+                    className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 sm:p-6 rounded-xl border border-border/30 bg-background/30 transition-shadow"
+                  >
+                    <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0 w-full sm:w-auto">
+                      <div className="flex-shrink-0">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-muted/10 flex items-center justify-center overflow-hidden">
+                          <img
+                            src={`${process.env.NEXT_PUBLIC_API_URL_FOR_IMAGE}${a?.bank?.university?.logo}`}
+                            alt={a?.bank?.university?.name || "University"}
+                            className="w-8 h-8 sm:w-10 sm:h-10 object-contain"
+                            loading="lazy"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between sm:flex-col sm:items-end w-full sm:w-auto">
+                        <div className="min-w-0 w-full">
+                          <div className="font-medium text-sm leading-snug line-clamp-2">
+                            {a?.bank?.title || a?.exam?.title || "—"}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1 leading-snug line-clamp-2">
+                            {a?.bank?.university?.name} • {a?.bank?.year ?? "-"}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1 truncate">
+                            {new Date(a.startedAt || a.createdAt || Date.now()).toLocaleString()}
+                          </div>
+                        </div>
+                        <div className="sm:hidden text-sm font-semibold w-20 text-right">
+                          {a.score ?? "-"} / {a.total ?? "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+                      <div className="flex items-center justify-between sm:flex-col sm:items-end w-full sm:w-auto">
+                        <div className="hidden sm:block text-sm font-semibold w-20 text-right">
+                          {a.score ?? "-"} / {a.total ?? "-"}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                        <Button
+                          size="sm"
+                          onClick={() => retakeAttempt(a)}
+                          className="rounded-lg h-9 px-3 shadow-sm w-full sm:w-auto"
+                        >
+                          {t("retake")}
+                        </Button>
+
+                        <Link href={`/results/${a?.id}`} className="w-full sm:w-auto">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="rounded-lg h-9 px-3 w-full sm:w-auto"
+                          >
+                            {t("viewResults")}
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+
 
           <div ref={wizardRef} className="scroll-mt-24">
             <Card className="border border-border/40 bg-card/50 backdrop-blur-sm rounded-xl overflow-hidden">
@@ -537,7 +633,7 @@ export default function DashboardPage() {
 
                   {selectedUni && (
                     <span className="px-3 py-1.5 rounded-lg border border-border/40 bg-background/60 text-muted-foreground">
-                      {t("selectedExamType")}:{" "}
+                      {t("selectedExamType")}: {" "}
                       <span className="font-medium text-foreground">{tName(selectedUni, locale)}</span>
                     </span>
                   )}
@@ -550,7 +646,6 @@ export default function DashboardPage() {
               </CardHeader>
 
               <CardContent className="relative min-h-[320px] pt-8">
-                {/* STEP 1 */}
                 <div className={[base, step === 1 ? active : hiddenLeft].join(" ")}>
                   <div className="flex items-center justify-between gap-3 mb-5">
                     <div className="font-semibold text-lg">{t("chooseExamType")}</div>
@@ -609,8 +704,6 @@ export default function DashboardPage() {
                     </div>
                   )}
                 </div>
-
-                {/* STEP 2 */}
                 <div className={[base, step === 2 ? active : step < 2 ? hiddenRight : hiddenLeft].join(" ")}>
                   <div className="flex items-center justify-between gap-3 mb-5">
                     <div className="font-semibold text-lg flex items-center gap-2">
@@ -647,8 +740,6 @@ export default function DashboardPage() {
                     </div>
                   )}
                 </div>
-
-                {/* STEP 3 */}
                 <div className={[base, step === 3 ? active : hiddenRight].join(" ")}>
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
                     <div className="font-semibold text-lg flex items-center gap-2">
@@ -722,9 +813,9 @@ export default function DashboardPage() {
             </Card>
           </div>
         </div>
-      </main>
+      </main >
 
       <Footer />
-    </div>
+    </div >
   )
 }

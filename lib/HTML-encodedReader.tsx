@@ -8,7 +8,7 @@ export default function HTMLEncodedReader({ content }: { content: string }) {
 
   return (
     <div
-      className="math-html"
+      className="math-html w-full break-words"
       dangerouslySetInnerHTML={{ __html: cleanHtml }}
     />
   )

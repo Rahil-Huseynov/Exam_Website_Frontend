@@ -780,7 +780,14 @@ export const translations = {
     "logs.userId": "İstifadəçi ID",
     "logs.user": "İstifadəçi",
     "logs.role": "Rol",
-    "logs.userAgent": "User-Agent"
+    "logs.userAgent": "User-Agent",
+    "recentAttempts": "Son 3 imtahan",
+    "recentAttemptsDesc": "Ən son verilmiş 3 imtahanın xülasəsi və yenidən vermək imkanı.",
+    "allAttempts": "Bütün imtahanlar",
+    "noRecentAttempts": "Heç bir imtahan yoxdur.",
+    "retake": "Yenidən ver",
+    "viewResults": "Nəticəyə bax",
+
   },
   en: {
     login: "Login",
@@ -1561,7 +1568,12 @@ export const translations = {
     "logs.user": "User",
     "logs.role": "Role",
     "logs.userAgent": "User-Agent",
-
+    "recentAttempts": "Recent exams",
+    "recentAttemptsDesc": "Summary of your last 3 exams and the ability to retake them.",
+    "allAttempts": "All exams",
+    "noRecentAttempts": "No exams found.",
+    "retake": "Retake",
+    "viewResults": "View results",
   },
   ru: {
     login: "Войти",
@@ -2355,7 +2367,15 @@ export const translations = {
     "logs.userId": "ID пользователя",
     "logs.user": "Пользователь",
     "logs.role": "Роль",
-    "logs.userAgent": "User-Agent"
+    "logs.userAgent": "User-Agent",
+    "recentAttempts": "Последние экзамены",
+    "recentAttemptsDesc": "Сводка последних 3 экзаменов и возможность пересдать их.",
+    "allAttempts": "Все экзамены",
+    "noRecentAttempts": "Экзамены не найдены.",
+    "retake": "Пересдать",
+    "viewResults": "Посмотреть результат",
+
+
   },
 }
 
