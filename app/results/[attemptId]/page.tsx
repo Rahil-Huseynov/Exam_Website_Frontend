@@ -186,7 +186,7 @@ export default function AttemptDetailsPage({ params }: { params: AnyParams }) {
                             return (
                               <div
                                 key={op.id}
-                                className={`px-4 py-3 rounded-xl border flex gap-3 ${isCorrect
+                                className={`break-all px-4 py-3 rounded-xl border flex gap-3 ${isCorrect
                                   ? "border-emerald-400 bg-emerald-50"
                                   : isSelected
                                     ? "border-rose-400 bg-rose-50"
