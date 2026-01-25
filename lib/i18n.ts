@@ -784,7 +784,7 @@ export const translations = {
     "recentAttempts": "Son 3 imtahan",
     "recentAttemptsDesc": "Ən son verilmiş 3 imtahanın xülasəsi və yenidən vermək imkanı.",
     "allAttempts": "Bütün imtahanlar",
-    "noRecentAttempts": "Heç bir imtahan yoxdur.",
+    "noRecentAttempts": "Tarixçədə heç bir imtahan yoxdur.",
     "retake": "Yenidən ver",
     "viewResults": "Nəticəyə bax",
 
@@ -1571,7 +1571,7 @@ export const translations = {
     "recentAttempts": "Recent exams",
     "recentAttemptsDesc": "Summary of your last 3 exams and the ability to retake them.",
     "allAttempts": "All exams",
-    "noRecentAttempts": "No exams found.",
+    "noRecentAttempts": "There are no exams in the history.",
     "retake": "Retake",
     "viewResults": "View results",
   },
@@ -2371,7 +2371,7 @@ export const translations = {
     "recentAttempts": "Последние экзамены",
     "recentAttemptsDesc": "Сводка последних 3 экзаменов и возможность пересдать их.",
     "allAttempts": "Все экзамены",
-    "noRecentAttempts": "Экзамены не найдены.",
+    "noRecentAttempts": "В истории нет ни одного экзамена.",
     "retake": "Пересдать",
     "viewResults": "Посмотреть результат",
 
