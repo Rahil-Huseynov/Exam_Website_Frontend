@@ -14,20 +14,58 @@ import { useRouter } from "next/navigation"
 import { deleteCookie_EXAM_DURATION_COOKIE, EXAM_DURATION_COOKIE, getCookie_EXAM_DURATION_COOKIE } from "@/helper/ExamDurationMinutesHelper"
 import HTMLEncodedReader from "@/lib/HTML-encodedReader"
 
+type SafeErr = any
 
-export default function ExamTokenRunner({ attemptId, userId, onFinished, }: { attemptId: string; userId: number; onFinished?: () => void }) {
-  const duration = getCookie_EXAM_DURATION_COOKIE(EXAM_DURATION_COOKIE)
+function parseServerError(err: SafeErr) {
+  try {
+    if (!err) return "Unknown error"
+    if (typeof err === "string") return err
+    if (err instanceof Error) {
+      return err.message || String(err)
+    }
+    if (err.response?.data) {
+      const d = err.response.data
+      if (typeof d === "string") return d
+      if (Array.isArray(d.message)) return d.message.join(", ")
+      if (typeof d.message === "string") return d.message
+      if (d.error) return String(d.error)
+      return JSON.stringify(d)
+    }
+    if (typeof err === "object" && err.message) {
+      if (Array.isArray(err.message)) return err.message.join(", ")
+      if (typeof err.message === "string") return err.message
+    }
+    if (err.raw && typeof err.raw === "object" && err.raw.message) {
+      return Array.isArray(err.raw.message) ? err.raw.message.join(", ") : String(err.raw.message)
+    }
+    return JSON.stringify(err)
+  } catch {
+    return "Unknown error"
+  }
+}
+
+export default function ExamTokenRunner({
+  attemptId,
+  userId,
+  onFinished,
+}: {
+  attemptId: string
+  userId: number
+  onFinished?: () => void
+}) {
+  const duration = getCookie_EXAM_DURATION_COOKIE(EXAM_DURATION_COOKIE) || "60"
   const EXAM_DURATION_SEC = Number(duration) * 60
+
   function formatTime(totalSec: number) {
     const sec = Math.max(0, totalSec)
     const mm = Math.floor(sec / 60)
     const ss = sec % 60
     return `${String(mm).padStart(2, "0")}:${String(ss).padStart(2, "0")}`
   }
+
   const { locale } = useLocale()
   const { t } = useTranslation(locale)
   const router = useRouter()
-
   const BASE = process.env.NEXT_PUBLIC_API_URL_FOR_IMAGE
 
   const [loading, setLoading] = useState(true)
@@ -45,7 +83,6 @@ export default function ExamTokenRunner({ attemptId, userId, onFinished, }: { at
   const [remainingSec, setRemainingSec] = useState<number>(EXAM_DURATION_SEC)
   const intervalRef = useRef<number | null>(null)
   const autoFinishedRef = useRef(false)
-  const flaggedCount = Object.values(flagByQ).filter(Boolean).length
 
   const timerKey = useMemo(() => (attemptId ? `exam_timer_started_at:${attemptId}` : ""), [attemptId])
 
@@ -96,7 +133,6 @@ export default function ExamTokenRunner({ attemptId, userId, onFinished, }: { at
     if (!questions.length) return
     if (summary?.status === "FINISHED") return
     startOrResumeTimer()
-
     return () => stopTimer()
   }, [attemptId, loading, questions.length, summary?.status])
 
@@ -110,21 +146,31 @@ export default function ExamTokenRunner({ attemptId, userId, onFinished, }: { at
   }, [summary?.status, timerKey])
 
   const total = questions.length
-  const answeredCount = Object.keys(selectedByQ).length
+  const answeredCount = Object.keys(selectedByQ).filter((qid) => {
+    const v = selectedByQ[qid]
+    return v !== undefined && v !== null && String(v).trim() !== ""
+  }).length
   const progress = total ? Math.round((answeredCount / total) * 100) : 0
 
-  const currentQ = questions[activeIndex]
+  useEffect(() => {
+    if (activeIndex >= questions.length && questions.length > 0) {
+      setActiveIndex(Math.max(0, questions.length - 1))
+    }
+    if (questions.length === 0) setActiveIndex(0)
+  }, [questions, activeIndex])
+
+  const currentQ = questions[activeIndex] ?? null
   const isFirst = activeIndex === 0
   const isLast = activeIndex === total - 1
-
   const isFinished = summary?.status === "FINISHED"
+  const flaggedCount = Object.values(flagByQ).filter(Boolean).length
+
   useEffect(() => {
     if (!attemptId) return
-
       ; (async () => {
         try {
-          const summary = await api.getAttemptSummary(attemptId)
-          if (summary?.status === "FINISHED") {
+          const s = await api.getAttemptSummary(attemptId)
+          if (s?.status === "FINISHED") {
             onFinished?.()
             router.replace(`/results/${attemptId}`)
           }
@@ -132,32 +178,42 @@ export default function ExamTokenRunner({ attemptId, userId, onFinished, }: { at
       })()
   }, [attemptId, router, onFinished])
 
-
   useEffect(() => {
     if (!attemptId) return
     void loadQuestions()
   }, [attemptId])
 
   async function loadQuestions() {
+    setLoading(true)
+    setQuestions([])
+    setActiveIndex(0)
+    setSelectedByQ({})
+    setSummary(null)
+    setReviewMode(false)
+    setReviewAnswers({})
+    setFlagByQ({})
+    autoFinishedRef.current = false
+    setRemainingSec(EXAM_DURATION_SEC)
+
     try {
-      setLoading(true)
-      setQuestions([])
-      setActiveIndex(0)
-      setSelectedByQ({})
-      setSummary(null)
-      setReviewMode(false)
-      setReviewAnswers({})
-      autoFinishedRef.current = false
-
-      setRemainingSec(EXAM_DURATION_SEC)
-
       const res = await api.getAttemptQuestions(attemptId, userId)
       const list = Array.isArray(res?.questions) ? res.questions : []
       setQuestions(list)
 
+      const sel: Record<string, string> = {}
+      const flags: Record<string, boolean> = {}
+      for (const q of list) {
+        if ((q as any).selectedOptionId) sel[q.id] = (q as any).selectedOptionId
+        else if ((q as any).studentTextAnswer) sel[q.id] = (q as any).studentTextAnswer
+        else sel[q.id] = ""
+        flags[q.id] = !!(q as any).flag
+      }
+      setSelectedByQ(sel)
+      setFlagByQ(flags)
+
       if (!list.length) toast.info(t("examRunner.toast.no_questions"))
-    } catch (e: any) {
-      toast.error(e?.message || t("examRunner.toast.load_failed"))
+    } catch (e) {
+      toast.error(parseServerError(e))
     } finally {
       setLoading(false)
     }
@@ -167,23 +223,38 @@ export default function ExamTokenRunner({ attemptId, userId, onFinished, }: { at
     if (!attemptId) return
     if (summary?.status === "FINISHED") return
 
-    setSelectedByQ((prev) => ({ ...prev, [questionId]: optionId }))
+    const prev = selectedByQ[questionId]
+    setSelectedByQ((p) => ({ ...p, [questionId]: optionId }))
 
     try {
       setSavingAnswer(true)
-      await api.answerAttempt(
-        attemptId,
-        questionId,
-        optionId,
-        !!flagByQ[questionId]
-      )
-    } catch (e: any) {
-      setSelectedByQ((prev) => {
-        const copy = { ...prev }
-        delete copy[questionId]
-        return copy
-      })
-      toast.error(e?.message || t("examRunner.toast.answer_failed"))
+      const flag = !!flagByQ[questionId]
+      await api.answerAttempt(attemptId, questionId, optionId, undefined, flag)
+    } catch (e) {
+      setSelectedByQ((p) => ({ ...p, [questionId]: prev ?? "" }))
+      toast.error(parseServerError(e))
+    } finally {
+      setSavingAnswer(false)
+    }
+  }
+
+  async function saveTextAnswer(questionId: string) {
+    if (!attemptId) return
+    if (summary?.status === "FINISHED") return
+
+    const text = String(selectedByQ[questionId] ?? "").trim()
+    if (text === "") {
+      toast.info(t("examRunner.toast.enter_answer") || "Cavab yazın")
+      return
+    }
+
+    try {
+      setSavingAnswer(true)
+      const flag = !!flagByQ[questionId]
+      await api.answerAttempt(attemptId, questionId, undefined, text, flag)
+      toast.success(t("examRunner.toast.answer_saved") || "Cavab yadda saxlandı")
+    } catch (e) {
+      toast.error(parseServerError(e))
     } finally {
       setSavingAnswer(false)
     }
@@ -192,24 +263,29 @@ export default function ExamTokenRunner({ attemptId, userId, onFinished, }: { at
   async function toggleFlag(questionId: string, value: boolean) {
     setFlagByQ((p) => ({ ...p, [questionId]: value }))
 
-    const selectedOptionId = selectedByQ[questionId]
+    const selectedValue = selectedByQ[questionId] ?? ""
+    const opts = questions.find((q) => q.id === questionId)?.options
+    const isTest = Array.isArray(opts) && opts.length > 0
 
     try {
-      if (selectedOptionId) {
-        await api.answerAttempt(attemptId, questionId, selectedOptionId, value)
+      if (selectedValue && selectedValue.trim() !== "") {
+        if (isTest) {
+          await api.answerAttempt(attemptId, questionId, selectedValue, undefined, value)
+        } else {
+          await api.answerAttempt(attemptId, questionId, undefined, selectedValue, value)
+        }
       } else {
         await api.setFlagAttempt(attemptId, questionId, value)
       }
-    } catch (err) {
+    } catch (e) {
       setFlagByQ((p) => ({ ...p, [questionId]: !value }))
-      toast.error((err as any)?.message || t("examRunner.toast.flag_failed"))
+      toast.error(parseServerError(e))
     }
   }
 
-
   async function finishExam() {
     if (!attemptId) {
-      toast.error(t("examRunner.toast.no_attempt"))
+      toast.error(t("examRunner.toast.no_attempt") || "Attempt not found")
       return
     }
     if (summary?.status === "FINISHED") return
@@ -218,31 +294,82 @@ export default function ExamTokenRunner({ attemptId, userId, onFinished, }: { at
     try {
       setFinishing(true)
 
+      const writingQs = questions.filter((q) => !Array.isArray(q.options) || q.options.length === 0)
+      const saves: Promise<any>[] = []
+      for (const q of writingQs) {
+        const val = String(selectedByQ[q.id] ?? "").trim()
+        if (val !== "") {
+          const flag = !!flagByQ[q.id]
+          saves.push(api.answerAttempt(attemptId, q.id, undefined, val, flag))
+        }
+      }
+
+      if (saves.length) {
+        await Promise.allSettled(saves).then((results) => {
+          const rejected = results.filter((r) => r.status === "rejected")
+          if (rejected.length) {
+            const firstErr = (rejected[0] as PromiseRejectedResult).reason
+            toast.warn(parseServerError(firstErr))
+          }
+        })
+      }
+
+      const writingOnly = questions.length > 0 && questions.every((q) => !Array.isArray(q.options) || q.options.length === 0)
+
+      const missing = questions.filter((q) => {
+        const v = selectedByQ[q.id]
+        return !(v !== undefined && v !== null && String(v).trim() !== "")
+      })
+
+      if (missing.length > 0 && writingOnly) {
+        toast.error(
+          t("examRunner.toast.finish_not_all_answered", { count: missing.length }) ||
+          `Hələ ${missing.length} sual cavablanmayıb.`
+        )
+        setFinishing(false)
+        return
+      }
+
+      if (missing.length > 0 && !writingOnly) {
+        toast.info(
+          t("examRunner.toast.finish_with_unanswered", { count: missing.length }) ||
+          `Diqqət: ${missing.length} sual cavablanmayıb. İmtahanı bitirəndən sonra boş qalanlar düzgün hesablanacaq.`
+        )
+      }
+
       await api.finishAttempt(attemptId)
 
       const s = await api.getAttemptSummary(attemptId)
       setSummary(s)
       onFinished?.()
+
       const res = await api.getAttemptAnswers(attemptId)
       const list: AttemptAnswer[] = Array.isArray(res?.answers) ? res.answers : []
-
       const map: Record<string, AttemptAnswer> = {}
       for (const a of list) map[a.questionId] = a
       setReviewAnswers(map)
-
-      setReviewMode(true)
-      setActiveIndex(0)
-
-      toast.success(t("examRunner.toast.finished_showing_results"))
-      deleteCookie_EXAM_DURATION_COOKIE(EXAM_DURATION_COOKIE)
-      if (typeof window !== "undefined") {
+      if (writingOnly) {
+        toast.success(t("examRunner.toast.finished_showing_results") || "Imtahan tamamlandı")
+        deleteCookie_EXAM_DURATION_COOKIE(EXAM_DURATION_COOKIE)
         try {
           localStorage.clear()
           sessionStorage.clear()
         } catch { }
+        router.replace(`/results`)
+        return
       }
-    } catch (e: any) {
-      toast.error(e?.message || t("examRunner.toast.finish_failed"))
+
+      setReviewMode(true)
+      setActiveIndex(0)
+
+      toast.success(t("examRunner.toast.finished_showing_results") || "Imtahan tamamlandı")
+      deleteCookie_EXAM_DURATION_COOKIE(EXAM_DURATION_COOKIE)
+      try {
+        localStorage.clear()
+        sessionStorage.clear()
+      } catch { }
+    } catch (e) {
+      toast.error(parseServerError(e))
     } finally {
       setFinishing(false)
     }
@@ -255,7 +382,7 @@ export default function ExamTokenRunner({ attemptId, userId, onFinished, }: { at
 
   function leftBtnClass(questionId: string, active: boolean) {
     if (!isFinished) {
-      const hasSelected = !!selectedByQ[questionId]
+      const hasSelected = !!(selectedByQ[questionId] && String(selectedByQ[questionId]).trim() !== "")
       return cn(
         active && "ring-2 ring-primary",
         hasSelected
@@ -305,6 +432,17 @@ export default function ExamTokenRunner({ attemptId, userId, onFinished, }: { at
       </Card>
     )
   }
+
+  if (!currentQ) {
+    return (
+      <Card className="backdrop-blur-xl bg-white/90 dark:bg-gray-950/85 border-white/20 shadow-xl">
+        <CardContent className="py-10 text-center text-sm text-muted-foreground">
+          {t("examRunner.ui.no_question")}
+        </CardContent>
+      </Card>
+    )
+  }
+
   const isFlagged = !!flagByQ[currentQ.id]
 
   return (
@@ -445,12 +583,8 @@ export default function ExamTokenRunner({ attemptId, userId, onFinished, }: { at
                     />
                   )}
                   <div className="flex items-center gap-2">
-                    <div>
-                      {activeIndex + 1}.
-                    </div>
-                    <div>
-                      <HTMLEncodedReader content={currentQ.text} />
-                    </div>
+                    <div>{activeIndex + 1}.</div>
+                    <div><HTMLEncodedReader content={currentQ.text} /></div>
                   </div>
                 </div>
               </CardTitle>
@@ -477,7 +611,7 @@ export default function ExamTokenRunner({ attemptId, userId, onFinished, }: { at
                   )
                 ) : (
                   <span>
-                    {selectedByQ[currentQ.id]
+                    {selectedByQ[currentQ.id] && String(selectedByQ[currentQ.id]).trim() !== ""
                       ? t("examRunner.ui.answer_selected")
                       : t("examRunner.ui.answer_not_selected")}
                   </span>
@@ -496,69 +630,96 @@ export default function ExamTokenRunner({ attemptId, userId, onFinished, }: { at
                         key={im.id || im.url}
                         src={`${BASE}${im.url}`}
                         alt="question"
-                        className="w-[524] object-contain rounded-2xl border bg-white"
+                        className="w-full object-contain rounded-2xl border bg-white"
                       />
                     ))}
                 </div>
               )}
 
-              {currentQ.options?.map((o) => {
-                const ans = reviewAnswers[currentQ.id]
-                const correctId = ans?.question?.correctOptionId
-                const selectedId = isFinished ? ans?.selectedOptionId : selectedByQ[currentQ.id]
+              {Array.isArray(currentQ.options) && currentQ.options.length > 0 ? (
+                currentQ.options.map((o) => {
+                  const ans = reviewAnswers[currentQ.id]
+                  const correctId = ans?.question?.correctOptionId
+                  const selectedId = isFinished ? ans?.selectedOptionId : selectedByQ[currentQ.id]
 
-                const selected = selectedId === o.id
-                const isCorrectOption = isFinished && correctId === o.id
-                const isWrongSelected = isFinished && selected && !!correctId && correctId !== o.id
+                  const selected = selectedId === o.id
+                  const isCorrectOption = isFinished && correctId === o.id
+                  const isWrongSelected = isFinished && selected && !!correctId && correctId !== o.id
 
-                const timeUp = remainingSec <= 0
-                const disabled = finishing || summary?.status === "FINISHED" || timeUp
+                  const timeUp = remainingSec <= 0
+                  const disabled = finishing || summary?.status === "FINISHED" || timeUp
 
-                return (
-                  <button
-                    key={o.id}
-                    type="button"
-                    disabled={disabled}
-                    onClick={() => void selectOption(currentQ.id, o.id)}
-                    className={cn(
-                      "w-full text-left rounded-2xl border p-4 transition-all",
-                      !isFinished &&
-                      "hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 hover:bg-gradient-to-r hover:from-violet-50 hover:to-blue-50 dark:hover:from-violet-950/20 dark:hover:to-blue-950/20",
-                      selected && !isFinished && "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/20",
-                      isCorrectOption && "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/20",
-                      isWrongSelected && "border-red-600 bg-red-50 dark:bg-red-950/20",
-                      disabled && "opacity-95 cursor-not-allowed",
-                    )}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="text-sm leading-relaxed">
-                        <HTMLEncodedReader content={o.text} />
-                      </div>
+                  return (
+                    <button
+                      key={o.id}
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => void selectOption(currentQ.id, o.id)}
+                      className={cn(
+                        "w-full text-left rounded-2xl border p-4 transition-all",
+                        !isFinished &&
+                        "hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 hover:bg-gradient-to-r hover:from-violet-50 hover:to-blue-50 dark:hover:from-violet-950/20 dark:hover:to-blue-950/20",
+                        selected && !isFinished && "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/20",
+                        isCorrectOption && "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/20",
+                        isWrongSelected && "border-red-600 bg-red-50 dark:bg-red-950/20",
+                        disabled && "opacity-95 cursor-not-allowed",
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="text-sm leading-relaxed">
+                          <HTMLEncodedReader content={o.text} />
+                        </div>
 
-                      {isFinished ? (
-                        <>
-                          {isCorrectOption && (
+                        {isFinished ? (
+                          <>
+                            {isCorrectOption && (
+                              <span className="text-emerald-600 text-xs font-semibold">
+                                {t("examRunner.badge.correct")}
+                              </span>
+                            )}
+                            {isWrongSelected && (
+                              <span className="text-red-600 text-xs font-semibold">
+                                {t("examRunner.badge.your_choice")}
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          selected && (
                             <span className="text-emerald-600 text-xs font-semibold">
-                              {t("examRunner.badge.correct")}
+                              {t("examRunner.badge.selected")}
                             </span>
-                          )}
-                          {isWrongSelected && (
-                            <span className="text-red-600 text-xs font-semibold">
-                              {t("examRunner.badge.your_choice")}
-                            </span>
-                          )}
+                          )
+                        )}
+                      </div>
+                    </button>
+                  )
+                })
+              ) : (
+                <div className="space-y-3">
+                  <textarea
+                    value={selectedByQ[currentQ.id] ?? ""}
+                    onChange={(e) => setSelectedByQ((p) => ({ ...p, [currentQ.id]: e.target.value }))}
+                    placeholder={t("examRunner.ui.enter_text_answer") || "Cavabınızı bura yazın..."}
+                    className="w-full min-h-[200px] rounded-2xl border p-4 resize-vertical"
+                    disabled={finishing || summary?.status === "FINISHED"}
+                  />
+                  <div className="flex items-center gap-3">
+                    <Button onClick={() => void saveTextAnswer(currentQ.id)} disabled={savingAnswer || finishing}>
+                      {savingAnswer ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          {t("examRunner.ui.saving")}
                         </>
                       ) : (
-                        selected && (
-                          <span className="text-emerald-600 text-xs font-semibold">
-                            {t("examRunner.badge.selected")}
-                          </span>
-                        )
+                        t("examRunner.ui.save_answer")
                       )}
+                    </Button>
+                    <div className="text-sm text-muted-foreground">
+                      {t("examRunner.ui.writing_note") ?? "Cavabınızı yadda saxlayın. İmtahanı bitirdikdən sonra AI tərəfindən yoxlanacaq."}
                     </div>
-                  </button>
-                )
-              })}
+                  </div>
+                </div>
+              )}
 
               <div className="mt-4 flex items-center justify-between gap-3">
                 <Button

@@ -51,6 +51,9 @@ export type AttemptReviewItem = {
   createdAt: string
   isCorrect: boolean
   flag: boolean
+  score: number
+  feedback?: string | null
+  studentTextAnswer?: string | null
   question: {
     id: string
     text: string
@@ -63,16 +66,18 @@ export type AttemptReviewItem = {
 
 export type ExamAttempt = {
   id: string
-  status: "IN_PROGRESS" | "FINISHED"
+  status: "IN_PROGRESS" | "FINISHED" | "WAITING_AI"
   startedAt: string
   finishedAt?: string | null
   score: number
+  type: "TEST" | "WRITING"
   total: number
   bank: {
     id: string
     title: string
     year: number
     price: number
+    type: "TEST" | "WRITING"
     university: { id: string; name: string; nameAz?: string; nameEn?: string; nameRu?: string; logo?: string | null }
     subject: { id: string; name: string; nameAz?: string; nameEn?: string; nameRu?: string }
     topic?: any
@@ -113,7 +118,7 @@ export interface Question {
 
 export type AdminResultItem = {
   id: string
-  status: "IN_PROGRESS" | "FINISHED"
+  status: "IN_PROGRESS" | "FINISHED" | "WAITING_AI"
   startedAt: string
   finishedAt?: string | null
   score: number
@@ -218,6 +223,7 @@ export interface Exam {
   questionCount: number
   random: boolean
   durationMinutes: number
+  type: "TEST" | "WRITING"
 }
 
 
@@ -271,7 +277,7 @@ export type BalanceTransactionItem = {
   createdAt: string
 
   bank?: { id: string; title: string; year: number; price: any } | null
-  attempt?: { id: string; startedAt: string; finishedAt?: string | null; status: "IN_PROGRESS" | "FINISHED" } | null
+  attempt?: { id: string; startedAt: string; finishedAt?: string | null; status: "IN_PROGRESS" | "FINISHED" | "WAITING_AI" } | null
   admin?: { id: number; email: string; firstName?: string | null; lastName?: string | null; role?: string | null } | null
 }
 
@@ -328,6 +334,7 @@ export interface AdminQuestion {
   id: string;
   text: string;
   html?: string;
+  type: "MULTIPLE_CHOICE" | "OPEN_ENDED";
   options: Array<{
     id: string;
     text: string;
@@ -762,10 +769,17 @@ class ApiClient {
       body: JSON.stringify(payload),
     })
   }
-
-  async getUserExamAttempts(userId: number, status?: "FINISHED" | "IN_PROGRESS") {
-    const qs = status ? `?status=${encodeURIComponent(status)}` : ""
-    return this.request<{ attempts: any[] }>(`/users/${encodeURIComponent(String(userId))}/attempts${qs}`)
+  async getUserExamAttempts(userId: number, status?: string | string[]) {
+    const params = new URLSearchParams();
+    if (status) {
+      if (Array.isArray(status)) {
+        status.forEach(s => params.append('status', s));
+      } else {
+        params.append('status', status);
+      }
+    }
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    return this.request<{ attempts: any[] }>(`/users/${encodeURIComponent(String(userId))}/attempts${qs}`);
   }
 
 
@@ -790,7 +804,7 @@ class ApiClient {
     return this.getExamYears(params);
   }
 
-  async createExam(data: { title: string; universityId: string; subjectId: string; year: number; price: number; questionCount: number; random: boolean; durationMinutes: number }) {
+  async createExam(data: { title: string; universityId: string; subjectId: string; year: number; price: number; questionCount: number; random: boolean; durationMinutes: number; type: "TEST" | "WRITING" }) {
     return this.request<Exam>("/questions/exam", {
       method: "POST",
       body: JSON.stringify(data),
@@ -946,25 +960,24 @@ class ApiClient {
       `/attempts/${encodeURIComponent(attemptId)}/questions?userId=${encodeURIComponent(String(userId))}`,
     )
   }
-
   async answerAttempt(
     attemptId: string,
     questionId: string,
-    selectedOptionId: string,
-    flag: boolean
+    selectedOptionId?: string | null,
+    studentTextAnswer?: string | null,
+    flag: boolean = false
   ) {
+    const payload: Record<string, any> = { questionId, flag }
+
+    if (selectedOptionId != null) payload.selectedOptionId = selectedOptionId
+    if (studentTextAnswer != null) payload.studentTextAnswer = studentTextAnswer
+
     return this.request<AnswerResponse>(
       `/attempts/${encodeURIComponent(attemptId)}/answer`,
-      {
-        method: "POST",
-        json: {
-          questionId,
-          selectedOptionId,
-          flag,
-        },
-      }
+      { method: "POST", json: payload }
     )
   }
+
 
   async setFlagAttempt(attemptId: string, questionId: string, flag: boolean) {
     return this.request(
@@ -1104,7 +1117,7 @@ class ApiClient {
     return this.request<LogsListResponse>(`/logs?${qs}`)
   }
 
-  async adminListResults(params?: { page?: number; limit?: number; q?: string; status?: "FINISHED" | "IN_PROGRESS" }) {
+  async adminListResults(params?: { page?: number; limit?: number; q?: string; status?: "FINISHED" | "IN_PROGRESS" | "WAITING_AI" }) {
     const sp = new URLSearchParams()
     sp.set("page", String(params?.page ?? 1))
     sp.set("limit", String(params?.limit ?? 20))

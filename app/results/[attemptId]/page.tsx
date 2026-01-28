@@ -37,7 +37,7 @@ export default function AttemptDetailsPage({ params }: { params: AnyParams }) {
       const res = await api.getAttemptReview(aid, userId)
       setData(res)
     } catch {
-      toast.error(t("errGeneric"))
+      toast.error(t("errGeneric") || "Xəta baş verdi")
     } finally {
       setLoading(false)
     }
@@ -66,17 +66,19 @@ export default function AttemptDetailsPage({ params }: { params: AnyParams }) {
           ),
         }
       })
-      toast.error(t("errGeneric"))
+      toast.error(t("errGeneric") || "Xəta baş verdi")
     }
   }
-
-
 
   const stats = data?.stats
   const attempt = data?.attempt
   const exam = data?.exam
-  const flagCount =
-    data?.items.filter((it) => it.flag).length ?? 0
+  const flagCount = data?.items.filter((it) => it.flag).length ?? 0
+
+  const isWritingAttempt = data?.items?.length
+    ? data.items.every((it) => !it.question.options || it.question.options.length === 0)
+    : false
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-50 via-blue-50 to-cyan-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
       <Navbar />
@@ -118,29 +120,94 @@ export default function AttemptDetailsPage({ params }: { params: AnyParams }) {
 
                 <CardContent>
                   <div className="flex flex-wrap gap-3">
-                    <Stat label={t("examRunner.result.correct")} value={stats?.correct} green />
-                    <Stat label={t("examRunner.result.wrong")} value={stats?.wrong} red />
-                    <Stat label={t("examRunner.result.total")} value={stats?.total} />
-                    <Stat
-                      label={t("examRunner.result.total.flag")}
-                      value={flagCount}
-                      yellow
-                    />
+                    {isWritingAttempt ? (
+                      <>
+                        <Stat
+                          label={t("score") ?? "Bal"}
+                          value={attempt?.score}
+                          green
+                        />
+                        <Stat
+                          label={t("examRunner.result.total")}
+                          value={attempt?.total}
+                        />
+                        <Stat
+                          label={t("examRunner.result.total.flag")}
+                          value={flagCount}
+                          yellow
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <Stat label={t("examRunner.result.correct")} value={stats?.correct} green />
+                        <Stat label={t("examRunner.result.wrong")} value={stats?.wrong} red />
+                        <Stat label={t("examRunner.result.total")} value={stats?.total} />
+                        <Stat
+                          label={t("examRunner.result.total.flag")}
+                          value={flagCount}
+                          yellow
+                        />
+                      </>
+                    )}
                   </div>
                 </CardContent>
+
               </Card>
+
               <CardContent className="space-y-4">
                 {data.items.map((it, idx) => {
-                  const correctId = it.question.correctOptionId
+                  const q = it.question
+                  const opts = q.options ?? []
+                  const hasOptions = Array.isArray(opts) && opts.length > 0
+                  const correctId = q.correctOptionId ?? null
+
+                  const headerStatus = (() => {
+                    if (isWritingAttempt) {
+                      if (it.isCorrect === true) {
+                        return (
+                          <span className="inline-flex items-center gap-2 text-emerald-600 font-semibold">
+                            <CheckCircle2 className="h-5 w-5" />
+                            {t("examRunner.result.correct")}
+                          </span>
+                        )
+                      } else if (it.isCorrect === false) {
+                        return (
+                          <span className="inline-flex items-center gap-2 text-rose-600 font-semibold">
+                            <XCircle className="h-5 w-5" />
+                            {t("examRunner.result.wrong")}
+                          </span>
+                        )
+                      } else {
+                        return (
+                          <div className="text-sm text-muted-foreground">
+                            {it.score != null ? `${t("score") ?? "Qiymət"}: ${it.score}` : (it.feedback ? (t("feedback") ?? "Feedback") : (t("pending") ?? "Gözləmədə"))}
+                          </div>
+                        )
+                      }
+                    } else {
+                      return it.isCorrect ? (
+                        <span className="inline-flex items-center gap-2 text-emerald-600 font-semibold">
+                          <CheckCircle2 className="h-5 w-5" />
+                          {t("examRunner.result.correct")}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-2 text-rose-600 font-semibold">
+                          <XCircle className="h-5 w-5" />
+                          {t("examRunner.result.wrong")}
+                        </span>
+                      )
+                    }
+                  })()
 
                   return (
-                    <Card className={`space-y-4 ${it.flag ? 'bg-yellow-100' : ''}`} key={it.answerId ?? it.question.id}>
+                    <Card className={`space-y-4 ${it.flag ? 'bg-yellow-100' : ''}`} key={it.answerId ?? q.id}>
                       <CardHeader>
                         <CardTitle className="flex items-center gap-4 ">
                           <div>
                             <button
-                              onClick={() => toggleFlag(it.question.id, it.flag)}
+                              onClick={() => toggleFlag(q.id, it.flag)}
                               className="cursor-pointer"
+                              aria-label={it.flag ? "Unflag question" : "Flag question"}
                             >
                               {it.flag ? (
                                 <Flag
@@ -152,62 +219,77 @@ export default function AttemptDetailsPage({ params }: { params: AnyParams }) {
                                 />
                               )}
                             </button>
-
                           </div>
+
                           <div className="flex items-center justify-between w-full">
                             <span>
                               {t("questionsLabel")} #{idx + 1}
                             </span>
 
-                            {it.isCorrect ? (
-                              <span className="inline-flex items-center gap-2 text-emerald-600 font-semibold">
-                                <CheckCircle2 className="h-5 w-5" />
-                                {t("examRunner.result.correct")}
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-2 text-rose-600 font-semibold">
-                                <XCircle className="h-5 w-5" />
-                                {t("examRunner.result.wrong")}
-                              </span>
-                            )}
+                            <div>{headerStatus}</div>
                           </div>
                         </CardTitle>
                       </CardHeader>
 
                       <CardContent className="space-y-4">
-                        <div className="font-medium whitespace-pre-wrap">{it.question.text}</div>
+                        <div className="font-medium whitespace-pre-wrap break-all">{q.text}</div>
 
-                        <div className="space-y-2">
-                          {it.question.options.map((op) => {
-                            const isCorrect = op.id === correctId
-                            const selectedId = it.selected?.id
-                            const isSelected = selectedId != null && op.id === selectedId
+                        {hasOptions ? (
+                          <div className="space-y-2">
+                            {opts.map((op: any) => {
+                              const isCorrect = op.id === correctId
+                              const selectedId = it.selected?.id
+                              const isSelected = selectedId != null && op.id === selectedId
 
-                            return (
-                              <div
-                                key={op.id}
-                                className={`break-all px-4 py-3 rounded-xl border flex gap-3 ${isCorrect
-                                  ? "border-emerald-400 bg-emerald-50"
-                                  : isSelected
-                                    ? "border-rose-400 bg-rose-50"
-                                    : "border-gray-200"
-                                  }`}
-                              >
-                                <span>{isCorrect ? "✅" : isSelected ? "👉" : "•"}</span>
-                                <span>{op.text}</span>
+                              return (
+                                <div
+                                  key={op.id}
+                                  className={`break-all px-4 py-3 rounded-xl border flex gap-3 ${isCorrect
+                                    ? "border-emerald-400 bg-emerald-50"
+                                    : isSelected
+                                      ? "border-rose-400 bg-rose-50"
+                                      : "border-gray-200"
+                                    }`}
+                                >
+                                  <span>{isCorrect ? "✅" : isSelected ? "👉" : "•"}</span>
+                                  <span>{op.text}</span>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            <div>
+                              <div className="text-sm text-muted-foreground mb-1">{t("yourAnswer") ?? "Sənin cavabın"}</div>
+                              <div className="whitespace-pre-wrap rounded-xl border p-4 bg-white break-all">{it.studentTextAnswer ?? "-"}</div>
+                            </div>
+
+                            {it.feedback && (
+                              <div>
+                                <div className="text-sm text-muted-foreground mb-1">{t("feedback") ?? "Qeydlər"}</div>
+                                <div className="whitespace-pre-wrap rounded-xl border p-4 bg-white break-all">{it.feedback}</div>
                               </div>
-                            )
-                          })}
-                        </div>
+                            )}
 
+                            <div className="text-sm text-muted-foreground">
+                              <b>{t("score") ?? "Qiymət"}:</b> {it.score != null ? it.score : (it.isCorrect == null ? (t("pending") ?? "Gözləmədə") : (it.isCorrect ? (t("correct") ?? "Düzgün") : (t("wrong") ?? "Yanlış")))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* bottom metadata */}
                         <div className="text-sm text-muted-foreground space-y-1">
-                          <div>
-                            <b>{t("examRunner.badge.your_choice")}:</b> {it.selected?.text ?? "-"}
-                          </div>
-                          <div>
-                            <b>{t("examRunner.ui.correct_answer")}:</b>{" "}
-                            {it.question.correctOptionText ?? "-"}
-                          </div>
+                          {hasOptions ? (
+                            <>
+                              <div>
+                                <b>{t("examRunner.badge.your_choice")}:</b> {it.selected?.text ?? "-"}
+                              </div>
+                              <div>
+                                <b>{t("examRunner.ui.correct_answer")}:</b>{" "}
+                                {q.correctOptionText ?? "-"}
+                              </div>
+                            </>
+                          ) : null}
                         </div>
                       </CardContent>
                     </Card>

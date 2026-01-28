@@ -212,7 +212,7 @@ export default function ExamsPage() {
 
       const duration = (exam as any).durationMinutes
       if (duration !== undefined && duration !== null && !Number.isNaN(Number(duration))) {
-        setCookie_EXAM_DURATION_COOKIE(EXAM_DURATION_COOKIE, String(duration), Number(EXAM_DURATION_COOKIE)) 
+        setCookie_EXAM_DURATION_COOKIE(EXAM_DURATION_COOKIE, String(duration), Number(EXAM_DURATION_COOKIE))
       }
 
       const tok = await api.createExamToken(bankId, user.id)
@@ -423,6 +423,19 @@ export default function ExamsPage() {
   dark:from-violet-950/20 dark:to-indigo-950/20">
                           <span className="text-muted-foreground">{t("examGivenQuestions")}:</span>
                           <span className="font-bold text-violet-600">{(exam as any).questionCount ?? "-"}</span>
+                        </div>
+
+                        <div className="flex items-center justify-between text-sm p-3 rounded-lg 
+  bg-gradient-to-r from-violet-50 to-fuchsia-50
+  dark:from-violet-950/20 dark:to-fuchsia-950/20">
+                          <span className="text-muted-foreground">{t("examtype")}:</span>
+                          <span className="font-bold text-violet-600">
+                            {exam.type === "TEST"
+                              ? t("examTypeTest")
+                              : exam.type === "WRITING" || exam.type === "WRITTING"
+                                ? t("examTypeWritting")
+                                : "-"}
+                          </span>
                         </div>
 
                         <div className="flex items-center justify-between text-sm p-3 rounded-lg

@@ -9,7 +9,7 @@ import { useTranslation } from "@/lib/i18n"
 import { Navbar } from "@/components/navbar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { BookOpen, Clock, TrendingUp } from "lucide-react"
+import { BookOpen, Bot, Clock, TrendingUp } from "lucide-react"
 import { api, ExamAttempt } from "@/lib/api"
 
 export default function ResultsPage() {
@@ -28,7 +28,7 @@ export default function ResultsPage() {
   async function loadAttempts(userId: number) {
     try {
       setLoading(true)
-      const res = await api.getUserExamAttempts(userId, "FINISHED")
+      const res = await api.getUserExamAttempts(userId, ["FINISHED", "WAITING_AI"])
       setAttempts(res.attempts || [])
     } catch {
       toast.error(t("errGeneric"))
@@ -43,7 +43,7 @@ export default function ResultsPage() {
       <main className="container mx-auto px-4 py-8">
         <div className="space-y-6">
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-violet-600 via-blue-600 to-cyan-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-extrabold bg-gradient-to-r from-violet-600 via-blue-600 to-cyan-600 bg-clip-text text-transparent">
               {t("examResults")}
             </h1>
             <p className="text-muted-foreground mt-2 text-lg">
@@ -60,13 +60,13 @@ export default function ResultsPage() {
             </div>
           ) : attempts.length === 0 ? (
             <div className="text-center py-16">
-              <div className="mx-auto mb-6 h-24 w-24 rounded-full bg-gradient-to-br from-violet-100 to-blue-100 dark:from-violet-950/20 dark:to-blue-950/20 flex items-center justify-center">
+              <div className="mx-auto mb-6 h-24 w-24 rounded-full bg-gradient-to-br from-violet-100 to-blue-100 dark:from-violet-950/20 dark:to-blue-950/20 flex items-center justify-center shadow-lg">
                 <BookOpen className="h-12 w-12 text-violet-600" />
               </div>
               <p className="text-muted-foreground text-lg mb-6">
                 {t("noExams")}
               </p>
-              <Button asChild className="h-12 px-8 bg-gradient-to-r from-violet-600 to-blue-600">
+              <Button asChild className="h-12 px-8 bg-gradient-to-r from-violet-600 to-blue-600 shadow-md">
                 <Link href="/exams">{t("takeExam")}</Link>
               </Button>
             </div>
@@ -77,31 +77,73 @@ export default function ResultsPage() {
                 const score = attempt.score || 0
                 const percentage = total > 0 ? (score / total) * 100 : 0
                 const isCompleted = attempt.status === "FINISHED" && !!attempt.finishedAt
+                const isWaitingAI = attempt.status === "WAITING_AI"
+                const bankType = (attempt.bank?.type || attempt.type || "").toString().toUpperCase()
+                const showAIBadge = bankType === "WRITING"
+                const isTest = bankType === "TEST"
 
                 return (
                   <Card
                     key={attempt.id}
-                    className="bg-white/80 dark:bg-gray-950/80 shadow-xl hover:shadow-2xl transition-all"
+                    className="bg-white/80 dark:bg-gray-950/80 shadow-xl hover:shadow-2xl transition-all overflow-hidden"
                   >
-                    <CardHeader>
+                    <CardHeader className="relative">
                       <div className="flex items-start justify-between">
                         <div className="space-y-1">
-                          <CardTitle>
+                          <CardTitle className="text-lg">
                             {attempt.bank.university?.name} — {attempt.bank.title}
                           </CardTitle>
-                          <CardDescription>
+                          <CardDescription className="text-sm text-muted-foreground">
                             {t("year")}: {attempt.bank.year}
                           </CardDescription>
                         </div>
 
-                        {isCompleted && (
-                          <div className="text-right">
-                            <div className="text-4xl font-bold bg-gradient-to-r from-violet-600 to-blue-600 bg-clip-text text-transparent">
-                              {percentage.toFixed(0)}%
+                        {showAIBadge ? (
+                          <div className="absolute right-4 top-4 flex items-center gap-3">
+                            <div
+                              className={`relative flex items-center justify-center h-9 px-3 rounded-full text-sm font-semibold bg-gradient-to-r from-blue-600 to-violet-600 text-white shadow-md`}
+                            >
+                              <span className="sr-only">Ai</span>
+                              <span className="uppercase tracking-wide">Aİ</span>
+                              <span
+                                className={`absolute -right-2 -top-2 h-3 w-3 rounded-full ${isWaitingAI ? "bg-yellow-400 animate-ping" : isCompleted ? "bg-green-400" : "bg-gray-300"
+                                  }`}
+                              />
+                              <span
+                                className={`absolute -right-2 -top-2 h-3 w-3 rounded-full ${isWaitingAI ? "bg-yellow-500" : isCompleted ? "bg-green-500" : "bg-gray-400"
+                                  }`}
+                              />
                             </div>
-                            <div className="text-sm text-muted-foreground">
-                              {score}/{total}
+                            <div className="hidden sm:flex items-center text-muted-foreground">
+                              <Bot className="h-5 w-5" />
                             </div>
+                          </div>
+                        ) : (
+                          <div className="absolute right-4 top-4">
+                            {isTest && (
+                              <div
+                                className="flex items-center justify-center h-9 w-9 rounded-full
+        bg-gradient-to-br from-slate-200 to-slate-100
+        dark:from-slate-800 dark:to-slate-700
+        shadow-md hover:scale-105 transition"
+                                title="Computer-based test"
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-6 w-6 text-slate-700 dark:text-slate-200"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                  strokeWidth={2}
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M9.75 17h4.5m-9-3.75h13.5a1.5 1.5 0 001.5-1.5V6.75a1.5 1.5 0 00-1.5-1.5H5.25a1.5 1.5 0 00-1.5 1.5v7.75a1.5 1.5 0 001.5 1.5z"
+                                  />
+                                </svg>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -110,43 +152,51 @@ export default function ResultsPage() {
                     <CardContent>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                          {isCompleted ? (
-                            <>
-                              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-violet-50 dark:bg-violet-950/20">
-                                <TrendingUp className="h-4 w-4 text-violet-600" />
-                                <span className="font-medium">
-                                  {percentage.toFixed(1)}%
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Clock className="h-4 w-4" />
-                                <span>
-                                  {attempt.finishedAt
-                                    ? new Date(attempt.finishedAt).toLocaleDateString()
-                                    : ""}
-                                </span>
-                              </div>
-                            </>
-                          ) : (
-                            <span className="px-3 py-1.5 rounded-lg bg-yellow-50 dark:bg-yellow-950/20 text-yellow-700 dark:text-yellow-400 font-medium">
-                              {t("notCompleted")}
+                          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-violet-50 to-blue-50 dark:bg-violet-950/10 shadow-inner">
+                            <TrendingUp className="h-4 w-4 text-violet-600" />
+                            <div className="flex flex-col leading-none">
+                              <span className="font-medium text-sm">
+                                {isCompleted ? `${percentage.toFixed(1)}%` : isWaitingAI ? t("checking") : t("notCompleted")}
+                              </span>
+                              {isCompleted && <span className="text-xs text-muted-foreground">{score}/{total}</span>}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4" />
+                            <span className="text-sm">
+                              {attempt.finishedAt
+                                ? new Date(attempt.finishedAt).toLocaleString(locale, {
+                                  year: "numeric",
+                                  month: "2-digit",
+                                  day: "2-digit",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })
+                                : isWaitingAI ? t("checking") : t("notCompleted")}
                             </span>
-                          )}
+                          </div>
                         </div>
 
-                        {isCompleted ? (
-                          <Button asChild size="sm" className="bg-gradient-to-r from-violet-600 to-blue-600">
-                            <Link href={`/results/${attempt.id}`}>
-                              {t("results.details")}
-                            </Link>
-                          </Button>
-                        ) : (
-                          <Button asChild size="sm" className="bg-gradient-to-r from-violet-600 to-blue-600">
-                            <Link href={`/exam/${attempt.bank.id}`}>
-                              {t("continue")}
-                            </Link>
-                          </Button>
-                        )}
+                        <div className="flex items-center gap-3">
+                          {isCompleted ? (
+                            <Button asChild size="sm" className="bg-gradient-to-r from-violet-600 to-blue-600 shadow-sm">
+                              <Link href={`/results/${attempt.id}`}>
+                                {t("results.details")}
+                              </Link>
+                            </Button>
+                          ) : isWaitingAI ? (
+                            <Button size="sm" disabled className="opacity-80 cursor-not-allowed bg-gradient-to-r from-yellow-400 to-yellow-300 text-black">
+                              {t("checking")}
+                            </Button>
+                          ) : (
+                            <Button asChild size="sm" className="bg-gradient-to-r from-violet-600 to-blue-600 shadow-sm">
+                              <Link href={`/exam/${attempt.bank.id}`}>
+                                {t("continue")}
+                              </Link>
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
