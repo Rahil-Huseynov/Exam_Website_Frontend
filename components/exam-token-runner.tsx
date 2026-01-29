@@ -13,6 +13,7 @@ import { CheckCircle2, ChevronLeft, ChevronRight, Flag, Loader2, XCircle, Clock,
 import { useRouter } from "next/navigation"
 import { deleteCookie_EXAM_DURATION_COOKIE, EXAM_DURATION_COOKIE, getCookie_EXAM_DURATION_COOKIE } from "@/helper/ExamDurationMinutesHelper"
 import HTMLEncodedReader from "@/lib/HTML-encodedReader"
+import { SimpleMathEditor } from "./simple-math-editor"
 
 type SafeErr = any
 
@@ -696,13 +697,15 @@ export default function ExamTokenRunner({
                 })
               ) : (
                 <div className="space-y-3">
-                  <textarea
+                  <SimpleMathEditor
                     value={selectedByQ[currentQ.id] ?? ""}
-                    onChange={(e) => setSelectedByQ((p) => ({ ...p, [currentQ.id]: e.target.value }))}
+                    onChange={(val) =>
+                      setSelectedByQ((p) => ({ ...p, [currentQ.id]: val }))
+                    }
                     placeholder={t("examRunner.ui.enter_text_answer") || "Cavabınızı bura yazın..."}
                     className="w-full min-h-[200px] rounded-2xl border p-4 resize-vertical"
-                    disabled={finishing || summary?.status === "FINISHED"}
                   />
+
                   <div className="flex items-center gap-3">
                     <Button onClick={() => void saveTextAnswer(currentQ.id)} disabled={savingAnswer || finishing}>
                       {savingAnswer ? (

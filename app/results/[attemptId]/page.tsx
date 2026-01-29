@@ -12,15 +12,18 @@ import { Navbar } from "@/components/navbar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { CheckCircle2, XCircle, ArrowLeft, Flag, FlagOff } from "lucide-react"
+import { latexToHtml } from "@/components/latex-preview"
+import HTMLEncodedReader from "@/lib/HTML-encodedReader"
 
 type AnyParams = Promise<Record<string, string | undefined>>
 
-export default function AttemptDetailsPage({ params }: { params: AnyParams }) {
+export default function AttemptDetailsPage({ params, value }: { params: AnyParams; value: string }) {
   const p = use(params)
   const attemptId = useMemo(() => String(p.attemptId || p.id || ""), [p])
   const { user } = useAuth()
   const { locale } = useLocale()
   const { t } = useTranslation(locale)
+  const [text, setText] = useState(value);
 
   const [data, setData] = useState<AttemptReviewResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -78,6 +81,11 @@ export default function AttemptDetailsPage({ params }: { params: AnyParams }) {
   const isWritingAttempt = data?.items?.length
     ? data.items.every((it) => !it.question.options || it.question.options.length === 0)
     : false
+
+  const contentHtml = (text: string) =>
+    text
+      ? `<div class="math-html">${latexToHtml(text)}</div>`
+      : `<span class="text-gray-400 italic">Preview görünəcək...</span>`;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-50 via-blue-50 to-cyan-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
@@ -232,8 +240,7 @@ export default function AttemptDetailsPage({ params }: { params: AnyParams }) {
                       </CardHeader>
 
                       <CardContent className="space-y-4">
-                        <div className="font-medium whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{q.text}</div>
-
+                        <HTMLEncodedReader className="font-medium whitespace-pre-wrap" content={contentHtml(q.text ?? "-")} />
                         {hasOptions ? (
                           <div className="space-y-2">
                             {opts.map((op: any) => {
@@ -244,7 +251,7 @@ export default function AttemptDetailsPage({ params }: { params: AnyParams }) {
                               return (
                                 <div
                                   key={op.id}
-                                  className={`break-words [overflow-wrap:anywhere] px-4 py-3 rounded-xl border flex gap-3 ${isCorrect
+                                  className={`break-all [word-break:break-all] [overflow-wrap:anywhere] px-4 py-3 rounded-xl border flex gap-3 ${isCorrect
                                     ? "border-emerald-400 bg-emerald-50"
                                     : isSelected
                                       ? "border-rose-400 bg-rose-50"
@@ -252,7 +259,7 @@ export default function AttemptDetailsPage({ params }: { params: AnyParams }) {
                                     }`}
                                 >
                                   <span>{isCorrect ? "✅" : isSelected ? "👉" : "•"}</span>
-                                  <span>{op.text}</span>
+                                  <HTMLEncodedReader content={contentHtml(op.text ?? "-")} />
                                 </div>
                               )
                             })}
@@ -261,13 +268,13 @@ export default function AttemptDetailsPage({ params }: { params: AnyParams }) {
                           <div className="space-y-3">
                             <div>
                               <div className="text-sm text-muted-foreground mb-1">{t("yourAnswer") ?? "Sənin cavabın"}</div>
-                              <div className="whitespace-pre-wrap rounded-xl border p-4 bg-white break-words [overflow-wrap:anywhere]">{it.studentTextAnswer ?? "-"}</div>
+                              <HTMLEncodedReader className="whitespace-pre-wrap rounded-xl border p-4 bg-white" content={contentHtml(it.studentTextAnswer ?? "-")} />
                             </div>
 
                             {it.feedback && (
                               <div>
                                 <div className="text-sm text-muted-foreground mb-1">{t("feedback") ?? "Qeydlər"}</div>
-                                <div className="whitespace-pre-wrap rounded-xl border p-4 bg-white break-words [overflow-wrap:anywhere]">{it.feedback}</div>
+                                <HTMLEncodedReader className="whitespace-pre-wrap rounded-xl border p-4 bg-white" content={contentHtml(it.feedback ?? "-")} />
                               </div>
                             )}
 
@@ -277,7 +284,6 @@ export default function AttemptDetailsPage({ params }: { params: AnyParams }) {
                           </div>
                         )}
 
-                        {/* bottom metadata */}
                         <div className="text-sm text-muted-foreground space-y-1">
                           {hasOptions ? (
                             <>
