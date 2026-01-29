@@ -232,7 +232,7 @@ export default function AttemptDetailsPage({ params }: { params: AnyParams }) {
                       </CardHeader>
 
                       <CardContent className="space-y-4">
-                        <div className="font-medium whitespace-pre-wrap break-all">{q.text}</div>
+                        <div className="font-medium whitespace-pre-wrap break-words [overflow-wrap:anywhere]">{q.text}</div>
 
                         {hasOptions ? (
                           <div className="space-y-2">
@@ -244,7 +244,7 @@ export default function AttemptDetailsPage({ params }: { params: AnyParams }) {
                               return (
                                 <div
                                   key={op.id}
-                                  className={`break-all px-4 py-3 rounded-xl border flex gap-3 ${isCorrect
+                                  className={`break-words [overflow-wrap:anywhere] px-4 py-3 rounded-xl border flex gap-3 ${isCorrect
                                     ? "border-emerald-400 bg-emerald-50"
                                     : isSelected
                                       ? "border-rose-400 bg-rose-50"
@@ -261,13 +261,13 @@ export default function AttemptDetailsPage({ params }: { params: AnyParams }) {
                           <div className="space-y-3">
                             <div>
                               <div className="text-sm text-muted-foreground mb-1">{t("yourAnswer") ?? "Sənin cavabın"}</div>
-                              <div className="whitespace-pre-wrap rounded-xl border p-4 bg-white break-all">{it.studentTextAnswer ?? "-"}</div>
+                              <div className="whitespace-pre-wrap rounded-xl border p-4 bg-white break-words [overflow-wrap:anywhere]">{it.studentTextAnswer ?? "-"}</div>
                             </div>
 
                             {it.feedback && (
                               <div>
                                 <div className="text-sm text-muted-foreground mb-1">{t("feedback") ?? "Qeydlər"}</div>
-                                <div className="whitespace-pre-wrap rounded-xl border p-4 bg-white break-all">{it.feedback}</div>
+                                <div className="whitespace-pre-wrap rounded-xl border p-4 bg-white break-words [overflow-wrap:anywhere]">{it.feedback}</div>
                               </div>
                             )}
 
