@@ -322,15 +322,6 @@ export default function ExamTokenRunner({
         return !(v !== undefined && v !== null && String(v).trim() !== "")
       })
 
-      if (missing.length > 0 && writingOnly) {
-        toast.error(
-          t("examRunner.toast.finish_not_all_answered", { count: missing.length }) ||
-          `Hələ ${missing.length} sual cavablanmayıb.`
-        )
-        setFinishing(false)
-        return
-      }
-
       if (missing.length > 0 && !writingOnly) {
         toast.info(
           t("examRunner.toast.finish_with_unanswered", { count: missing.length }) ||
@@ -705,22 +696,6 @@ export default function ExamTokenRunner({
                     placeholder={t("examRunner.ui.enter_text_answer") || "Cavabınızı bura yazın..."}
                     className="w-full min-h-[200px] rounded-2xl border p-4 resize-vertical"
                   />
-
-                  <div className="flex items-center gap-3">
-                    <Button onClick={() => void saveTextAnswer(currentQ.id)} disabled={savingAnswer || finishing}>
-                      {savingAnswer ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          {t("examRunner.ui.saving")}
-                        </>
-                      ) : (
-                        t("examRunner.ui.save_answer")
-                      )}
-                    </Button>
-                    <div className="text-sm text-muted-foreground">
-                      {t("examRunner.ui.writing_note") ?? "Cavabınızı yadda saxlayın. İmtahanı bitirdikdən sonra AI tərəfindən yoxlanacaq."}
-                    </div>
-                  </div>
                 </div>
               )}
 

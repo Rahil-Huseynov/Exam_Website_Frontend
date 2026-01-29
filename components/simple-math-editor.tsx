@@ -694,7 +694,7 @@ export function SimpleMathEditor({
       )}
 
       <Dialog open={showCustomRoot} onOpenChange={setShowCustomRoot}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md h-50 overflow-hidden">
           <DialogHeader>
             <DialogTitle>Özəl Kök Dərəcəsi</DialogTitle>
           </DialogHeader>
@@ -728,7 +728,7 @@ export function SimpleMathEditor({
       </Dialog>
 
       <Dialog open={showCustomPower} onOpenChange={setShowCustomPower}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md h-50 overflow-hidden">
           <DialogHeader>
             <DialogTitle>Özəl Qüvvət</DialogTitle>
           </DialogHeader>
