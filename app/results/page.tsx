@@ -97,6 +97,13 @@ export default function ResultsPage() {
                           <CardDescription className="text-sm text-muted-foreground">
                             {t("year")}: {attempt.bank.year}
                           </CardDescription>
+                          <CardDescription className="text-sm text-muted-foreground">
+                            {t("examtype")}:   {attempt.bank.type === "TEST"
+                              ? t("examTypeTest")
+                              : attempt.bank.type === "WRITING" || attempt.bank.type === "WRITTING"
+                                ? t("examTypeWritting")
+                                : "-"}
+                          </CardDescription>
                         </div>
 
                         {showAIBadge ? (

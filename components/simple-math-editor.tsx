@@ -20,13 +20,7 @@ import {
   Search,
   FunctionSquare,
   X,
-  Plus,
-  Minus,
-  ChevronUp,
-  ChevronDown,
 } from 'lucide-react';
-import PreviewReader from '@/lib/PreviewReader';
-import Question from '@/lib/HTML-encodedReader';
 import HTMLEncodedReader from '@/lib/HTML-encodedReader';
 
 interface SimpleMathEditorProps {
@@ -38,6 +32,7 @@ interface SimpleMathEditorProps {
 }
 
 const ALL_MATH_SYMBOLS = [
+  // Əsas Simvollar
   { symbol: '√', label: 'Kvadrat Kök', command: '\\sqrt{}', category: 'basic' },
   { symbol: '∛', label: 'Kub kök', command: '\\sqrt[3]{}', category: 'roots' },
   { symbol: '∜', label: '4-cü dərəcəli kök', command: '\\sqrt[4]{}', category: 'roots' },
@@ -47,47 +42,214 @@ const ALL_MATH_SYMBOLS = [
   { symbol: '∞', label: 'Sonsuzluq', command: '\\infty', category: 'basic' },
   { symbol: '∑', label: 'Cəmi', command: '\\sum', category: 'basic' },
   { symbol: '∫', label: 'İnteqral', command: '\\int', category: 'basic' },
+  { symbol: '∏', label: 'Hasil', command: '\\prod', category: 'basic' },
+  { symbol: '∂', label: 'Qismən törəmə', command: '\\partial', category: 'basic' },
+  { symbol: '∇', label: 'Nabla', command: '\\nabla', category: 'basic' },
   { symbol: '±', label: 'Üstəgəl/Minus', command: '\\pm', category: 'basic' },
   { symbol: '≠', label: 'Bərabər deyil', command: '\\neq', category: 'basic' },
   { symbol: '≈', label: 'Təqribən', command: '\\approx', category: 'basic' },
   { symbol: '≤', label: 'Kiçik və ya bərabər', command: '\\leq', category: 'basic' },
   { symbol: '≥', label: 'Böyük və ya bərabər', command: '\\geq', category: 'basic' },
   { symbol: '°', label: 'Dərəcə', command: '^{\\circ}', category: 'basic' },
+  { symbol: '!', label: 'Faktorial', command: '!', category: 'basic' },
+  { symbol: '%', label: 'Faiz', command: '\\%', category: 'basic' },
+  { symbol: '|', label: 'Modul', command: '|', category: 'basic' },
+  { symbol: '‖', label: 'Norma', command: '\\|', category: 'basic' },
+  { symbol: '⌈', label: 'Üst tam hissə', command: '\\lceil', category: 'basic' },
+  { symbol: '⌉', label: 'Üst tam hissə bağla', command: '\\rceil', category: 'basic' },
+  { symbol: '⌊', label: 'Alt tam hissə', command: '\\lfloor', category: 'basic' },
+  { symbol: '⌋', label: 'Alt tam hissə bağla', command: '\\rfloor', category: 'basic' },
+  { symbol: 'ℓ', label: 'Ell', command: '\\ell', category: 'basic' },
+  { symbol: 'ℏ', label: 'Planck sabiti', command: '\\hbar', category: 'basic' },
+  { symbol: 'ℑ', label: 'İmaqinar hissə', command: '\\Im', category: 'basic' },
+  { symbol: 'ℜ', label: 'Real hissə', command: '\\Re', category: 'basic' },
+  { symbol: '℘', label: 'Veierstrass', command: '\\wp', category: 'basic' },
+  { symbol: 'ℵ', label: 'Aleph', command: '\\aleph', category: 'basic' },
 
+  // Əməliyyatlar
   { symbol: '+', label: 'Toplama', category: 'operators' },
   { symbol: '-', label: 'Çıxma', category: 'operators' },
   { symbol: '×', label: 'Vurma', command: '\\times', category: 'operators' },
   { symbol: '÷', label: 'Bölmə', command: '\\div', category: 'operators' },
   { symbol: '=', label: 'Bərabərdir', category: 'operators' },
+  { symbol: '⋅', label: 'Nöqtə vurma', command: '\\cdot', category: 'operators' },
+  { symbol: '⊕', label: 'Birbaşa cəm', command: '\\oplus', category: 'operators' },
+  { symbol: '⊗', label: 'Tensor hasil', command: '\\otimes', category: 'operators' },
+  { symbol: '∗', label: 'Konvolyusiya', command: '\\ast', category: 'operators' },
+  { symbol: '≀', label: 'Vreath', command: '\\wr', category: 'operators' },
 
+  // Kəsrlər
   { symbol: '½', label: '1/2', command: '\\frac{1}{2}', category: 'fractions' },
   { symbol: '⅓', label: '1/3', command: '\\frac{1}{3}', category: 'fractions' },
   { symbol: '¼', label: '1/4', command: '\\frac{1}{4}', category: 'fractions' },
   { symbol: '¾', label: '3/4', command: '\\frac{3}{4}', category: 'fractions' },
+  { symbol: '⅔', label: '2/3', command: '\\frac{2}{3}', category: 'fractions' },
+  { symbol: '⅕', label: '1/5', command: '\\frac{1}{5}', category: 'fractions' },
+  { symbol: '⅖', label: '2/5', command: '\\frac{2}{5}', category: 'fractions' },
+  { symbol: '⅗', label: '3/5', command: '\\frac{3}{5}', category: 'fractions' },
+  { symbol: '⅘', label: '4/5', command: '\\frac{4}{5}', category: 'fractions' },
+  { symbol: '⅙', label: '1/6', command: '\\frac{1}{6}', category: 'fractions' },
+  { symbol: '⅚', label: '5/6', command: '\\frac{5}{6}', category: 'fractions' },
+  { symbol: '⅛', label: '1/8', command: '\\frac{1}{8}', category: 'fractions' },
+  { symbol: '⅜', label: '3/8', command: '\\frac{3}{8}', category: 'fractions' },
+  { symbol: '⅝', label: '5/8', command: '\\frac{5}{8}', category: 'fractions' },
+  { symbol: '⅞', label: '7/8', command: '\\frac{7}{8}', category: 'fractions' },
 
+  // Yunan Hərfləri
   { symbol: 'α', label: 'Alfa', command: '\\alpha', category: 'greek' },
   { symbol: 'β', label: 'Beta', command: '\\beta', category: 'greek' },
   { symbol: 'γ', label: 'Qamma', command: '\\gamma', category: 'greek' },
   { symbol: 'δ', label: 'Delta', command: '\\delta', category: 'greek' },
+  { symbol: 'ε', label: 'Epsilon', command: '\\epsilon', category: 'greek' },
+  { symbol: 'ζ', label: 'Zeta', command: '\\zeta', category: 'greek' },
+  { symbol: 'η', label: 'Eta', command: '\\eta', category: 'greek' },
   { symbol: 'θ', label: 'Teta', command: '\\theta', category: 'greek' },
+  { symbol: 'ι', label: 'İota', command: '\\iota', category: 'greek' },
+  { symbol: 'κ', label: 'Kappa', command: '\\kappa', category: 'greek' },
+  { symbol: 'λ', label: 'Lambda', command: '\\lambda', category: 'greek' },
+  { symbol: 'μ', label: 'Mu', command: '\\mu', category: 'greek' },
+  { symbol: 'ν', label: 'Nu', command: '\\nu', category: 'greek' },
+  { symbol: 'ξ', label: 'Ksi', command: '\\xi', category: 'greek' },
+  { symbol: 'ο', label: 'Omikron', command: '\\omicron', category: 'greek' },
   { symbol: 'π', label: 'Pi', command: '\\pi', category: 'greek' },
+  { symbol: 'ρ', label: 'Ro', command: '\\rho', category: 'greek' },
   { symbol: 'σ', label: 'Siqma', command: '\\sigma', category: 'greek' },
+  { symbol: 'τ', label: 'Tau', command: '\\tau', category: 'greek' },
+  { symbol: 'υ', label: 'Upsilon', command: '\\upsilon', category: 'greek' },
+  { symbol: 'φ', label: 'Fi', command: '\\phi', category: 'greek' },
+  { symbol: 'χ', label: 'Xi', command: '\\chi', category: 'greek' },
+  { symbol: 'ψ', label: 'Psi', command: '\\psi', category: 'greek' },
   { symbol: 'ω', label: 'Omega', command: '\\omega', category: 'greek' },
 
+  // Böyük Yunan Hərfləri
+  { symbol: 'Γ', label: 'Böyük Qamma', command: '\\Gamma', category: 'greek_upper' },
+  { symbol: 'Δ', label: 'Böyük Delta', command: '\\Delta', category: 'greek_upper' },
+  { symbol: 'Θ', label: 'Böyük Teta', command: '\\Theta', category: 'greek_upper' },
+  { symbol: 'Λ', label: 'Böyük Lambda', command: '\\Lambda', category: 'greek_upper' },
+  { symbol: 'Ξ', label: 'Böyük Ksi', command: '\\Xi', category: 'greek_upper' },
+  { symbol: 'Π', label: 'Böyük Pi', command: '\\Pi', category: 'greek_upper' },
+  { symbol: 'Σ', label: 'Böyük Siqma', command: '\\Sigma', category: 'greek_upper' },
+  { symbol: 'Υ', label: 'Böyük Upsilon', command: '\\Upsilon', category: 'greek_upper' },
+  { symbol: 'Φ', label: 'Böyük Fi', command: '\\Phi', category: 'greek_upper' },
+  { symbol: 'Ψ', label: 'Böyük Psi', command: '\\Psi', category: 'greek_upper' },
+  { symbol: 'Ω', label: 'Böyük Omega', command: '\\Omega', category: 'greek_upper' },
+
+  // Oxlar
   { symbol: '→', label: 'Sağa ox', command: '\\rightarrow', category: 'arrows' },
   { symbol: '←', label: 'Sola ox', command: '\\leftarrow', category: 'arrows' },
   { symbol: '↑', label: 'Yuxarı ox', command: '\\uparrow', category: 'arrows' },
   { symbol: '↓', label: 'Aşağı ox', command: '\\downarrow', category: 'arrows' },
+  { symbol: '↔', label: 'Sağa-sola ox', command: '\\leftrightarrow', category: 'arrows' },
+  { symbol: '⇌', label: 'Tərsinə ox', command: '\\rightleftharpoons', category: 'arrows' },
+  { symbol: '⇑', label: 'Yuxarı cüt ox', command: '\\Uparrow', category: 'arrows' },
+  { symbol: '⇓', label: 'Aşağı cüt ox', command: '\\Downarrow', category: 'arrows' },
+  { symbol: '↦', label: 'Xəritələmə', command: '\\mapsto', category: 'arrows' },
+  { symbol: '⇢', label: 'Sağa qısa ox', command: '\\to', category: 'arrows' },
+  { symbol: '⟶', label: 'Uzun sağa ox', command: '\\longrightarrow', category: 'arrows' },
+  { symbol: '⟵', label: 'Uzun sola ox', command: '\\longleftarrow', category: 'arrows' },
+  { symbol: '⟷', label: 'Uzun sağa-sola ox', command: '\\longleftrightarrow', category: 'arrows' },
 
+  // Çoxluq Simvolları
   { symbol: '∈', label: 'Element', command: '\\in', category: 'set' },
   { symbol: '∉', label: 'Element deyil', command: '\\notin', category: 'set' },
   { symbol: '⊂', label: 'Alt çoxluq', command: '\\subset', category: 'set' },
+  { symbol: '⊆', label: 'Alt çoxluq və ya bərabər', command: '\\subseteq', category: 'set' },
+  { symbol: '⊃', label: 'Üst çoxluq', command: '\\supset', category: 'set' },
+  { symbol: '⊇', label: 'Üst çoxluq və ya bərabər', command: '\\supseteq', category: 'set' },
   { symbol: '∪', label: 'Birləşmə', command: '\\cup', category: 'set' },
   { symbol: '∩', label: 'Kəsişmə', command: '\\cap', category: 'set' },
+  { symbol: '∖', label: 'Fərq', command: '\\setminus', category: 'set' },
   { symbol: '∅', label: 'Boş çoxluq', command: '\\emptyset', category: 'set' },
+  { symbol: '⋂', label: 'Ümumi kəsişmə', command: '\\bigcap', category: 'set' },
+  { symbol: '⋃', label: 'Ümumi birləşmə', command: '\\bigcup', category: 'set' },
   { symbol: 'ℕ', label: 'Natural ədədlər', command: '\\mathbb{N}', category: 'set' },
+  { symbol: 'ℤ', label: 'Tam ədədlər', command: '\\mathbb{Z}', category: 'set' },
+  { symbol: 'ℚ', label: 'Rasional ədədlər', command: '\\mathbb{Q}', category: 'set' },
   { symbol: 'ℝ', label: 'Reel ədədlər', command: '\\mathbb{R}', category: 'set' },
   { symbol: 'ℂ', label: 'Kompleks ədədlər', command: '\\mathbb{C}', category: 'set' },
+
+  // Məntiq Simvolları
+  { symbol: '∀', label: 'Hamısı üçün', command: '\\forall', category: 'logic' },
+  { symbol: '∃', label: 'Mövcuddur', command: '\\exists', category: 'logic' },
+  { symbol: '∄', label: 'Mövcud deyil', command: '\\nexists', category: 'logic' },
+  { symbol: '¬', label: 'İnkar', command: '\\neg', category: 'logic' },
+  { symbol: '∧', label: 'Və', command: '\\wedge', category: 'logic' },
+  { symbol: '∨', label: 'Və ya', command: '\\vee', category: 'logic' },
+  { symbol: '⇒', label: 'Nəticə', command: '\\Rightarrow', category: 'logic' },
+  { symbol: '⇔', label: 'Bərabər nəticə', command: '\\Leftrightarrow', category: 'logic' },
+  { symbol: '∴', label: 'Ona görə', command: '\\therefore', category: 'logic' },
+  { symbol: '∵', label: 'Çünki', command: '\\because', category: 'logic' },
+
+  // Əlaqə Simvolları
+  { symbol: '<', label: 'Kiçikdir', command: '<', category: 'relations' },
+  { symbol: '>', label: 'Böyükdür', command: '>', category: 'relations' },
+  { symbol: '≡', label: 'Ekvivalenti', command: '\\equiv', category: 'relations' },
+  { symbol: '∼', label: 'Oxşar', command: '\\sim', category: 'relations' },
+  { symbol: '≅', label: 'Konqruent', command: '\\cong', category: 'relations' },
+  { symbol: '∝', label: 'Proporsional', command: '\\propto', category: 'relations' },
+  { symbol: '≪', label: 'Çox kiçik', command: '\\ll', category: 'relations' },
+  { symbol: '≫', label: 'Çox böyük', command: '\\gg', category: 'relations' },
+  { symbol: '⊥', label: 'Perpendikulyar', command: '\\perp', category: 'relations' },
+  { symbol: '∥', label: 'Paralel', command: '\\parallel', category: 'relations' },
+  { symbol: '∤', label: 'Bölmür', command: '\\nmid', category: 'relations' },
+  { symbol: '∣', label: 'Bölür', command: '\\mid', category: 'relations' },
+
+  // Həndəsə Simvolları
+  { symbol: '∠', label: 'Bucaq', command: '\\angle', category: 'geometry' },
+  { symbol: '△', label: 'Üçbucaq', command: '\\triangle', category: 'geometry' },
+  { symbol: '□', label: 'Kvadrat', command: '\\square', category: 'geometry' },
+  { symbol: '▱', label: 'Paraleloqram', command: '\\parallelogram', category: 'geometry' },
+  { symbol: '○', label: 'Dairə', command: '\\circ', category: 'geometry' },
+  { symbol: '⊙', label: 'Dairə içində nöqtə', command: '\\odot', category: 'geometry' },
+  { symbol: '∘', label: 'Dairəvi əməliyyat', command: '\\circ', category: 'geometry' },
+  { symbol: '′', label: 'Dərəcə işarəsi', command: "'", category: 'geometry' },
+  { symbol: '″', label: 'İkiqat dərəcə işarəsi', command: '"', category: 'geometry' },
+
+  // Riyazi Funksiyalar
+  { symbol: 'lim', label: 'Limit', command: '\\lim', category: 'functions' },
+  { symbol: 'sin', label: 'Sinus', command: '\\sin', category: 'functions' },
+  { symbol: 'cos', label: 'Kosinus', command: '\\cos', category: 'functions' },
+  { symbol: 'tan', label: 'Tangens', command: '\\tan', category: 'functions' },
+  { symbol: 'cot', label: 'Kotangens', command: '\\cot', category: 'functions' },
+  { symbol: 'sec', label: 'Sekans', command: '\\sec', category: 'functions' },
+  { symbol: 'csc', label: 'Kosekans', command: '\\csc', category: 'functions' },
+  { symbol: 'arcsin', label: 'Arksinus', command: '\\arcsin', category: 'functions' },
+  { symbol: 'arccos', label: 'Arkkosinus', command: '\\arccos', category: 'functions' },
+  { symbol: 'arctan', label: 'Arktangens', command: '\\arctan', category: 'functions' },
+  { symbol: 'sinh', label: 'Hiperbolik sinus', command: '\\sinh', category: 'functions' },
+  { symbol: 'cosh', label: 'Hiperbolik kosinus', command: '\\cosh', category: 'functions' },
+  { symbol: 'tanh', label: 'Hiperbolik tangens', command: '\\tanh', category: 'functions' },
+  { symbol: 'log', label: 'Loqarifm', command: '\\log', category: 'functions' },
+  { symbol: 'ln', label: 'Natural loqarifm', command: '\\ln', category: 'functions' },
+  { symbol: 'lg', label: '10-luq loqarifm', command: '\\lg', category: 'functions' },
+  { symbol: 'exp', label: 'Eksponensial', command: '\\exp', category: 'functions' },
+  { symbol: 'det', label: 'Determinant', command: '\\det', category: 'functions' },
+  { symbol: 'max', label: 'Maksimum', command: '\\max', category: 'functions' },
+  { symbol: 'min', label: 'Minimum', command: '\\min', category: 'functions' },
+  { symbol: 'sup', label: 'Supremum', command: '\\sup', category: 'functions' },
+  { symbol: 'inf', label: 'İnfimum', command: '\\inf', category: 'functions' },
+  { symbol: 'arg', label: 'Arqument', command: '\\arg', category: 'functions' },
+  { symbol: 'dim', label: 'Ölçü', command: '\\dim', category: 'functions' },
+  { symbol: 'ker', label: 'Nüvə', command: '\\ker', category: 'functions' },
+  { symbol: 'hom', label: 'Homomorfizm', command: '\\hom', category: 'functions' },
+
+  // Ədəd növləri
+  { symbol: 'ℍ', label: 'Kvaternion', command: '\\mathbb{H}', category: 'numbers' },
+  { symbol: '𝔸', label: 'Cəbri ədəd', command: '\\mathbb{A}', category: 'numbers' },
+  { symbol: 'ℙ', label: 'Sadə ədəd', command: '\\mathbb{P}', category: 'numbers' },
+  { symbol: '𝔹', label: 'Boolean', command: '\\mathbb{B}', category: 'numbers' },
+
+  // Digər xüsusi simvollar
+  { symbol: '♭', label: 'Bemol', command: '\\flat', category: 'special' },
+  { symbol: '♯', label: 'Diyez', command: '\\sharp', category: 'special' },
+  { symbol: '♮', label: 'Natural', command: '\\natural', category: 'special' },
+  { symbol: '†', label: 'Dəqiq', command: '\\dagger', category: 'special' },
+  { symbol: '‡', label: 'İkiqat dəqiq', command: '\\ddagger', category: 'special' },
+  { symbol: '⋆', label: 'Ulduz', command: '\\star', category: 'special' },
+  { symbol: '⋄', label: 'Almaz', command: '\\diamond', category: 'special' },
+  { symbol: '∙', label: 'Kiçik nöqtə', command: '\\bullet', category: 'special' },
+  { symbol: '✓', label: 'Çek işarəsi', command: '\\checkmark', category: 'special' },
+  { symbol: '✗', label: 'X işarəsi', command: '\\times', category: 'special' },
 ];
 
 const CATEGORIES = [
@@ -96,9 +258,16 @@ const CATEGORIES = [
   { id: 'operators', label: 'Əməliyyatlar' },
   { id: 'fractions', label: 'Kəsrlər' },
   { id: 'greek', label: 'Yunan Hərfləri' },
+  { id: 'greek_upper', label: 'Böyük Yunan' },
   { id: 'arrows', label: 'Oxlar' },
   { id: 'set', label: 'Çoxluq' },
+  { id: 'logic', label: 'Məntiq' },
+  { id: 'relations', label: 'Əlaqələr' },
+  { id: 'geometry', label: 'Həndəsə' },
+  { id: 'functions', label: 'Funksiyalar' },
+  { id: 'numbers', label: 'Ədəd Növləri' },
   { id: 'roots', label: 'Köklər' },
+  { id: 'special', label: 'Xüsusi' },
 ];
 
 export function SimpleMathEditor({
@@ -236,10 +405,9 @@ export function SimpleMathEditor({
   const latexToHtml = (latex: string): string => {
     if (!latex) return '';
 
-    let html = latex;
+    let html = latex.trim();
 
-    html = html.trim();
-
+    // Köklər
     html = html.replace(/\\sqrt\[([^\]]+)\]\{([^}]+)\}/g, (match, degree, content) => {
       return `<span class="math-sqrt"><sup class="sqrt-degree">${degree}</sup><span class="sqrt-symbol">√</span><span class="sqrt-content">${content}</span></span>`;
     });
@@ -248,21 +416,26 @@ export function SimpleMathEditor({
       return `<span class="math-sqrt"><span class="sqrt-symbol">√</span><span class="sqrt-content">${content}</span></span>`;
     });
 
+    // Kəsrlər
     html = html.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, (match, numerator, denominator) => {
       return `<span class="math-frac"><span class="frac-num">${numerator}</span><span class="frac-line">/</span><span class="frac-den">${denominator}</span></span>`;
     });
 
+    // Üst və alt indekslər
     html = html.replace(/\^\{([^}]+)\}/g, '<sup>$1</sup>');
     html = html.replace(/\^([a-zA-Z0-9α-ωΑ-Ω+\-±])/g, '<sup>$1</sup>');
-
     html = html.replace(/_\{([^}]+)\}/g, '<sub>$1</sub>');
     html = html.replace(/_([a-zA-Z0-9α-ωΑ-Ω+\-±])/g, '<sub>$1</sub>');
 
-    const symbolReplacements: [RegExp, string][] = [
+    // LaTeX komandalarını Unicode simvollarına çevir
+    const replacements: [RegExp, string][] = [
       [/\\pi/g, 'π'],
       [/\\infty/g, '∞'],
       [/\\sum/g, '∑'],
       [/\\int/g, '∫'],
+      [/\\prod/g, '∏'],
+      [/\\partial/g, '∂'],
+      [/\\nabla/g, '∇'],
       [/\\pm/g, '±'],
       [/\\neq/g, '≠'],
       [/\\approx/g, '≈'],
@@ -275,40 +448,126 @@ export function SimpleMathEditor({
       [/\\beta/g, 'β'],
       [/\\gamma/g, 'γ'],
       [/\\delta/g, 'δ'],
+      [/\\epsilon/g, 'ε'],
+      [/\\zeta/g, 'ζ'],
+      [/\\eta/g, 'η'],
       [/\\theta/g, 'θ'],
+      [/\\iota/g, 'ι'],
+      [/\\kappa/g, 'κ'],
+      [/\\lambda/g, 'λ'],
+      [/\\mu/g, 'μ'],
+      [/\\nu/g, 'ν'],
+      [/\\xi/g, 'ξ'],
+      [/\\omicron/g, 'ο'],
+      [/\\pi/g, 'π'],
+      [/\\rho/g, 'ρ'],
       [/\\sigma/g, 'σ'],
+      [/\\tau/g, 'τ'],
+      [/\\upsilon/g, 'υ'],
+      [/\\phi/g, 'φ'],
+      [/\\chi/g, 'χ'],
+      [/\\psi/g, 'ψ'],
       [/\\omega/g, 'ω'],
+      [/\\Gamma/g, 'Γ'],
+      [/\\Delta/g, 'Δ'],
+      [/\\Theta/g, 'Θ'],
+      [/\\Lambda/g, 'Λ'],
+      [/\\Xi/g, 'Ξ'],
+      [/\\Pi/g, 'Π'],
+      [/\\Sigma/g, 'Σ'],
+      [/\\Upsilon/g, 'Υ'],
+      [/\\Phi/g, 'Φ'],
+      [/\\Psi/g, 'Ψ'],
+      [/\\Omega/g, 'Ω'],
       [/\\rightarrow/g, '→'],
       [/\\leftarrow/g, '←'],
       [/\\uparrow/g, '↑'],
       [/\\downarrow/g, '↓'],
+      [/\\leftrightarrow/g, '↔'],
+      [/\\Rightarrow/g, '⇒'],
+      [/\\Leftarrow/g, '⇐'],
+      [/\\Leftrightarrow/g, '⇔'],
+      [/\\mapsto/g, '↦'],
+      [/\\to/g, '→'],
       [/\\in/g, '∈'],
       [/\\notin/g, '∉'],
       [/\\subset/g, '⊂'],
+      [/\\subseteq/g, '⊆'],
+      [/\\supset/g, '⊃'],
+      [/\\supseteq/g, '⊇'],
       [/\\cup/g, '∪'],
       [/\\cap/g, '∩'],
+      [/\\setminus/g, '∖'],
       [/\\emptyset/g, '∅'],
+      [/\\forall/g, '∀'],
+      [/\\exists/g, '∃'],
+      [/\\nexists/g, '∄'],
+      [/\\neg/g, '¬'],
+      [/\\wedge/g, '∧'],
+      [/\\vee/g, '∨'],
+      [/\\Rightarrow/g, '⇒'],
+      [/\\Leftrightarrow/g, '⇔'],
+      [/\\angle/g, '∠'],
+      [/\\triangle/g, '△'],
+      [/\\square/g, '□'],
+      [/\\circ/g, '○'],
+      [/\\odot/g, '⊙'],
+      [/\\parallel/g, '∥'],
+      [/\\perp/g, '⊥'],
+      [/\\cong/g, '≅'],
+      [/\\sim/g, '∼'],
+      [/\\propto/g, '∝'],
+      [/\\equiv/g, '≡'],
+      [/\\ll/g, '≪'],
+      [/\\gg/g, '≫'],
       [/\\mathbb\{N\}/g, 'ℕ'],
+      [/\\mathbb\{Z\}/g, 'ℤ'],
+      [/\\mathbb\{Q\}/g, 'ℚ'],
       [/\\mathbb\{R\}/g, 'ℝ'],
       [/\\mathbb\{C\}/g, 'ℂ'],
+      [/\\mathbb\{H\}/g, 'ℍ'],
+      [/\\mathbb\{A\}/g, '𝔸'],
+      [/\\mathbb\{P\}/g, 'ℙ'],
+      [/\\mathbb\{B\}/g, '𝔹'],
       [/\\^\\circ/g, '°'],
+      [/\\lceil/g, '⌈'],
+      [/\\rceil/g, '⌉'],
+      [/\\lfloor/g, '⌊'],
+      [/\\rfloor/g, '⌋'],
+      [/\\ell/g, 'ℓ'],
+      [/\\hbar/g, 'ℏ'],
+      [/\\Im/g, 'ℑ'],
+      [/\\Re/g, 'ℜ'],
+      [/\\wp/g, '℘'],
+      [/\\aleph/g, 'ℵ'],
+      [/\\varnothing/g, '∅'],
+      [/\\bigcap/g, '⋂'],
+      [/\\bigcup/g, '⋃'],
+      [/\\flat/g, '♭'],
+      [/\\sharp/g, '♯'],
+      [/\\natural/g, '♮'],
+      [/\\dagger/g, '†'],
+      [/\\ddagger/g, '‡'],
+      [/\\star/g, '⋆'],
+      [/\\diamond/g, '⋄'],
+      [/\\bullet/g, '∙'],
+      [/\\checkmark/g, '✓'],
     ];
 
-    symbolReplacements.forEach(([regex, replacement]) => {
+    replacements.forEach(([regex, replacement]) => {
       html = html.replace(regex, replacement);
     });
 
+    // Xüsusi işarələr
     html = html.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
     html = html.replace(/\s+/g, ' ');
 
     return html;
   };
+
   const contentHtml = text
     ? `<div class="math-html">${latexToHtml(text)}</div>`
     : `<span class="text-gray-400 italic">Preview görünəcək...</span>`;
-
-
 
   return (
     <div className={`space-y-2 ${className}`}>
@@ -503,7 +762,7 @@ export function SimpleMathEditor({
       </Dialog>
 
       <Dialog open={showSymbols} onOpenChange={setShowSymbols}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-8xl max-h-[90vh] overflow-auto">
           <DialogHeader>
             <DialogTitle>Riyazi Simvollar və Düsturlar</DialogTitle>
           </DialogHeader>
