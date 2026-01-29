@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { BookOpen, Bot, Clock, TrendingUp } from "lucide-react"
 import { api, ExamAttempt } from "@/lib/api"
+import Image from "next/image"
 
 export default function ResultsPage() {
   const { user } = useAuth()
@@ -100,49 +101,14 @@ export default function ResultsPage() {
 
                         {showAIBadge ? (
                           <div className="absolute right-4 top-4 flex items-center gap-3">
-                            <div
-                              className={`relative flex items-center justify-center h-9 px-3 rounded-full text-sm font-semibold bg-gradient-to-r from-blue-600 to-violet-600 text-white shadow-md`}
-                            >
-                              <span className="sr-only">Ai</span>
-                              <span className="uppercase tracking-wide">Aİ</span>
-                              <span
-                                className={`absolute -right-2 -top-2 h-3 w-3 rounded-full ${isWaitingAI ? "bg-yellow-400 animate-ping" : isCompleted ? "bg-green-400" : "bg-gray-300"
-                                  }`}
-                              />
-                              <span
-                                className={`absolute -right-2 -top-2 h-3 w-3 rounded-full ${isWaitingAI ? "bg-yellow-500" : isCompleted ? "bg-green-500" : "bg-gray-400"
-                                  }`}
-                              />
-                            </div>
                             <div className="hidden sm:flex items-center text-muted-foreground">
-                              <Bot className="h-5 w-5" />
+                              <Image src="/ai.png" alt="AI icon" width={44} height={44} />
                             </div>
                           </div>
                         ) : (
                           <div className="absolute right-4 top-4">
                             {isTest && (
-                              <div
-                                className="flex items-center justify-center h-9 w-9 rounded-full
-        bg-gradient-to-br from-slate-200 to-slate-100
-        dark:from-slate-800 dark:to-slate-700
-        shadow-md hover:scale-105 transition"
-                                title="Computer-based test"
-                              >
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  className="h-6 w-6 text-slate-700 dark:text-slate-200"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                  strokeWidth={2}
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M9.75 17h4.5m-9-3.75h13.5a1.5 1.5 0 001.5-1.5V6.75a1.5 1.5 0 00-1.5-1.5H5.25a1.5 1.5 0 00-1.5 1.5v7.75a1.5 1.5 0 001.5 1.5z"
-                                  />
-                                </svg>
-                              </div>
+                              <Image src="/test.png" alt="Test icon" width={44} height={44} />
                             )}
                           </div>
                         )}

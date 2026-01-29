@@ -13,12 +13,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { BookOpen, Search, Filter, Sparkles } from "lucide-react"
+import { BookOpen, Search, Filter, Sparkles, Cpu } from "lucide-react"
 import { toast, ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 import { PublicNavbar } from "@/components/public-navbar"
 import { deleteCookie_EXAM_DURATION_COOKIE, EXAM_DURATION_COOKIE, setCookie_EXAM_DURATION_COOKIE } from "@/helper/ExamDurationMinutesHelper"
-
+import AI from "/ai.png"
+import Image from "next/image"
 function tokenBankKey(token: string) {
   return `exam_token_bank_${token}`
 }
@@ -388,11 +389,24 @@ export default function ExamsPage() {
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {exams.map((exam) => {
                 const isStarting = startingId === String(exam.id)
+                const isWriting = exam.type === "WRITING"
+                const isTest = exam.type === "TEST"
                 return (
                   <Card
                     key={exam.id}
                     className="flex flex-col backdrop-blur-sm bg-white/80 dark:bg-gray-950/80 border-white/20 shadow-xl hover:shadow-2xl transition-all hover:-translate-y-1"
                   >
+                    {isWriting && (
+                      <div className="absolute right-6 top-13 p-1 bg-white/90 dark:bg-gray-900/80 rounded-full shadow">
+                        <Image src="/ai.png" alt="AI icon" width={44} height={44} />
+                      </div>
+                    )}
+                    {isTest && (
+                      <div className="absolute right-6 top-13 p-1 bg-white/90 dark:bg-gray-900/80 rounded-full shadow">
+                        <Image src="/test.png" alt="Test icon" width={44} height={44} />
+                      </div>
+                    )}
+
                     <CardHeader>
                       <div className="flex items-start justify-between mb-2">
                         <Sparkles className="h-5 w-5 text-violet-600" />
