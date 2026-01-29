@@ -9,7 +9,7 @@ import { useTranslation } from "@/lib/i18n"
 import { Navbar } from "@/components/navbar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { BookOpen, Bot, Clock, TrendingUp } from "lucide-react"
+import { BookOpen, Bot, Clock, TrendingUp, TriangleAlert } from "lucide-react"
 import { api, ExamAttempt } from "@/lib/api"
 import Image from "next/image"
 
@@ -164,6 +164,16 @@ export default function ResultsPage() {
                           )}
                         </div>
                       </div>
+                      {isWaitingAI ? (
+                        <div className="flex items-center gap-2 pt-3 text-xs text-muted-foreground mt-1">
+                          <div>
+                            <TriangleAlert color="#ff0000" />
+                          </div>
+                          <div>
+                            <span>Bu yazılı imtahan süni intellekt tərəfindən yoxlanılır. Nəticənin hesablanması təxminən 1 saat çəkə bilər. </span>
+                          </div>
+                        </div>
+                      ) : null}
                     </CardContent>
                   </Card>
                 )
@@ -171,7 +181,7 @@ export default function ResultsPage() {
             </div>
           )}
         </div>
-      </main>
-    </div>
+      </main >
+    </div >
   )
 }

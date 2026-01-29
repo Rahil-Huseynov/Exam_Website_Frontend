@@ -34,6 +34,7 @@ import {
 import { toastError } from "@/lib/toast"
 import { fromCents, toCents } from "@/lib/utils"
 import { deleteCookie_EXAM_DURATION_COOKIE, EXAM_DURATION_COOKIE, setCookie_EXAM_DURATION_COOKIE } from "@/helper/ExamDurationMinutesHelper"
+import Image from "next/image"
 
 type Attempt = any
 type Step = 1 | 2 | 3
@@ -523,72 +524,104 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="grid gap-3">
-                {recentAttempts.map((a: any) => (
-                  <div
-                    key={a.id}
-                    className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 sm:p-6 rounded-xl border border-border/30 bg-background/30 transition-shadow"
-                  >
-                    <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0 w-full sm:w-auto">
-                      <div className="flex-shrink-0">
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-muted/10 flex items-center justify-center overflow-hidden">
-                          <img
-                            src={`${process.env.NEXT_PUBLIC_API_URL_FOR_IMAGE}${a?.bank?.university?.logo}`}
-                            alt={a?.bank?.university?.name || "University"}
-                            className="w-8 h-8 sm:w-10 sm:h-10 object-contain"
-                            loading="lazy"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between sm:flex-col sm:items-end w-full sm:w-auto">
-                        <div className="min-w-0 w-full">
-                          <div className="font-medium text-sm leading-snug line-clamp-2">
-                            {a?.bank?.title || a?.exam?.title || "—"}
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1 leading-snug line-clamp-2">
-                            {a?.bank?.university?.name} • {a?.bank?.year ?? "-"}
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1 truncate">
-                            {new Date(a.startedAt || a.createdAt || Date.now()).toLocaleString()}
+                {recentAttempts.map((a: any) => {
+                  const showAIBadge = a?.bank?.type === "WRITING"
+                  const isTest = a?.bank?.type === "TEST"
+
+                  return (
+                    <div
+                      key={a.id}
+                      className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 sm:p-6 rounded-xl border border-border/30 bg-background/30 transition-shadow"
+                    >
+                      <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0 w-full sm:w-auto">
+                        <div className="flex-shrink-0">
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-muted/10 flex items-center justify-center overflow-hidden">
+                            <img
+                              src={`${process.env.NEXT_PUBLIC_API_URL_FOR_IMAGE}${a?.bank?.university?.logo}`}
+                              alt={a?.bank?.university?.name || "University"}
+                              className="w-8 h-8 sm:w-10 sm:h-10 object-contain"
+                              loading="lazy"
+                            />
                           </div>
                         </div>
-                        <div className="sm:hidden text-sm font-semibold w-20 text-right">
-                          {a.score ?? "-"} / {a.total ?? "-"}
+
+                        <div className="flex items-center justify-between sm:flex-col sm:items-end w-full sm:w-auto">
+                          <div className="min-w-0 w-full">
+                            <div className="font-medium text-sm leading-snug line-clamp-2">
+                              {a?.bank?.title || a?.exam?.title || "—"}
+                            </div>
+
+                            <div className="text-xs text-muted-foreground mt-1 leading-snug line-clamp-2">
+                              {a?.bank?.university?.name} • {a?.bank?.year ?? "-"}
+                            </div>
+
+                            <div className="text-xs text-muted-foreground mt-1 truncate">
+                              {new Date(
+                                a.startedAt || a.createdAt || Date.now()
+                              ).toLocaleString()}
+                            </div>
+
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 truncate">
+                              {showAIBadge ? (
+                                <Image src="/ai.png" alt="AI icon" width={20} height={20} />
+                              ) : isTest ? (
+                                <Image src="/test.png" alt="Test icon" width={20} height={20} />
+                              ) : (
+                                <BookOpen className="h-4 w-4 text-primary/70" />
+                              )}
+
+                              <span>{t("examtype")}:</span>
+                              <span>
+                                {a.bank.type === "TEST"
+                                  ? t("examTypeTest")
+                                  : a.bank.type === "WRITING" ||
+                                    a.bank.type === "WRITTING"
+                                    ? t("examTypeWritting")
+                                    : "-"}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="sm:hidden text-sm font-semibold w-20 text-right">
+                            {a.score ?? "-"} / {a.total ?? "-"}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
-                      <div className="flex items-center justify-between sm:flex-col sm:items-end w-full sm:w-auto">
-                        <div className="hidden sm:block text-sm font-semibold w-20 text-right">
-                          {a.score ?? "-"} / {a.total ?? "-"}
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
+                        <div className="flex items-center justify-between sm:flex-col sm:items-end w-full sm:w-auto">
+                          <div className="hidden sm:block text-sm font-semibold w-20 text-right">
+                            {a.score ?? "-"} / {a.total ?? "-"}
+                          </div>
                         </div>
-                      </div>
 
-                      <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                        <Button
-                          size="sm"
-                          onClick={() => retakeAttempt(a)}
-                          className="rounded-lg h-9 px-3 shadow-sm w-full sm:w-auto"
-                        >
-                          {t("retake")}
-                        </Button>
-
-                        <Link href={`/results/${a?.id}`} className="w-full sm:w-auto">
+                        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                           <Button
-                            variant="outline"
                             size="sm"
-                            className="rounded-lg h-9 px-3 w-full sm:w-auto"
+                            onClick={() => retakeAttempt(a)}
+                            className="rounded-lg h-9 px-3 shadow-sm w-full sm:w-auto"
                           >
-                            {t("viewResults")}
+                            {t("retake")}
                           </Button>
-                        </Link>
+
+                          <Link href={`/results/${a?.id}`} className="w-full sm:w-auto">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="rounded-lg h-9 px-3 w-full sm:w-auto"
+                            >
+                              {t("viewResults")}
+                            </Button>
+                          </Link>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </CardContent>
+
 
 
           <div ref={wizardRef} className="scroll-mt-24">
@@ -767,46 +800,76 @@ export default function DashboardPage() {
                     <div className="text-sm text-muted-foreground py-8 text-center">{t("noExams")}</div>
                   ) : (
                     <div className="space-y-3 max-h-96 overflow-y-auto">
-                      {filteredExams.map((exam: any) => (
-                        <div
-                          key={exam.id}
-                          className="flex items-center justify-between p-4 rounded-lg border border-border/40 bg-card/50 hover:bg-card/80 transition-colors group"
-                        >
-                          <div className="min-w-0 flex-1">
-                            <div className="font-medium text-sm">{exam.title || exam.name}</div>
-                            <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
-                              <BookOpen className="h-3.5 w-3.5 text-primary/70" />
-                              <span>
-                                {t("exam.card.questions_preview", {
-                                  count: exam.questionCount ?? 0,
-                                  total: approxCount((exam as any).questionsTotal),
-                                })}
-                              </span>
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                              <span>{t("examDuration")}:</span>
-                              <span>
-                                {exam.durationMinutes ?? "-"} {t("minutes")}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3 ml-4">
-                            <div className="text-right">
-                              <div className="font-semibold text-sm">
-                                {fromCents(toCents((exam as any)?.price || 0))} AZN
+                      {filteredExams.map((exam: any) => {
+                        const showAIBadge = exam.type === "WRITING"
+                        const isTest = exam.type === "TEST"
+                        return (
+                          <div
+                            key={exam.id}
+                            className="flex items-center justify-between p-4 rounded-lg border border-border/40 bg-card/50 hover:bg-card/80 transition-colors group"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <div className="font-medium text-sm">
+                                {exam.title || exam.name}
+                              </div>
+
+                              <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
+                                {/* ICON */}
+                                {showAIBadge ? (
+                                  <Image src="/ai.png" alt="AI icon" width={20} height={20} />
+                                ) : isTest ? (
+                                  <Image src="/test.png" alt="Test icon" width={20} height={20} />
+                                ) : (
+                                  <BookOpen className="h-4 w-4 text-primary/70" />
+                                )}
+
+                                <span>
+                                  {t("exam.card.questions_preview", {
+                                    count: exam.questionCount ?? 0,
+                                    total: approxCount((exam as any).questionsTotal),
+                                  })}
+                                </span>
+                              </div>
+
+                              <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                                <span>{t("examDuration")}:</span>
+                                <span>
+                                  {exam.durationMinutes ?? "-"} {t("minutes")}
+                                </span>
+                              </div>
+
+                              <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                                <span>{t("examtype")}:</span>
+                                <span>
+                                  {exam.type === "TEST"
+                                    ? t("examTypeTest")
+                                    : exam.type === "WRITING" || exam.type === "WRITTING"
+                                      ? t("examTypeWritting")
+                                      : "-"}
+                                </span>
                               </div>
                             </div>
-                            <Button
-                              size="sm"
-                              onClick={() => startExam(exam)}
-                              className="rounded-lg h-8 px-3 group-hover:shadow-md transition-all"
-                            >
-                              {t("start")}
-                            </Button>
+
+                            <div className="grid sm:flex items-center gap-3 ml-4">
+                              <div className="text-right">
+                                <div className="font-semibold text-sm">
+                                  {fromCents(toCents((exam as any)?.price || 0))} AZN
+                                </div>
+                              </div>
+
+                              <Button
+                                size="sm"
+                                onClick={() => startExam(exam)}
+                                className="rounded-lg h-8 px-3 group-hover:shadow-md transition-all"
+                              >
+                                {t("start")}
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        )
+                      })}
                     </div>
+
                   )}
                 </div>
               </CardContent>
