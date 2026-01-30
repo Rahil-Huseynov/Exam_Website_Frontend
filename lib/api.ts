@@ -1,9 +1,6 @@
 "use client"
-
 import { toast } from "react-toastify"
-
 const API_URL = process.env.NEXT_PUBLIC_API_URL
-
 // ================== TYPES ==================
 export interface User {
   id: number
@@ -15,7 +12,6 @@ export interface User {
   publicId: string
   role: "user" | "admin" | "superadmin"
 }
-
 export type LoginResponse = {
   accessToken?: string
   access_token?: string
@@ -28,7 +24,6 @@ export type LoginResponse = {
     role: string
   }
 }
-
 export interface University {
   id: string
   name: string
@@ -37,7 +32,6 @@ export interface University {
   nameRu?: string
   logo?: string | null
 }
-
 export interface Subject {
   id: string
   name: string
@@ -45,7 +39,6 @@ export interface Subject {
   nameEn?: string
   nameRu?: string
 }
-
 export type AttemptReviewItem = {
   answerId: string
   createdAt: string
@@ -63,7 +56,6 @@ export type AttemptReviewItem = {
   }
   selected: { id: string; text: string }
 }
-
 export type ExamAttempt = {
   id: string
   status: "IN_PROGRESS" | "FINISHED" | "WAITING_AI"
@@ -83,8 +75,6 @@ export type ExamAttempt = {
     topic?: any
   }
 }
-
-
 export type AttemptReviewResponse = {
   attempt: {
     id: string
@@ -98,24 +88,20 @@ export type AttemptReviewResponse = {
   stats: { total: number; correct: number; wrong: number }
   items: AttemptReviewItem[]
 }
-
 export interface QuestionOption {
   id: string
   text: string
 }
-
 export type ExamQuestion = {
   id: string
   text: string
   options: { id: string; text: string }[]
 }
-
 export interface Question {
   id: string
   text: string
   options: QuestionOption[]
 }
-
 export type AdminResultItem = {
   id: string
   status: "IN_PROGRESS" | "FINISHED" | "WAITING_AI"
@@ -134,7 +120,6 @@ export type AdminResultItem = {
     topic?: any
   }
 }
-
 export type AdminResultsResponse = {
   page: number
   limit: number
@@ -142,7 +127,6 @@ export type AdminResultsResponse = {
   pages: number
   items: AdminResultItem[]
 }
-
 export type AttemptAnswer = {
   id: string
   questionId: string
@@ -157,7 +141,6 @@ export type AttemptAnswer = {
   }
   selectedOption: { id: string; text: string }
 }
-
 export type AdminListItem = {
   id: number
   email: string
@@ -165,54 +148,43 @@ export type AdminListItem = {
   lastName?: string | null
   role?: string | null
 }
-
 export type LogItem = {
   id: number
   method: string
   url: string
   status: number
   duration: number
-
   ip?: string | null
   asn?: string | null
   isp?: string | null
   country?: string | null
   region?: string | null
   city?: string | null
-
   deviceType?: string | null
   browser?: string | null
   browserVer?: string | null
   os?: string | null
   osVersion?: string | null
-
   userAgent?: string | null
   userId?: number | null
   userName?: string | null
   userRole?: string | null
-
   createdAt: string
 }
-
-
-
 export type LogsListResponse = {
   data: LogItem[]
   total: number
 }
-
 export type AdminListResponse = {
   users: AdminListItem[]
   totalPages: number
 }
-
 export type UpdateAdminPayload = {
   firstName?: string
   lastName?: string
   role?: string
   password?: string
 }
-
 export interface Exam {
   id: string
   title: string
@@ -225,18 +197,14 @@ export interface Exam {
   durationMinutes: number
   type: "TEST" | "WRITING"
 }
-
-
 export type NewsAdminItem = {
   id: string
   titleAz: string
   titleEn?: string | null
   titleRu?: string | null
-
   contentAz: string
   contentEn?: string | null
   contentRu?: string | null
-
   imageUrl?: string | null
   isPublished: boolean
   publishedAt?: string | null
@@ -244,12 +212,10 @@ export type NewsAdminItem = {
   updatedAt: string
   admin?: { id: number; email: string; firstName?: string | null; lastName?: string | null } | null
 }
-
 export type NewsAdminListResponse = {
   items: NewsAdminItem[]
   meta: { page: number; limit: number; total: number; pages: number }
 }
-
 export type CreateNewsPayload = {
   titleAz: string
   titleEn?: string | null
@@ -260,12 +226,8 @@ export type CreateNewsPayload = {
   imageUrl?: string | null
   isPublished?: boolean
 }
-
 export type UpdateNewsPayload = Partial<CreateNewsPayload>
-
-
 export type BalanceTxnType = "EXAM_PURCHASE" | "ADMIN_TOPUP"
-
 export type BalanceTransactionItem = {
   id: string
   userId: number
@@ -275,23 +237,18 @@ export type BalanceTransactionItem = {
   type: BalanceTxnType
   note?: string | null
   createdAt: string
-
   bank?: { id: string; title: string; year: number; price: any } | null
   attempt?: { id: string; startedAt: string; finishedAt?: string | null; status: "IN_PROGRESS" | "FINISHED" | "WAITING_AI" } | null
   admin?: { id: number; email: string; firstName?: string | null; lastName?: string | null; role?: string | null } | null
 }
-
 export type BalanceHistoryResponse = {
   page: number
   limit: number
   total: number
   items: BalanceTransactionItem[]
 }
-
-
 export type DraftOption = { tempOptionId: string; text: string }
 export type DraftQuestion = { tempId: string; text: string; options: DraftOption[]; clipUrls?: string[]; correctAnswerText?: string }
-
 export type ImportDirectPayload = {
   questions: Array<{
     text: string
@@ -300,18 +257,15 @@ export type ImportDirectPayload = {
     imageUrls?: string[]
   }>
 }
-
 export type AdminTopUpByPublicIdResponse = {
   ok: true
   added: string
   user: { id: number; publicId: string; email: string; firstName?: string | null; lastName?: string | null; balance: string }
 }
-
 export type AdminSignupResponse = {
   ok: true
   admin: { id: number; email: string; firstName?: string | null; lastName?: string | null; role: string }
 }
-
 export type PublicNewsItem = {
   id: string
   title: string
@@ -323,13 +277,10 @@ export type PublicNewsItem = {
   updatedAt: string
   lang: "az" | "en" | "ru"
 }
-
 export type PublicNewsListResponse = {
   items: PublicNewsItem[]
   meta: { page: number; limit: number; total: number; pages: number }
 }
-
-
 export interface AdminQuestion {
   id: string;
   text: string;
@@ -346,25 +297,20 @@ export interface AdminQuestion {
   correctAnswerHtml?: string;
   imageUrls: string[];
 }
-
-
 export type ListBankQuestionsResponse = {
   bankId: string
   questions: AdminQuestion[]
 }
-
 export type UpdateQuestionPayload = {
   text?: string
   options?: Array<{ text: string }>
   correctAnswerText?: string
 }
-
 export type CreateQuestionPayload = {
   text: string
   options: Array<{ text: string }>
   correctAnswerText?: string
 }
-
 export interface CreateQuestionRequest {
   text: string;
   html?: string;
@@ -375,8 +321,6 @@ export interface CreateQuestionRequest {
   correctAnswerText: string;
   correctAnswerHtml?: string;
 }
-
-
 export type UpdateExamPayload = { title?: string; year?: number; price?: number; questionCount?: number; random?: boolean; durationMinutes: number }
 export type DeleteOkResponse = { ok: boolean }
 export type CreateExamTokenResponse = { ok: true; token: string; expiresAt: string }
@@ -384,7 +328,6 @@ export type CreateAttemptResponse = { attemptId: string }
 export type AnswerResponse = { isCorrect: boolean; answerId: string }
 export type FinishResponse = { attemptId: string; status: string; score: number; total: number }
 export type UserAttemptsResponse = { attempts: any[] }
-
 export type AttemptSummary = {
   attemptId: string
   status: string
@@ -395,40 +338,38 @@ export type AttemptSummary = {
   score?: number
   total?: number
 }
-
 export type AttemptQuestion = {
   id: string
   text: string
   options: { id: string; text: string }[]
 }
 export type AttemptQuestionsResponse = { questions: AttemptQuestion[] }
-
 // ================== API CLIENT ==================
 class ApiClient {
   private token: string | null = null
-
   setToken(token: string) {
     this.token = token
+    if (typeof window !== "undefined") {
+      localStorage.setItem("accessToken", token)
+    }
   }
-
   getToken() {
     return this.token
   }
-
   clearToken() {
     this.token = null
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("accessToken")
+    }
   }
-
   // ------------------ helpers (locale) ------------------
   private getLocale(): "az" | "en" | "ru" {
     if (typeof window === "undefined") return "en"
-
     const ls =
       window.localStorage.getItem("locale") ||
       window.localStorage.getItem("lang") ||
       window.localStorage.getItem("NEXT_LOCALE")
     if (ls === "az" || ls === "en" || ls === "ru") return ls
-
     const cookie = document.cookie || ""
     const pick = (key: string) => {
       const m = cookie.match(new RegExp(`(?:^|; )${key}=([^;]*)`))
@@ -436,41 +377,32 @@ class ApiClient {
     }
     const ck = pick("locale") || pick("lang") || pick("NEXT_LOCALE")
     if (ck === "az" || ck === "en" || ck === "ru") return ck
-
     return "en"
   }
-
   private pickLang(az: string, en: string, ru: string) {
     const l = this.getLocale()
     return l === "az" ? az : l === "ru" ? ru : en
   }
-
   private pickFrom3Lang(serverMsg: string) {
     const msg = String(serverMsg || "").trim()
     if (!msg) return ""
-
     const s = msg.replace(/\r/g, "")
     const hasMarkers = /AZ:\s*/i.test(s) && /EN:\s*/i.test(s) && /RU:\s*/i.test(s)
     if (!hasMarkers) return msg
-
     const extract = (tag: "AZ" | "EN" | "RU") => {
       const re = new RegExp(`${tag}:\\s*([\\s\\S]*?)(?=\\n(?:AZ|EN|RU):\\s*|$)`, "i")
       const m = s.match(re)
       return (m?.[1] || "").trim()
     }
-
     const az = extract("AZ")
     const en = extract("EN")
     const ru = extract("RU")
-
     return this.pickLang(az || msg, en || msg, ru || msg)
   }
-
   private getDefaultErrMsg(status: number, serverMsg?: string) {
     if (serverMsg && String(serverMsg).trim()) {
       return this.pickFrom3Lang(String(serverMsg).trim())
     }
-
     if (status === 0) {
       return this.pickLang(
         "Şəbəkə xətası. İnterneti yoxlayın.",
@@ -478,11 +410,9 @@ class ApiClient {
         "Ошибка сети. Проверьте интернет-соединение.",
       )
     }
-
     if (status === 400) {
       return this.pickLang("Göndərilən məlumat düzgün deyil.", "Invalid request data.", "Неверные данные запроса.")
     }
-
     if (status === 401) {
       return this.pickLang(
         "Sessiya bitib. Yenidən daxil olun.",
@@ -490,7 +420,6 @@ class ApiClient {
         "Сессия истекла. Войдите снова.",
       )
     }
-
     if (status === 403) {
       return this.pickLang(
         "Bu əməliyyat üçün icazəniz yoxdur.",
@@ -498,11 +427,9 @@ class ApiClient {
         "У вас нет прав на это действие.",
       )
     }
-
     if (status === 404) {
       return this.pickLang("Resurs tapılmadı.", "Resource not found.", "Ресурс не найден.")
     }
-
     if (status >= 500) {
       return this.pickLang(
         "Server xətası. Bir az sonra yenidən yoxlayın.",
@@ -510,14 +437,11 @@ class ApiClient {
         "Ошибка сервера. Попробуйте позже.",
       )
     }
-
     return this.pickLang("Xəta baş verdi.", "Something went wrong.", "Произошла ошибка.")
   }
-
   private toastRequestError(message: string, toastId: string) {
     toast.error(message, { toastId })
   }
-
   private async request<T>(
     endpoint: string,
     options: (Omit<RequestInit, "body"> & { body?: BodyInit | null; json?: any; skipToast?: boolean; rawResponse?: boolean }) = {},
@@ -528,38 +452,28 @@ class ApiClient {
         "NEXT_PUBLIC_API_URL is missing. Set it in .env.",
         "NEXT_PUBLIC_API_URL не найден. Укажите в .env.",
       )
-
       if (typeof window !== "undefined" && !options.skipToast) {
         const toastId = `reqerr:apiurl:${Date.now()}:${Math.random().toString(16).slice(2)}`
         this.toastRequestError(msg, toastId)
       }
-
       throw new Error("NEXT_PUBLIC_API_URL tapılmadı. .env-də set et.")
     }
-
     const headers: Record<string, string> = {
       ...(options.headers as Record<string, string> | undefined),
     }
-
     const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData
-
     if (!isFormData) headers["Content-Type"] = headers["Content-Type"] ?? "application/json"
-
     if (process.env.NEXT_PUBLIC_API_KEY) headers["x-api-key"] = process.env.NEXT_PUBLIC_API_KEY
     if (this.token) headers["Authorization"] = `Bearer ${this.token}`
-
     const toastId = `reqerr:${endpoint}:${Date.now()}:${Math.random().toString(16).slice(2)}`
-
     const bodyToSend: BodyInit | null | undefined =
       options.json !== undefined ? JSON.stringify(options.json) : options.body
-
     let res: Response
     try {
       res = await fetch(`${API_URL}${endpoint}`, {
         ...options,
         headers,
         body: bodyToSend,
-        credentials: "include",
       })
     } catch {
       const message = this.getDefaultErrMsg(0)
@@ -568,11 +482,9 @@ class ApiClient {
       }
       throw new Error("Network error")
     }
-
     if (!res.ok) {
       const contentType = res.headers.get("content-type") || ""
       let serverMsg = ""
-
       try {
         if (contentType.includes("application/json")) {
           const j: any = await res.json()
@@ -583,9 +495,7 @@ class ApiClient {
       } catch {
         serverMsg = ""
       }
-
       let message = serverMsg ? this.pickFrom3Lang(serverMsg) : this.getDefaultErrMsg(res.status)
-
       if (
         serverMsg &&
         serverMsg.toLowerCase().includes("balans") &&
@@ -597,86 +507,67 @@ class ApiClient {
           "Недостаточно средств на балансе",
         )
       }
-
       const publicNoAuthEndpoints = ["/", "/faq", "/contact-us"]
-
       const suppress401OnAuth =
         res.status === 401 &&
         (endpoint.startsWith("/auth/") || publicNoAuthEndpoints.some((p) => endpoint === p))
-
       const shouldToast = typeof window !== "undefined" && !options.skipToast && !suppress401OnAuth
       if (shouldToast) this.toastRequestError(message, toastId)
-
       throw new Error(`${message} (Status: ${res.status})`)
     }
-
     if ((options as any).rawResponse) {
       return res as unknown as T
     }
-
-
     const text = await res.text()
     return (text ? JSON.parse(text) : {}) as T
   }
-
   // ================== AUTH ==================
   async login(email: string, password: string) {
     const data = await this.request<LoginResponse>("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
     })
-
     const token = data.accessToken || (data as any).access_token
     if (token) this.setToken(token)
-
     return data
   }
-
   async adminTopUpByPublicId(publicId: string, amount: number) {
     return this.request<AdminTopUpByPublicIdResponse>("/auth/admin/topup-by-publicid", {
       method: "POST",
       json: { publicId, amount },
     })
   }
-
   async adminSignup(payload: { email: string; password: string; firstName?: string; lastName?: string; role?: string }) {
     return this.request<AdminSignupResponse>("/auth/admin/signup", {
       method: "POST",
       json: payload,
     })
   }
-
-
   async register(email: string, password: string, firstName: string, lastName?: string) {
     return this.request<{ success: boolean; email?: string; error?: string }>("/auth/user/signup", {
       method: "POST",
       body: JSON.stringify({ email, password, firstName, lastName }),
     })
   }
-
   async getProfile() {
     return this.request<User>("/auth/me")
   }
-
   async forgotPassword(email: string) {
     return this.request<{ message?: string }>(`/auth/forgot-password`, {
       method: "POST",
       json: { email },
     })
   }
-
   async resetPassword(token: string, newPassword: string) {
     return this.request<{ message?: string }>(`/auth/reset-password`, {
       method: "POST",
       json: { token, newPassword },
     })
   }
-
   async checkResetToken(token: string) {
     const qs = new URLSearchParams({ token }).toString()
     return this.request<{ valid: boolean }>(`/auth/check-token?${qs}`, { method: "GET" })
   }
-
   // ================== EMAIL VERIFY ==================
   async verifyEmail(email: string, code: string) {
     return this.request<{ success: boolean; error?: string }>("/auth/user/verify-email", {
@@ -684,36 +575,30 @@ class ApiClient {
       body: JSON.stringify({ email, code }),
     })
   }
-
   async resendVerificationCode(email: string) {
     return this.request<{ success: boolean; error?: string }>("/auth/user/resend-verification", {
       method: "POST",
       body: JSON.stringify({ email }),
     })
   }
-
   // ================== UNIVERSITIES ==================
   async getUniversities() {
     return this.request<University[]>("/questions/universities")
   }
-
   async createUniversity(name: string, nameAz?: string, nameEn?: string, nameRu?: string) {
     return this.request<University>("/questions/university", {
       method: "POST",
       body: JSON.stringify({ name, nameAz, nameEn, nameRu }),
     })
   }
-
   async uploadUniversityLogo(universityId: string, file: File) {
     const fd = new FormData()
     fd.append("file", file)
-
     return this.request<University>(`/questions/university/${encodeURIComponent(universityId)}/logo`, {
       method: "POST",
       body: fd,
     })
   }
-
   async updateUniversity(
     universityId: string,
     data: { name?: string; nameAz?: string; nameEn?: string; nameRu?: string; logo?: string | null },
@@ -723,25 +608,21 @@ class ApiClient {
       body: JSON.stringify(data),
     })
   }
-
   async deleteUniversity(universityId: string) {
     return this.request<DeleteOkResponse>(`/questions/university/${encodeURIComponent(universityId)}`, {
       method: "DELETE",
     })
   }
-
   // ================== SUBJECTS ==================
   async getSubjects() {
     return this.request<Subject[]>("/questions/subjects")
   }
-
   async createSubject(name: string, nameAz?: string, nameEn?: string, nameRu?: string) {
     return this.request<Subject>("/questions/subject", {
       method: "POST",
       body: JSON.stringify({ name, nameAz, nameEn, nameRu }),
     })
   }
-
   async updateSubject(
     subjectId: string,
     data: { name?: string; nameAz?: string; nameEn?: string; nameRu?: string },
@@ -751,13 +632,11 @@ class ApiClient {
       body: JSON.stringify(data),
     })
   }
-
   async deleteSubject(subjectId: string) {
     return this.request<DeleteOkResponse>(`/questions/subject/${encodeURIComponent(subjectId)}`, {
       method: "DELETE",
     })
   }
-
   // ================== EXAMS / QUESTIONS ==================
   async getExamsByFilter(universityId?: string, subjectId?: string, year?: number) {
     const params = new URLSearchParams()
@@ -767,7 +646,6 @@ class ApiClient {
     const qs = params.toString()
     return this.request<Exam[]>(`/questions/exams${qs ? `?${qs}` : ""}`)
   }
-
   async updateExam(bankId: string, payload: UpdateExamPayload) {
     return this.request<Exam>(`/questions/bank/${encodeURIComponent(bankId)}`, {
       method: "PATCH",
@@ -786,8 +664,6 @@ class ApiClient {
     const qs = params.toString() ? `?${params.toString()}` : '';
     return this.request<{ attempts: any[] }>(`/users/${encodeURIComponent(String(userId))}/attempts${qs}`);
   }
-
-
   async getAttemptReview(attemptId: string, userId: number) {
     return this.request<AttemptReviewResponse>(
       `/attempts/${encodeURIComponent(attemptId)}/review?userId=${encodeURIComponent(String(userId))}`,
@@ -801,28 +677,24 @@ class ApiClient {
     const data = await this.request<{ years: number[] }>("/questions/years" + (query ? "?" + query : ""))
     return data.years || []
   }
-
   async getExamYearsByUniversity(universityId: string, subjectId?: string) {
     const params: { universityId?: string; subjectId?: string } = {};
     if (universityId) params.universityId = universityId;
     if (subjectId) params.subjectId = subjectId;
     return this.getExamYears(params);
   }
-
   async createExam(data: { title: string; universityId: string; subjectId: string; year: number; price: number; questionCount: number; random: boolean; durationMinutes: number; type: "TEST" | "WRITING" }) {
     return this.request<Exam>("/questions/exam", {
       method: "POST",
       body: JSON.stringify(data),
     })
   }
-
   async getExamQuestions(examId: string) {
     if (!examId || examId === "NaN" || examId === "undefined" || examId === "null") {
       throw new Error(`Invalid examId: "${examId}"`)
     }
     return this.request<any>(`/questions/exam/${encodeURIComponent(examId)}`)
   }
-
   async importQuestionsDirect(bankId: string, payload: ImportDirectPayload) {
     return this.request<{ count: number; questions: { id: string }[] }>(
       `/banks/${encodeURIComponent(bankId)}/questions/import-direct`,
@@ -832,38 +704,32 @@ class ApiClient {
       },
     )
   }
-
   // ================== ADMIN: QUESTIONS CRUD ==================
   async listBankQuestions(bankId: string) {
     return this.request<ListBankQuestionsResponse>(`/questions/bank/${encodeURIComponent(bankId)}/questions`)
   }
-
   async createQuestion(bankId: string, payload: CreateQuestionPayload) {
     return this.request<AdminQuestion>(`/questions/bank/${encodeURIComponent(bankId)}/question`, {
       method: "POST",
       body: JSON.stringify(payload),
     })
   }
-
   async updateQuestion(questionId: string, payload: UpdateQuestionPayload) {
     return this.request<AdminQuestion>(`/questions/question/${encodeURIComponent(questionId)}`, {
       method: "PATCH",
       body: JSON.stringify(payload),
     })
   }
-
   async deleteQuestion(questionId: string) {
     return this.request<DeleteOkResponse>(`/questions/question/${encodeURIComponent(questionId)}`, {
       method: "DELETE",
     })
   }
-
   async deleteBank(bankId: string) {
     return this.request<DeleteOkResponse>(`/questions/bank/${encodeURIComponent(bankId)}`, {
       method: "DELETE",
     })
   }
-
   // ================== ATTEMPTS ==================
   async createAttempt(bankId: string, userId: number, token: string) {
     return this.request<CreateAttemptResponse>(`/banks/${encodeURIComponent(bankId)}/attempts`, {
@@ -885,19 +751,15 @@ class ApiClient {
       }
     )
   }
-
-
   async revokeExamToken(bankId: string, userId: number, token: string) {
     return this.request<{ ok: true; revoked: boolean }>(`/banks/${encodeURIComponent(bankId)}/exam/revoke`, {
       method: "POST",
       json: { userId, token },
     })
   }
-
   async getUserAttempts(userId: number) {
     return this.request<UserAttemptsResponse>(`/users/${userId}/attempts`)
   }
-
   async getExams(params: {
     universityId?: string
     subjectId?: string
@@ -913,11 +775,9 @@ class ApiClient {
     if (params.search) sp.set("search", params.search)
     if (params.page) sp.set("page", String(params.page))
     if (params.limit) sp.set("limit", String(params.limit))
-
     const query = sp.toString()
     return this.request<Exam[]>(`/questions/exams${query ? "?" + query : ""}`)
   }
-
   async getExamsForAdmin(params: {
     universityId?: string
     subjectId?: string
@@ -933,25 +793,21 @@ class ApiClient {
     if (params.search) sp.set("search", params.search)
     if (params.page) sp.set("page", String(params.page))
     if (params.limit) sp.set("limit", String(params.limit))
-
     const query = sp.toString()
     return this.request<Exam[]>(`/questions/exams-admin${query ? "?" + query : ""}`)
   }
-
   async createExamToken(bankId: string, userId: number | string) {
     return this.request<{ ok: true; token: string; expiresAt: string }>(
       `/banks/${bankId}/exam-token`,
       { method: "POST", json: { userId } }
     )
   }
-
   async createAttemptWithToken(bankId: string, userId: number, token: string) {
     return this.request<CreateAttemptResponse>(`/banks/${encodeURIComponent(bankId)}/attempts`, {
       method: "POST",
       json: { userId, token },
     })
   }
-
   async deleteExamToken(bankId: string, userId: number, token: string, keepalive = false) {
     return this.request<{ ok: true; deleted: boolean }>(`/banks/${encodeURIComponent(bankId)}/exam-token/delete`, {
       method: "POST",
@@ -959,7 +815,6 @@ class ApiClient {
       keepalive,
     })
   }
-
   async getAttemptQuestions(attemptId: string, userId: number) {
     return this.request<{ questions: ExamQuestion[] }>(
       `/attempts/${encodeURIComponent(attemptId)}/questions?userId=${encodeURIComponent(String(userId))}`,
@@ -973,17 +828,13 @@ class ApiClient {
     flag: boolean = false
   ) {
     const payload: Record<string, any> = { questionId, flag }
-
     if (selectedOptionId != null) payload.selectedOptionId = selectedOptionId
     if (studentTextAnswer != null) payload.studentTextAnswer = studentTextAnswer
-
     return this.request<AnswerResponse>(
       `/attempts/${encodeURIComponent(attemptId)}/answer`,
       { method: "POST", json: payload }
     )
   }
-
-
   async setFlagAttempt(attemptId: string, questionId: string, flag: boolean) {
     return this.request(
       `/attempts/${encodeURIComponent(attemptId)}/answers/${encodeURIComponent(questionId)}/flag`,
@@ -993,51 +844,41 @@ class ApiClient {
       },
     )
   }
-
   async finishAttempt(attemptId: string) {
     return this.request<{ attemptId: string; status: string; score: number; total: number }>(
       `/attempts/${encodeURIComponent(attemptId)}/finish`,
       { method: "POST" },
     )
   }
-
   async getAttemptSummary(attemptId: string) {
     return this.request<AttemptSummary>(`/attempts/${encodeURIComponent(attemptId)}/summary`)
   }
-
   async getAttemptAnswers(attemptId: string) {
     return this.request<{ answers: AttemptAnswer[] }>(`/attempts/${encodeURIComponent(attemptId)}/answers`)
   }
-
   async adminGetUserByPublicId(publicId: string) {
     const qs = new URLSearchParams({ publicId }).toString()
     return this.request<{ ok: true; user: any }>(`/auth/admin/user-by-publicid?${qs}`)
   }
-
-
   async getAdmins(page = 1, limit = 50, search = "") {
     const qs = new URLSearchParams({ page: String(page), limit: String(limit), search }).toString()
     return this.request<AdminListResponse>(`/auth/admins?${qs}`)
   }
-
   async updateAdmin(id: number, payload: UpdateAdminPayload) {
     return this.request<AdminListItem>(`/auth/admin/${id}`, {
       method: "PUT",
       json: payload,
     })
   }
-
   async deleteAdmin(id: number) {
     return this.request<{ ok?: boolean; message?: string }>(`/auth/admin/${id}`, {
       method: "DELETE",
     })
   }
-
   async getBalanceHistory(userId: number, page = 1, limit = 50) {
     const qs = new URLSearchParams({ page: String(page), limit: String(limit) }).toString()
     return this.request<BalanceHistoryResponse>(`/auth/users/${encodeURIComponent(String(userId))}/balance-history?${qs}`)
   }
-
   // ================== PROFILE ==================
   async updateUser(userId: number, payload: { firstName?: string; lastName?: string; email?: string }) {
     return this.request<any>(`/auth/users/${encodeURIComponent(String(userId))}`, {
@@ -1045,60 +886,47 @@ class ApiClient {
       json: payload,
     })
   }
-
   async changePassword(currentPassword: string, newPassword: string) {
     return this.request<{ message: string }>(`/auth/users/password`, {
       method: "PATCH",
       json: { currentPassword, newPassword },
     })
   }
-
-
   // ================== NEWS ==================
   async adminListNews(page = 1, limit = 20) {
     const qs = new URLSearchParams({ page: String(page), limit: String(limit) }).toString()
     return this.request<NewsAdminListResponse>(`/news/admin/all?${qs}`)
   }
-
   async listNews(lang: "az" | "en" | "ru", page = 1, limit = 20) {
     const qs = new URLSearchParams({
       lang,
       page: String(page),
       limit: String(limit),
     }).toString()
-
     return this.request<PublicNewsListResponse>(`/news?${qs}`)
   }
-
-
   async adminCreateNews(payload: CreateNewsPayload) {
     return this.request<NewsAdminItem>(`/news/admin`, { method: "POST", json: payload })
   }
-
   async adminUpdateNews(id: string, payload: UpdateNewsPayload) {
     return this.request<NewsAdminItem>(`/news/admin/${encodeURIComponent(id)}`, { method: "PATCH", json: payload })
   }
-
   async adminPublishNews(id: string) {
     return this.request<NewsAdminItem>(`/news/admin/${encodeURIComponent(id)}/publish`, { method: "PATCH" })
   }
-
   async adminUploadNewsImage(file: File) {
     const fd = new FormData()
     fd.append("file", file)
-
     return this.request<{ url: string }>(`/news/admin/upload-image`, {
       method: "POST",
       body: fd,
     })
   }
-
   async adminDeleteNews(id: string) {
     return this.request<{ ok: true }>(`/news/admin/${encodeURIComponent(id)}`, {
       method: "DELETE",
     })
   }
-
   // ================== CONTACT ==================
   async sendContact(payload: { name: string; email: string; message: string; subject?: unknown; phone?: string }) {
     const cleanPayload = {
@@ -1110,7 +938,6 @@ class ApiClient {
         ? { subject: payload.subject.trim() }
         : {}),
     }
-
     return this.request<{ ok: boolean; message?: unknown }>("/emails/contact", {
       method: "POST",
       json: cleanPayload,
@@ -1121,7 +948,6 @@ class ApiClient {
     const qs = new URLSearchParams({ page: String(page), limit: String(limit) }).toString()
     return this.request<LogsListResponse>(`/logs?${qs}`)
   }
-
   async adminListResults(params?: { page?: number; limit?: number; q?: string; status?: "FINISHED" | "IN_PROGRESS" | "WAITING_AI" }) {
     const sp = new URLSearchParams()
     sp.set("page", String(params?.page ?? 1))
@@ -1130,7 +956,6 @@ class ApiClient {
     if (params?.status) sp.set("status", params.status)
     return this.request<AdminResultsResponse>(`/admin/results?${sp.toString()}`)
   }
-
   // ================== PDF Converter ==================
   async pdfConverter(
     file: File,
@@ -1140,7 +965,6 @@ class ApiClient {
   ) {
     const formData = new FormData();
     formData.append("file", file);
-
     let res: Response;
     try {
       // rawResponse: true -> request Response obyektini qaytaracaq, JSON parse etməyəcək
@@ -1154,27 +978,22 @@ class ApiClient {
       onError("Şəbəkə xətası: " + (e?.message || String(e)));
       return;
     }
-
     if (!res.ok) {
       const txt = await res.text().catch(() => "");
       onError(`Server xətası: ${res.status} ${txt}`);
       return;
     }
-
     const reader = (res as any).body?.getReader?.();
     const decoder = new TextDecoder();
     let buffer = "";
-
     if (reader) {
       try {
         while (true) {
           const { value, done } = await reader.read();
           if (done) break;
           buffer += decoder.decode(value, { stream: true });
-
           const parts = buffer.split("\n\n");
           buffer = parts.pop() || "";
-
           for (const part of parts) {
             const line = part.trim();
             if (!line) continue;
@@ -1200,7 +1019,6 @@ class ApiClient {
             }
           }
         }
-
         if (buffer) {
           const line = buffer.trim();
           if (line.startsWith("data: ")) {
@@ -1220,13 +1038,11 @@ class ApiClient {
             }
           }
         }
-
         onError("Stream bitdi amma 'done' mesajı alınmadı");
       } catch (e: any) {
         onError("Stream oxunarkən xəta: " + (e?.message || String(e)));
       }
     } else {
-      // fallback
       try {
         const text = await res.text();
         const m = text.match(/done:([^\s\r\n]+)/);
@@ -1237,7 +1053,6 @@ class ApiClient {
           onProgress(100);
           return;
         }
-
         const all = Array.from(text.matchAll(/data:\s*([^\s\r\n]+)/g));
         if (all.length) {
           const last = all[all.length - 1][1];
@@ -1258,16 +1073,11 @@ class ApiClient {
             return;
           }
         }
-
         onError("Server cavabı pars edilə bilmədi");
       } catch (e: any) {
         onError("Cavab oxunarkən xəta: " + (e?.message || String(e)));
       }
     }
   }
-
-
-
 }
-
 export const api = new ApiClient()

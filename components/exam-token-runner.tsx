@@ -343,10 +343,6 @@ export default function ExamTokenRunner({
       if (writingOnly) {
         toast.success(t("examRunner.toast.finished_showing_results") || "Imtahan tamamlandı")
         deleteCookie_EXAM_DURATION_COOKIE(EXAM_DURATION_COOKIE)
-        try {
-          localStorage.clear()
-          sessionStorage.clear()
-        } catch { }
         router.replace(`/results`)
         return
       }
@@ -356,10 +352,6 @@ export default function ExamTokenRunner({
 
       toast.success(t("examRunner.toast.finished_showing_results") || "Imtahan tamamlandı")
       deleteCookie_EXAM_DURATION_COOKIE(EXAM_DURATION_COOKIE)
-      try {
-        localStorage.clear()
-        sessionStorage.clear()
-      } catch { }
     } catch (e) {
       toast.error(parseServerError(e))
     } finally {
