@@ -520,7 +520,7 @@ class ApiClient {
 
   private async request<T>(
     endpoint: string,
-    options: (Omit<RequestInit, "body"> & { body?: BodyInit | null; json?: any; skipToast?: boolean }) = {},
+    options: (Omit<RequestInit, "body"> & { body?: BodyInit | null; json?: any; skipToast?: boolean; rawResponse?: boolean }) = {},
   ): Promise<T> {
     if (!API_URL) {
       const msg = this.pickLang(
@@ -609,6 +609,11 @@ class ApiClient {
 
       throw new Error(`${message} (Status: ${res.status})`)
     }
+
+    if ((options as any).rawResponse) {
+      return res as unknown as T
+    }
+
 
     const text = await res.text()
     return (text ? JSON.parse(text) : {}) as T
@@ -1125,6 +1130,143 @@ class ApiClient {
     if (params?.status) sp.set("status", params.status)
     return this.request<AdminResultsResponse>(`/admin/results?${sp.toString()}`)
   }
+
+  // ================== PDF Converter ==================
+  async pdfConverter(
+    file: File,
+    onProgress: (p: number) => void,
+    onDone: (downloadUrl: string) => void,
+    onError: (msg: string) => void
+  ) {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    let res: Response;
+    try {
+      // rawResponse: true -> request Response obyektini qaytaracaq, JSON parse etməyəcək
+      res = await this.request<Response>("/pdfconverter/upload", {
+        method: "POST",
+        body: formData,
+        rawResponse: true,
+        skipToast: true, // stream zamanı toast-ları avtomatik göstərməyək
+      });
+    } catch (e: any) {
+      onError("Şəbəkə xətası: " + (e?.message || String(e)));
+      return;
+    }
+
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "");
+      onError(`Server xətası: ${res.status} ${txt}`);
+      return;
+    }
+
+    const reader = (res as any).body?.getReader?.();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    if (reader) {
+      try {
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+
+          const parts = buffer.split("\n\n");
+          buffer = parts.pop() || "";
+
+          for (const part of parts) {
+            const line = part.trim();
+            if (!line) continue;
+            const prefix = "data:";
+            if (line.startsWith(prefix)) {
+              const data = line.slice(prefix.length).trim();
+              if (data.startsWith("done:")) {
+                const filename = data.slice("done:".length).trim();
+                onProgress(100);
+                const base = (process.env.NEXT_PUBLIC_API_URL_FOR_IMAGE?.replace(/\/$/, "")) || window.location.origin;
+                onDone(`${base}/uploads/pdf-read/${encodeURIComponent(filename)}`);
+                return;
+              } else if (data === "error") {
+                onError("Server xətası");
+                return;
+              } else {
+                const n = Number(data);
+                if (!Number.isNaN(n)) onProgress(n);
+              }
+            } else {
+              const n = Number(line);
+              if (!Number.isNaN(n)) onProgress(n);
+            }
+          }
+        }
+
+        if (buffer) {
+          const line = buffer.trim();
+          if (line.startsWith("data: ")) {
+            const data = line.slice("data: ".length).trim();
+            if (data.startsWith("done:")) {
+              const filename = data.slice("done:".length).trim();
+              const base = window.location.origin;
+              onDone(`${base}/pdfconverter/download/${encodeURIComponent(filename)}`);
+              onProgress(100);
+              return;
+            } else if (!Number.isNaN(Number(data))) {
+              onProgress(Number(data));
+              return;
+            } else if (data === "error") {
+              onError("Server xətası");
+              return;
+            }
+          }
+        }
+
+        onError("Stream bitdi amma 'done' mesajı alınmadı");
+      } catch (e: any) {
+        onError("Stream oxunarkən xəta: " + (e?.message || String(e)));
+      }
+    } else {
+      // fallback
+      try {
+        const text = await res.text();
+        const m = text.match(/done:([^\s\r\n]+)/);
+        if (m) {
+          const filename = m[1];
+          const base = window.location.origin;
+          onDone(`${base}/pdfconverter/download/${encodeURIComponent(filename)}`);
+          onProgress(100);
+          return;
+        }
+
+        const all = Array.from(text.matchAll(/data:\s*([^\s\r\n]+)/g));
+        if (all.length) {
+          const last = all[all.length - 1][1];
+          if (last === "error") {
+            onError("Server xətası");
+            return;
+          }
+          if (last.startsWith("done:")) {
+            const filename = last.slice("done:".length);
+            const base = window.location.origin;
+            onDone(`${base}/pdfconverter/download/${encodeURIComponent(filename)}`);
+            onProgress(100);
+            return;
+          }
+          const n = Number(last);
+          if (!Number.isNaN(n)) {
+            onProgress(n);
+            return;
+          }
+        }
+
+        onError("Server cavabı pars edilə bilmədi");
+      } catch (e: any) {
+        onError("Cavab oxunarkən xəta: " + (e?.message || String(e)));
+      }
+    }
+  }
+
+
 
 }
 

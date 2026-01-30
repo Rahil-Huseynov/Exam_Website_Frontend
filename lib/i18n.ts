@@ -809,6 +809,17 @@ export const translations = {
     "examtype": "İmtahan növü",
     "examTypeTest": "Test",
     "examTypeWritting": "Yazılı",
+    "pdf.title": "PDF Çevirici",
+    "pdf.subtitle": "Sənədlərinizi dərhal çevirin",
+    "pdf.choose": "PDF seçin və ya bura sürüşdürün",
+    "pdf.supported": "Yalnız PDF — maksimum 50MB",
+    "pdf.convert": "PDF Çevir",
+    "pdf.converting": "Çevrilir...",
+    "pdf.processing": "Emal olunur",
+    "pdf.done": "Çevirilmə tamamlandı",
+    "pdf.ready": "Fayl yükləməyə hazırdır",
+    "pdf.download": "Yüklə",
+    "pdf.error": "Xəta baş verdi"
   },
   en: {
     login: "Login",
@@ -1617,9 +1628,19 @@ export const translations = {
     "examtype": "Exam type",
     "examTypeTest": "Test",
     "examTypeWritting": "Writing",
+    "pdf.title": "PDF Converter",
+    "pdf.subtitle": "Upload and transform your documents instantly",
+    "pdf.choose": "Choose PDF or drag here",
+    "pdf.supported": "Supported: PDF files up to 50MB",
+    "pdf.convert": "Convert PDF",
+    "pdf.converting": "Converting...",
+    "pdf.processing": "Processing",
+    "pdf.done": "Conversion complete",
+    "pdf.ready": "Your file is ready to download",
+    "pdf.download": "Download",
+    "pdf.error": "An error occurred"
 
-
-
+  
   },
   ru: {
     login: "Войти",
@@ -2442,8 +2463,18 @@ export const translations = {
     "examtype": "Тип экзамена",
     "examTypeTest": "Тест",
     "examTypeWritting": "Письменный",
-
-  },
+    "pdf.title": "Конвертер PDF",
+    "pdf.subtitle": "Загружайте и преобразуйте документы мгновенно",
+    "pdf.choose": "Выберите PDF или перетащите сюда",
+    "pdf.supported": "Поддерживаются PDF файлы до 50 МБ",
+    "pdf.convert": "Конвертировать PDF",
+    "pdf.converting": "Конвертация...",
+    "pdf.processing": "Обработка",
+    "pdf.done": "Конвертация завершена",
+    "pdf.ready": "Ваш файл готов к загрузке",
+    "pdf.download": "Скачать",
+    "pdf.error": "Произошла ошибка"
+  }
 }
 
 export function useTranslation(locale: Locale = "az") {

@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button"
 import AdminNewsPage from "@/components/admin/news-tab"
 import { LogsTab } from "@/components/admin/logs-tab"
 import { ResultsTab } from "@/components/admin/results-tab"
+import PdfConverterPage from "@/components/admin/pdfconverter"
 
 export default function AdminPage() {
   const { user, loading, logout } = useAuth()
@@ -201,6 +202,10 @@ export default function AdminPage() {
                 <TabsTrigger value="results" className="text-xs sm:text-sm whitespace-nowrap">
                   {t("resultsTitle")}
                 </TabsTrigger>
+
+                <TabsTrigger value="pdfconverter" className="text-xs sm:text-sm whitespace-nowrap">
+                  {t("pdf.title")}
+                </TabsTrigger>
               </TabsList>
 
             </div>
@@ -235,6 +240,9 @@ export default function AdminPage() {
 
             <TabsContent value="results" className="overflow-x-auto">
               <ResultsTab />
+            </TabsContent>
+            <TabsContent value="pdfconverter" className="overflow-x-auto">
+              <PdfConverterPage />
             </TabsContent>
           </Tabs>
         </div>
