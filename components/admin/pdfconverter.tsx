@@ -164,6 +164,7 @@ export default function PdfConverter() {
 
                 <a
                   href={resultUrl}
+                  target="_blank"
                   download
                   className="flex items-center justify-center gap-2 mt-4 px-4 py-2.5 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors"
                 >
