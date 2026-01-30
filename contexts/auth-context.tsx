@@ -10,7 +10,13 @@ import {
   type ReactNode,
 } from "react"
 import { api, type User } from "@/lib/api"
-import { clearAllData, mark401Once, has401Occurred, clear401Flag } from "@/helper/clearalldata"
+import {
+  clearAllData,
+  mark401Once,
+  has401Occurred,
+  clear401Flag,
+} from "@/helper/clearalldata"
+import { useRouter } from "next/navigation"
 
 interface AuthContextType {
   user: User | null
@@ -45,22 +51,14 @@ async function revokeAllExamTokens(userId: number) {
   for (const p of pairs) {
     try {
       await api.revokeExamToken(p.bankId, userId, p.token)
-    } catch {}
-    finally {
+    } catch {
+    } finally {
       clearExamToken(p.bankId)
     }
   }
 }
 
 const RELOAD_GUARD_KEY = "auth_401_reload_done"
-function hasReloadedOnce(): boolean {
-  if (typeof window === "undefined") return false
-  return window.sessionStorage.getItem(RELOAD_GUARD_KEY) === "1"
-}
-function markReloadedOnce() {
-  if (typeof window === "undefined") return
-  window.sessionStorage.setItem(RELOAD_GUARD_KEY, "1")
-}
 function clearReloadGuard() {
   if (typeof window === "undefined") return
   window.sessionStorage.removeItem(RELOAD_GUARD_KEY)
@@ -69,8 +67,11 @@ function clearReloadGuard() {
 const PROFILE_POLL_MS = 10_000
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const router = useRouter()
+
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+
   const didLogoutRef = useRef(false)
   const isReloadingRef = useRef(false)
   const pollingRef = useRef(false)
@@ -106,12 +107,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         clear401Flag()
       } catch (e: any) {
         const msg = String(e?.message || "")
-        const is401 = msg.includes("Status: 401") || msg.includes("(Status: 401)") || msg.includes("401")
+        const is401 =
+          msg.includes("Status: 401") ||
+          msg.includes("(Status: 401)") ||
+          msg.includes("401")
+
         if (is401) {
           handleFirst401()
           setUser(null)
           return
         }
+
         setUser(null)
       } finally {
         if (!silent) setLoading(false)
@@ -132,6 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (isReloadingRef.current) return
       void checkAuth({ silent: true })
     }, PROFILE_POLL_MS)
+
     return () => window.clearInterval(id)
   }, [checkAuth])
 
@@ -140,9 +147,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const profile = await api.getProfile()
       setUser(profile)
       clearReloadGuard()
-      clear401Flag() 
+      clear401Flag()
       return profile
-    } catch (e: any) {
+    } catch {
       setUser(null)
       return null
     }
@@ -165,15 +172,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     api.clearToken()
 
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, { method: "POST" })
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
+        method: "POST",
+      })
     } catch {}
 
     if (typeof window !== "undefined") clearAllData()
 
-    if (typeof window !== "undefined") window.location.reload()
-  }, [user?.id])
+    router.replace("/login") 
+  }, [user?.id, router])
 
-  const value = useMemo(() => ({ user, loading, refreshUser, logout }), [user, loading, refreshUser, logout])
+  const value = useMemo(
+    () => ({ user, loading, refreshUser, logout }),
+    [user, loading, refreshUser, logout],
+  )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
