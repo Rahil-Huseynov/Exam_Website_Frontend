@@ -271,9 +271,6 @@ export default function ContactPage() {
                       <a href="tel:+994515593172" className="text-sm text-muted-foreground hover:text-primary">
                         +994 51 559 31 72
                       </a>
-                      <a href="tel:+994123456789" className="text-sm text-muted-foreground hover:text-primary">
-                        +994123456789
-                      </a>
                     </div>
                   </div>
                 </div>
