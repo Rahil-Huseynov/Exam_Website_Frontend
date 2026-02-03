@@ -118,13 +118,13 @@ export default function HomePage() {
               <p className="text-muted-foreground leading-relaxed">{t("homeFeature3Desc")}</p>
             </Card>
 
-            <Card className="p-8 space-y-4 border-2 hover:border-success/50 transition-all duration-300 hover:shadow-lg hover:shadow-success/10 rounded-3xl bg-gradient-to-br from-card to-success/5">
+            {/* <Card className="p-8 space-y-4 border-2 hover:border-success/50 transition-all duration-300 hover:shadow-lg hover:shadow-success/10 rounded-3xl bg-gradient-to-br from-card to-success/5">
               <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-success to-primary flex items-center justify-center shadow-lg shadow-success/25">
                 <Award className="h-7 w-7 text-success-foreground" />
               </div>
               <h3 className="text-2xl font-semibold">{t("homeFeature4Title")}</h3>
               <p className="text-muted-foreground leading-relaxed">{t("homeFeature4Desc")}</p>
-            </Card>
+            </Card> */}
 
             <Card className="p-8 space-y-4 border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 rounded-3xl bg-gradient-to-br from-card to-primary/5">
               <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/25">

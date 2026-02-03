@@ -239,7 +239,7 @@ export default function ExamsPage() {
   }
 
   const selectedUniversityLabel = useMemo(() => {
-    if (selectedUniversity === "all") return t("filterUniversity")
+    if (selectedUniversity === "all") return t("examtype")
     const uni = universities.find(u => String(u.id) === selectedUniversity)
     return uni ? truncateText(tUniName(uni, locale)) : t("filterUniversity")
   }, [selectedUniversity, universities, locale])
