@@ -40,6 +40,12 @@ export function Navbar() {
       <div className="mx-auto px-4">
         <div className="flex h-20 items-center justify-between">
           <Link
+            href="/"
+            className="text-2xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent"
+          >
+            <img className="w-30" src="/Logo.png" alt="İmtahanVer.net logosu" />
+          </Link>
+          <Link
             href={safeUser ? "/dashboard" : "/"}
             className="text-2xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent"
           >

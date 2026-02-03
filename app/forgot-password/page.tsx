@@ -66,12 +66,12 @@ export default function ForgotPasswordPage() {
       <div className="relative min-h-screen flex items-center justify-center p-4">
         <div className="w-full max-w-md space-y-4">
           <div className="flex items-center justify-between">
-            {/* <Link
+            <Link
               href="/"
               className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-blue-600 bg-clip-text text-transparent flex items-center gap-2"
             >
               <img className="w-40" src="/Logo.png" alt="İmtahanVer.net logosu" />
-            </Link> */}
+            </Link>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

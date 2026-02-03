@@ -252,9 +252,9 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <p className="font-semibold text-lg">{t("email")}</p>
-                      {/* <a href="mailto:info@imtahanver.net" className="text-sm text-muted-foreground hover:text-primary">
+                      <a href="mailto:info@imtahanver.net" className="text-sm text-muted-foreground hover:text-primary">
                         info@imtahanver.net
-                      </a> */}
+                      </a>
                     </div>
                   </div>
                 </div>
@@ -268,9 +268,9 @@ export default function ContactPage() {
                     </div>
                     <div>
                       <p className="font-semibold text-lg">{t("contactPhoneLabel")}</p>
-                      {/* <a href="tel:+994515593172" className="text-sm text-muted-foreground hover:text-primary">
+                      <a href="tel:+994515593172" className="text-sm text-muted-foreground hover:text-primary">
                         +994 51 559 31 72
-                      </a> */}
+                      </a>
                       <a href="tel:+994123456789" className="text-sm text-muted-foreground hover:text-primary">
                         +994123456789
                       </a>

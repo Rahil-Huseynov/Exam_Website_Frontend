@@ -1,16 +1,13 @@
-// lib/editor-types.ts
-
-// Quill tipləri üçün temporary fix
 export interface QuestionContent {
   text: string;
   html?: string;
-  delta?: any; // Delta tipini any olaraq dəyişin
+  delta?: any; 
 }
 
 export interface OptionContent {
   text: string;
   html?: string;
-  delta?: any; // Delta tipini any olaraq dəyişin
+  delta?: any; 
 }
 
 export interface DraftQuestion {

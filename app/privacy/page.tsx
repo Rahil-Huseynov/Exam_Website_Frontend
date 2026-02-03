@@ -70,9 +70,9 @@ export default function PrivacyPage() {
 
               <p className="text-muted-foreground">
                 {t("privacyQuestionsEmailPrefix")}{" "}
-                {/* <a href="mailto:info@imtahanver.net" className="text-primary font-semibold hover:underline">
+                <a href="mailto:info@imtahanver.net" className="text-primary font-semibold hover:underline">
                   info@imtahanver.net
-                </a> */}
+                </a>
               </p>
             </div>
           </Card>

@@ -26,7 +26,6 @@ export default function ResetPasswordPage() {
   const { locale, setLocale } = useLocale()
   const { t } = useTranslation(locale)
 
-  // ✅ t-nin key tipi buradan gəlir (union)
   type TKey = Parameters<typeof t>[0]
 
   const [tokenChecking, setTokenChecking] = useState(true)
@@ -38,7 +37,6 @@ export default function ResetPasswordPage() {
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  // ✅ helper artıq string deyil, TKey qəbul edir
   const toastErr = (key: TKey, fallback: string, opts?: Parameters<typeof toast.error>[1]) =>
     toast.error(t(key) || fallback, { autoClose: 3000, ...opts })
 
@@ -80,7 +78,6 @@ export default function ResetPasswordPage() {
     return () => {
       cancelled = true
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token])
 
   async function handleSubmit(e: React.FormEvent) {
@@ -125,12 +122,12 @@ export default function ResetPasswordPage() {
       <div className="relative min-h-screen flex items-center justify-center p-4">
         <div className="w-full max-w-md space-y-4">
           <div className="flex items-center justify-between">
-            {/* <Link
+            <Link
               href="/"
               className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-blue-600 bg-clip-text text-transparent flex items-center gap-2"
             >
               <img className="w-40" src="/Logo.png" alt="İmtahanVer.net logosu" />
-            </Link> */}
+            </Link>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

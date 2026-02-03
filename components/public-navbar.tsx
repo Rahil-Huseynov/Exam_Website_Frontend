@@ -52,7 +52,7 @@ export function PublicNavbar() {
             style={{ visibility: mobileMenuOpen ? "hidden" : "visible" }}
             onClick={closeMobile}
           >
-            {/* <img className="w-40" src="/Logo.png" alt="İmtahanVer.net logosu" /> */}
+            <img className="w-40" src="/Logo.png" alt="İmtahanVer.net logosu" />
           </Link>
 
           {/* Desktop Menu */}
@@ -166,7 +166,7 @@ export function PublicNavbar() {
                   className="text-2xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent"
                   onClick={closeMobile}
                 >
-                  {/* <img className="w-30" src="/Logo.png" alt="İmtahanVer.net logosu" /> */}
+                  <img className="w-30" src="/Logo.png" alt="İmtahanVer.net logosu" />
                 </Link>
 
                 <Button variant="ghost" size="icon" onClick={closeMobile} aria-label="Close menu">

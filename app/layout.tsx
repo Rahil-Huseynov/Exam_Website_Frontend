@@ -10,8 +10,7 @@ const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  // title: "İmtahanVer.net – Onlayn Universitet İmtahanları",
-    title: "TEST",
+  title: "İmtahanVer.net – Onlayn Universitet İmtahanları",
   description: "Universitet imtahanlarını real suallarla onlayn şəkildə sına",
   icons: {
     icon: [
