@@ -819,7 +819,19 @@ export const translations = {
     "pdf.done": "Çevirilmə tamamlandı",
     "pdf.ready": "Fayl yükləməyə hazırdır",
     "pdf.download": "Yüklə",
-    "pdf.error": "Xəta baş verdi"
+    "pdf.error": "Xəta baş verdi",
+    "title": "PDF Yaradıcı - Suallar və Variantlar",
+    "instructions": "Textarea-ya sualları aşağıdakı formatda yazın:<br />1. Sual mətni (çox sətirli ola bilər)<br />A) Variant 1<br />B) Variant 2<br />...<br />2. Növbəti sual...",
+    "parseButton": "Sualları Parse Et",
+    "generateButton": "PDF Yaradın və Endirin",
+    "noQuestionsAlert": "Əvvəlcə sualları parse edin!",
+    "errorAlert": "PDF yaradılarkən xəta baş verdi. Konsola baxın.",
+    "parsedTitle": "Parse Olunan Suallar ({{count}} ədəd):",
+    "placeholder": "Bütün sualları və variantları buraya yazın...",
+    "fileName": "suallar.pdf",
+    "pdfcreator": "PDF yarat",
+
+
   },
   en: {
     login: "Login",
@@ -1638,9 +1650,21 @@ export const translations = {
     "pdf.done": "Conversion complete",
     "pdf.ready": "Your file is ready to download",
     "pdf.download": "Download",
-    "pdf.error": "An error occurred"
+    "pdf.error": "An error occurred",
+    "title": "PDF Creator - Questions and Options",
+    "instructions": "Enter the questions into the textarea in the following format:<br />1. Question text (can be multi-line)<br />A) Option 1<br />B) Option 2<br />...<br />2. Next question...",
+    "parseButton": "Parse Questions",
+    "generateButton": "Generate and Download PDF",
+    "noQuestionsAlert": "Please parse the questions first!",
+    "errorAlert": "An error occurred while creating the PDF. Check the console.",
+    "parsedTitle": "Parsed Questions ({{count}}):",
+    "placeholder": "Write all questions and options here...",
+    "fileName": "questions.pdf",
+    "pdfcreator": "Create PDF",
 
-  
+
+
+
   },
   ru: {
     login: "Войти",
@@ -2473,7 +2497,18 @@ export const translations = {
     "pdf.done": "Конвертация завершена",
     "pdf.ready": "Ваш файл готов к загрузке",
     "pdf.download": "Скачать",
-    "pdf.error": "Произошла ошибка"
+    "pdf.error": "Произошла ошибка",
+    "title": "Создание PDF - Вопросы и Варианты",
+    "instructions": "Введите вопросы в textarea в следующем формате:<br />1. Текст вопроса (может быть многострочным)<br />A) Вариант 1<br />B) Вариант 2<br />...<br />2. Следующий вопрос...",
+    "parseButton": "Разобрать Вопросы",
+    "generateButton": "Создать и Скачать PDF",
+    "noQuestionsAlert": "Сначала разберите вопросы!",
+    "errorAlert": "Произошла ошибка при создании PDF. Проверьте консоль.",
+    "parsedTitle": "Разобранные Вопросы ({{count}}):",
+    "placeholder": "Напишите все вопросы и варианты здесь...",
+    "fileName": "voprosy.pdf",
+    "pdfcreator": "Создать PDF",
+
   }
 }
 

@@ -19,6 +19,7 @@ import { OptionContent, QuestionContent } from "@/types/editor-types"
 import { useAuth } from "@/contexts/auth-context"
 import { pdfReadForWriting } from "@/lib/pdf-read-for-writing"
 import { pdfParseForWriting } from "@/lib/pdf-parse-for-writing"
+import { Virtuoso } from 'react-virtuoso'
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 type DraftSelectionMap = Record<string, string>
 function normText(s: string) {
@@ -82,7 +83,7 @@ export function ExamsTab() {
   const total = useMemo(() => (Array.isArray(draft) ? draft.length : 0), [draft])
   const [pdfProgress, setPdfProgress] = useState<number>(0)
   const draftScrollRef = useRef<HTMLDivElement | null>(null)
-  const qRefs = useRef<Record<string, HTMLDivElement | null>>({})
+  const listRef = useRef<any>(null)
   const [draftExamType, setDraftExamType] = useState<string>("")
   useEffect(() => {
     loadData()
@@ -99,23 +100,41 @@ export function ExamsTab() {
       return prev
     })
   }, [newOptions.length])
+  useEffect(() => {
+    if (draftModalOpen && draft.length > 0) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const badId = findFirstBadTempId(draft as any[]);
+          if (badId) {
+            const index = (draft as any[]).findIndex(q => q.tempId === badId);
+            if (index !== -1) {
+              listRef.current?.scrollToIndex({ index, align: "start" });
+            }
+          } else {
+            listRef.current?.scrollToIndex({ index: 0, align: "start" });
+          }
+        });
+      });
+    }
+  }, [draftModalOpen, draft, draftExamType])
   function findFirstBadTempId(list: any[]) {
     if (draftExamType === "WRITING") return undefined
     const bad = (Array.isArray(list) ? list : []).find((q) => (q?.options?.length ?? 0) !== 5)
     return bad?.tempId as string | undefined
   }
   function scrollToTempId(tempId: string) {
-    requestAnimationFrame(() => {
+    const index = (draft as any[]).findIndex(q => q.tempId === tempId);
+    if (index !== -1) {
       requestAnimationFrame(() => {
-        const el = qRefs.current[tempId]
-        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" })
-      })
-    })
+        listRef.current?.scrollToIndex({ index, align: "start" });
+      });
+    }
   }
   function scrollToQuestionNo(no: number) {
-    const q = (draft as any[]).find((x, idx) => (x.qNo ?? idx + 1) === no)
-    if (!q?.tempId) return
-    scrollToTempId(q.tempId)
+    const index = (draft as any[]).findIndex((x, idx) => (x.qNo ?? idx + 1) === no)
+    if (index !== -1 && listRef.current) {
+      listRef.current.scrollToIndex({ index, align: "start" })
+    }
   }
   async function loadData() {
     try {
@@ -275,13 +294,6 @@ export function ExamsTab() {
       setSelectedCorrect({})
       setBulkPickText("")
       setDraftModalOpen(true)
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          const badId = findFirstBadTempId(newDraft as any[])
-          if (badId) scrollToTempId(badId)
-          else draftScrollRef.current?.scrollTo({ top: 0, behavior: "auto" })
-        })
-      })
       toastSuccess(t("exams.success.pdf_parsed"))
     } catch (err: any) {
       toastError(err?.message || t("exams.errors.pdf_read_failed"))
@@ -290,7 +302,6 @@ export function ExamsTab() {
     }
   }
   function removeDraftQuestionCascade(qTempId: string) {
-    delete qRefs.current[qTempId]
     setDraft((prev: any) => {
       const list = Array.isArray(prev) ? prev : []
       const next = list
@@ -842,12 +853,6 @@ export function ExamsTab() {
                 variant="outline"
                 onClick={() => {
                   setDraftModalOpen(true)
-                  requestAnimationFrame(() => {
-                    requestAnimationFrame(() => {
-                      const badId = findFirstBadTempId(draft as any[])
-                      if (badId) scrollToTempId(badId)
-                    })
-                  })
                 }}
                 disabled={busy || draft.length === 0}
                 type="button"
@@ -882,8 +887,7 @@ export function ExamsTab() {
       </Card>
       <Dialog open={draftModalOpen} onOpenChange={setDraftModalOpen}>
         <DialogContent
-          ref={draftScrollRef as any}
-          className="!w-[98vw] !h-[96vh] max-w-none max-h-none overflow-y-auto rounded-2xl"
+          className="!w-[98vw] !h-[96vh] max-w-none max-h-none rounded-2xl flex flex-col"
           onOpenAutoFocus={(e) => e.preventDefault()}
           onCloseAutoFocus={(e) => e.preventDefault()}
         >
@@ -894,152 +898,186 @@ export function ExamsTab() {
           {total === 0 ? (
             <div className="text-sm text-muted-foreground">{t("exams.ui.no_draft_yet")}</div>
           ) : (
-            <div className="space-y-4">
-              {(draft as any[]).map((q, idx) => {
-                const no = q.qNo ?? idx + 1
-                const isWriting = draftExamType === "WRITING"
-                return (
-                  <div
-                    key={q.tempId}
-                    id={`draft-q-${no}`}
-                    ref={(el) => {
-                      qRefs.current[q.tempId] = el
-                    }}
-                    className="scroll-mt-24"
-                  >
-                    <Card className="border-muted">
-                      <CardHeader className="flex flex-row items-center justify-between gap-2">
-                        <CardTitle className="text-base">{no}.</CardTitle>
-                        <div className="flex gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => addDraftQuestion(idx + 1)}
-                            disabled={busy}
-                            title={t("exams.ui.add_question_after_this")}
-                          >
-                            <Plus className="h-4 w-4 mr-2" />
-                            {t("exams.ui.add_after")}
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => {
-                              const ok = window.confirm(t("exams.confirm.delete_draft_question"))
-                              if (ok) removeDraftQuestionCascade(q.tempId)
-                            }}
-                            disabled={busy}
-                            title={t("exams.ui.delete_question")}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            {t("common.delete")}
-                          </Button>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                          <Label>{t("exams.ui.question_text")}</Label>
-                          <SimpleMathEditor
-                            value={q.content.text}
-                            onChange={(text) => updateDraftQuestion(q.tempId, { text })}
-                            placeholder={t("exams.ui.question_placeholder")}
-                            className="min-h-[120px]"
-                          />
-                        </div>
-                        {(q.clipUrls || []).length > 0 && (
-                          <div className="space-y-2">
-                            <Label>{t("exams.ui.figures")}</Label>
-                            <div className="grid gap-3 md:grid-cols-2">
-                              {(q.clipUrls || []).map((u: string, i: number) => (
-                                <div key={i} className="relative">
-                                  <img src={getImageSrc(u)} alt={`q-figure-${i}`} className="w-full rounded-lg border bg-white" />
-                                  <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    className="absolute top-1 right-1"
-                                    onClick={() => {
-                                      setDraft(prev => prev.map(pq => pq.tempId === q.tempId ? { ...pq, clipUrls: (pq.clipUrls || []).filter((_, j) => j !== i) } : pq))
-                                    }}
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              ))}
+            <div className="flex-1 min-h-0">
+              <Virtuoso
+                ref={listRef}
+                data={draft as any[]}
+                itemContent={(idx:any, q:any) => {
+                  const no = q.qNo ?? idx + 1
+                  const isWriting = draftExamType === "WRITING"
+                  return (
+                    <div className="mb-4">
+                      <div
+                        key={q.tempId}
+                        id={`draft-q-${no}`}
+                        className="scroll-mt-24"
+                      >
+                        <Card className="border-muted">
+                          <CardHeader className="flex flex-row items-center justify-between gap-2">
+                            <CardTitle className="text-base">{no}.</CardTitle>
+                            <div className="flex gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => addDraftQuestion(idx + 1)}
+                                disabled={busy}
+                                title={t("exams.ui.add_question_after_this")}
+                              >
+                                <Plus className="h-4 w-4 mr-2" />
+                                {t("exams.ui.add_after")}
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => {
+                                  const ok = window.confirm(t("exams.confirm.delete_draft_question"))
+                                  if (ok) removeDraftQuestionCascade(q.tempId)
+                                }}
+                                disabled={busy}
+                                title={t("exams.ui.delete_question")}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                {t("common.delete")}
+                              </Button>
                             </div>
-                          </div>
-                        )}
-                        <div className="space-y-2">
-                          <Label>{t("exams.ui.add_more_images")}</Label>
-                          <Input
-                            type="file"
-                            accept="image/*"
-                            multiple
-                            onChange={(e) => {
-                              const files = e.target.files
-                              if (!files) return
-                              Array.from(files).forEach(f => {
-                                const reader = new FileReader()
-                                reader.onload = () => {
-                                  setDraft(prev => prev.map(pq => pq.tempId === q.tempId ? { ...pq, clipUrls: [...(pq.clipUrls || []), reader.result as string] } : pq))
-                                }
-                                reader.readAsDataURL(f)
-                              })
-                            }}
-                          />
-                        </div>
-                        {isWriting ? (
-                          <div className="space-y-2">
-                            <Label>{t("exams.ui.answer_key")}</Label>
-                            <SimpleMathEditor
-                              value={q.correctAnswerText || ""}
-                              onChange={(text) => setDraft((prev: any) => prev.map((pq: any) => pq.tempId === q.tempId ? { ...pq, correctAnswerText: text } : pq))}
-                              placeholder={t("exams.ui.answer_key_placeholder")}
-                              className="min-h-[120px]"
-                            />
-                          </div>
-                        ) : (
-                          <div className="space-y-2">
-                            <Label>{t("exams.ui.options")}</Label>
-                            {(!Array.isArray(q.options) || q.options.length === 0) && (
-                              <div className="text-sm text-muted-foreground">
-                                {t("exams.ui.no_options_found")}
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                              <Label>{t("exams.ui.question_text")}</Label>
+                              <SimpleMathEditor
+                                value={q.content.text}
+                                onChange={(text) => updateDraftQuestion(q.tempId, { text })}
+                                placeholder={t("exams.ui.question_placeholder")}
+                                className="min-h-[120px]"
+                              />
+                            </div>
+                            {(q.clipUrls || []).length > 0 && (
+                              <div className="space-y-2">
+                                <Label>{t("exams.ui.figures")}</Label>
+                                <div className="grid gap-3 md:grid-cols-2">
+                                  {(q.clipUrls || []).map((u: string, i: number) => (
+                                    <div key={i} className="relative">
+                                      <img src={getImageSrc(u)} alt={`q-figure-${i}`} className="w-full rounded-lg border bg-white" />
+                                      <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        className="absolute top-1 right-1"
+                                        onClick={() => {
+                                          setDraft(prev => prev.map(pq => pq.tempId === q.tempId ? { ...pq, clipUrls: (pq.clipUrls || []).filter((_, j) => j !== i) } : pq))
+                                        }}
+                                      >
+                                        <X className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
                             )}
                             <div className="space-y-2">
-                              {(q.options || []).map((opt: any, oi: number) => {
-                                const checked = selectedCorrect[q.tempId] === opt.tempOptionId
-                                return (
-                                  <div key={opt.tempOptionId} className="flex flex-col gap-2 rounded-lg border p-3">
-                                    <div className="flex items-start gap-2">
-                                      <input
-                                        type="radio"
-                                        name={q.tempId}
-                                        checked={checked}
-                                        onChange={() => setSelectedCorrect((prev) => ({ ...prev, [q.tempId]: opt.tempOptionId }))}
-                                        className="mt-2"
-                                        title={t("exams.ui.correct_answer")}
-                                      />
-                                      <div className="flex-1 space-y-2">
-                                        <SimpleMathEditor
-                                          value={opt.content.text}
-                                          onChange={(text) => updateDraftOption(q.tempId, opt.tempOptionId, { text })}
-                                          placeholder={`${String.fromCharCode(65 + oi)}) ${t("exams.ui.option_n", { n: oi + 1 })}`}
-                                          className="min-h-[80px]"
-                                        />
-                                        {(opt.clipUrls || []).length > 0 && (
-                                          <div className="space-y-2">
-                                            <Label>Images for this Option</Label>
-                                            <div className="grid gap-3 md:grid-cols-2">
-                                              {opt.clipUrls.map((u: string, j: number) => (
-                                                <div key={j} className="relative">
-                                                  <img src={getImageSrc(u)} alt={`opt-figure-${oi}-${j}`} className="w-full rounded-lg border bg-white" />
-                                                  <Button
-                                                    variant="destructive"
-                                                    size="sm"
-                                                    className="absolute top-1 right-1"
-                                                    onClick={() => {
+                              <Label>{t("exams.ui.add_more_images")}</Label>
+                              <Input
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                onChange={(e) => {
+                                  const files = e.target.files
+                                  if (!files) return
+                                  Array.from(files).forEach(f => {
+                                    const reader = new FileReader()
+                                    reader.onload = () => {
+                                      setDraft(prev => prev.map(pq => pq.tempId === q.tempId ? { ...pq, clipUrls: [...(pq.clipUrls || []), reader.result as string] } : pq))
+                                    }
+                                    reader.readAsDataURL(f)
+                                  })
+                                }}
+                              />
+                            </div>
+                            {isWriting ? (
+                              <div className="space-y-2">
+                                <Label>{t("exams.ui.answer_key")}</Label>
+                                <SimpleMathEditor
+                                  value={q.correctAnswerText || ""}
+                                  onChange={(text) => setDraft((prev: any) => prev.map((pq: any) => pq.tempId === q.tempId ? { ...pq, correctAnswerText: text } : pq))}
+                                  placeholder={t("exams.ui.answer_key_placeholder")}
+                                  className="min-h-[120px]"
+                                />
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                <Label>{t("exams.ui.options")}</Label>
+                                {(!Array.isArray(q.options) || q.options.length === 0) && (
+                                  <div className="text-sm text-muted-foreground">
+                                    {t("exams.ui.no_options_found")}
+                                  </div>
+                                )}
+                                <div className="space-y-2">
+                                  {(q.options || []).map((opt: any, oi: number) => {
+                                    const checked = selectedCorrect[q.tempId] === opt.tempOptionId
+                                    return (
+                                      <div key={opt.tempOptionId} className="flex flex-col gap-2 rounded-lg border p-3">
+                                        <div className="flex items-start gap-2">
+                                          <input
+                                            type="radio"
+                                            name={q.tempId}
+                                            checked={checked}
+                                            onChange={() => setSelectedCorrect((prev) => ({ ...prev, [q.tempId]: opt.tempOptionId }))}
+                                            className="mt-2"
+                                            title={t("exams.ui.correct_answer")}
+                                          />
+                                          <div className="flex-1 space-y-2">
+                                            <SimpleMathEditor
+                                              value={opt.content.text}
+                                              onChange={(text) => updateDraftOption(q.tempId, opt.tempOptionId, { text })}
+                                              placeholder={`${String.fromCharCode(65 + oi)}) ${t("exams.ui.option_n", { n: oi + 1 })}`}
+                                              className="min-h-[80px]"
+                                            />
+                                            {(opt.clipUrls || []).length > 0 && (
+                                              <div className="space-y-2">
+                                                <Label>Images for this Option</Label>
+                                                <div className="grid gap-3 md:grid-cols-2">
+                                                  {opt.clipUrls.map((u: string, j: number) => (
+                                                    <div key={j} className="relative">
+                                                      <img src={getImageSrc(u)} alt={`opt-figure-${oi}-${j}`} className="w-full rounded-lg border bg-white" />
+                                                      <Button
+                                                        variant="destructive"
+                                                        size="sm"
+                                                        className="absolute top-1 right-1"
+                                                        onClick={() => {
+                                                          setDraft(prev =>
+                                                            prev.map(pq => {
+                                                              if (pq.tempId !== q.tempId) return pq
+                                                              return {
+                                                                ...pq,
+                                                                options: pq.options.map((po: any) => {
+                                                                  if (po.tempOptionId !== opt.tempOptionId) return po
+                                                                  return { ...po, clipUrls: (po.clipUrls || []).filter((_: any, m: any) => m !== j) }
+                                                                })
+                                                              }
+                                                            })
+                                                          )
+                                                        }}
+                                                      >
+                                                        <X className="h-4 w-4" />
+                                                      </Button>
+                                                    </div>
+                                                  ))}
+                                                </div>
+                                              </div>
+                                            )}
+                                            <div className="space-y-2">
+                                              <Label>Add Image to this Option</Label>
+                                              <Input
+                                                type="file"
+                                                accept="image/*"
+                                                multiple
+                                                onChange={(e) => {
+                                                  const files = e.target.files
+                                                  if (!files) return
+                                                  Array.from(files).forEach(f => {
+                                                    const reader = new FileReader()
+                                                    reader.onload = () => {
                                                       setDraft(prev =>
                                                         prev.map(pq => {
                                                           if (pq.tempId !== q.tempId) return pq
@@ -1047,79 +1085,48 @@ export function ExamsTab() {
                                                             ...pq,
                                                             options: pq.options.map((po: any) => {
                                                               if (po.tempOptionId !== opt.tempOptionId) return po
-                                                              return { ...po, clipUrls: (po.clipUrls || []).filter((_: any, m: any) => m !== j) }
+                                                              return { ...po, clipUrls: [...(po.clipUrls || []), reader.result as string] }
                                                             })
                                                           }
                                                         })
                                                       )
-                                                    }}
-                                                  >
-                                                    <X className="h-4 w-4" />
-                                                  </Button>
-                                                </div>
-                                              ))}
+                                                    }
+                                                    reader.readAsDataURL(f)
+                                                  })
+                                                }}
+                                              />
                                             </div>
                                           </div>
-                                        )}
-                                        <div className="space-y-2">
-                                          <Label>Add Image to this Option</Label>
-                                          <Input
-                                            type="file"
-                                            accept="image/*"
-                                            multiple
-                                            onChange={(e) => {
-                                              const files = e.target.files
-                                              if (!files) return
-                                              Array.from(files).forEach(f => {
-                                                const reader = new FileReader()
-                                                reader.onload = () => {
-                                                  setDraft(prev =>
-                                                    prev.map(pq => {
-                                                      if (pq.tempId !== q.tempId) return pq
-                                                      return {
-                                                        ...pq,
-                                                        options: pq.options.map((po: any) => {
-                                                          if (po.tempOptionId !== opt.tempOptionId) return po
-                                                          return { ...po, clipUrls: [...(po.clipUrls || []), reader.result as string] }
-                                                        })
-                                                      }
-                                                    })
-                                                  )
-                                                }
-                                                reader.readAsDataURL(f)
-                                              })
-                                            }}
-                                          />
+                                          <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => removeDraftOption(q.tempId, opt.tempOptionId)}
+                                            disabled={(q.options || []).length <= 2}
+                                            title={t("exams.ui.remove_option")}
+                                          >
+                                            <X className="h-4 w-4" />
+                                          </Button>
                                         </div>
                                       </div>
-                                      <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={() => removeDraftOption(q.tempId, opt.tempOptionId)}
-                                        disabled={(q.options || []).length <= 2}
-                                        title={t("exams.ui.remove_option")}
-                                      >
-                                        <X className="h-4 w-4" />
-                                      </Button>
-                                    </div>
-                                  </div>
-                                )
-                              })}
-                            </div>
-                            <div className="flex gap-2 pt-2 items-center">
-                              <Button type="button" variant="outline" onClick={() => addDraftOption(q.tempId)}>
-                                <Plus className="h-4 w-4 mr-2" />
-                                {t("exams.ui.add_option")}
-                              </Button>
-                              <div className="text-xs text-muted-foreground">{t("exams.ui.note_min_2_unique")}</div>
-                            </div>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </div>
-                )
-              })}
+                                    )
+                                  })}
+                                </div>
+                                <div className="flex gap-2 pt-2 items-center">
+                                  <Button type="button" variant="outline" onClick={() => addDraftOption(q.tempId)}>
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    {t("exams.ui.add_option")}
+                                  </Button>
+                                  <div className="text-xs text-muted-foreground">{t("exams.ui.note_min_2_unique")}</div>
+                                </div>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      </div>
+                    </div>
+                  )
+                }}
+              />
             </div>
           )}
           {! (draftExamType === "WRITING") && (
