@@ -7,6 +7,7 @@ import "./globals.css"
 import { ToastContainer } from "react-toastify"
 import { MaintenanceWatcher } from "@/components/MaintenanceWatcher"
 import MaintenanceClient from "@/components/MaintenanceClient"
+import { MaintenanceGuard } from "@/components/MaintenanceGuard"
 
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
@@ -44,6 +45,7 @@ export default function RootLayout({
           <AuthProvider>
             <MaintenanceClient />
             <MaintenanceWatcher />
+            <MaintenanceGuard />
             {children}
           </AuthProvider>
 
