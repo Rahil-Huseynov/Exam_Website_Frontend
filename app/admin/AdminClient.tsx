@@ -23,6 +23,7 @@ import { LogsTab } from "@/components/admin/logs-tab"
 import { ResultsTab } from "@/components/admin/results-tab"
 import PdfConverterPage from "@/components/admin/pdfconverter"
 import PDFCreatorPage from "@/components/admin/pdf-creator"
+import SettingsPage from "@/components/admin/settings"
 
 export default function AdminPage() {
   const { user, loading, logout } = useAuth()
@@ -208,8 +209,12 @@ export default function AdminPage() {
                   {t("pdf.title")}
                 </TabsTrigger>
 
-                    <TabsTrigger value="pdfcreator" className="text-xs sm:text-sm whitespace-nowrap">
+                <TabsTrigger value="pdfcreator" className="text-xs sm:text-sm whitespace-nowrap">
                   {t("pdfcreator")}
+                </TabsTrigger>
+
+                <TabsTrigger value="settings" className="text-xs sm:text-sm whitespace-nowrap">
+                  {t("settings")}
                 </TabsTrigger>
               </TabsList>
 
@@ -249,8 +254,11 @@ export default function AdminPage() {
             <TabsContent value="pdfconverter" className="overflow-x-auto">
               <PdfConverterPage />
             </TabsContent>
-             <TabsContent value="pdfcreator" className="overflow-x-auto">
+            <TabsContent value="pdfcreator" className="overflow-x-auto">
               <PDFCreatorPage />
+            </TabsContent>
+            <TabsContent value="settings" className="overflow-x-auto">
+              <SettingsPage />
             </TabsContent>
           </Tabs>
         </div>

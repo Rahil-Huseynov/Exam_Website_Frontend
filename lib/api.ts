@@ -12,6 +12,9 @@ export interface User {
   publicId: string
   role: "user" | "admin" | "superadmin"
 }
+
+export type Feature = { key: string; enabled: boolean };
+
 export type LoginResponse = {
   accessToken?: string
   access_token?: string
@@ -1079,5 +1082,26 @@ class ApiClient {
       }
     }
   }
+
+  // ================== FEATURE ==================
+  async getFeature(key: string): Promise<Feature> {
+    return this.request<Feature>(`/feature/${encodeURIComponent(key)}`);
+  }
+
+  async setFeature(key: string, enabled: boolean): Promise<Feature> {
+    return this.request<Feature>('/feature', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ key, enabled }),
+    });
+  }
+
+  async listFeatures(): Promise<Feature[]> {
+    return this.request<Feature[]>('/feature');
+  }
+
+
 }
 export const api = new ApiClient()

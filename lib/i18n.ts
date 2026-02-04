@@ -830,7 +830,18 @@ export const translations = {
     "placeholder": "Bütün sualları və variantları buraya yazın...",
     "fileName": "suallar.pdf",
     "pdfcreator": "PDF yarat",
-
+    "maintenance.title": "Texniki işlər gedir",
+    "maintenance.description": "Hazırda sistemdə planlı texniki işlər aparılır. Xahiş edirik bir az sonra yenidən cəhd edin.",
+    "maintenance.badge": "Texniki rejim",
+    "settings": "Ayarlar",
+    "settings.title": "Sistem Ayarları",
+    "settings.maintenanceTitle": "Maintenance Mode",
+    "settings.active": "AKTİVDİR",
+    "settings.inactive": "DEAKTİVDİR",
+    "settings.loading": "Yüklənir...",
+    "settings.saving": "Yadda saxlanılır...",
+    "settings.description": "Tətbiq ayarlarını və seçimlərini idarə edin",
+    "settings.maintenanceDesc": "Tətbiq üçün texniki xidmət rejimini aktiv et",
 
   },
   en: {
@@ -1659,9 +1670,18 @@ export const translations = {
     "fileName": "questions.pdf",
     "pdfcreator": "Create PDF",
 
-
-
-
+    "maintenance.title": "Maintenance in progress",
+    "maintenance.description": "The system is currently undergoing scheduled maintenance. Please try again later.",
+    "maintenance.badge": "Maintenance mode",
+    "settings": "Settings",
+    "settings.title": "System Settings",
+    "settings.maintenanceTitle": "Maintenance Mode",
+    "settings.active": "ACTIVE",
+    "settings.inactive": "INACTIVE",
+    "settings.loading": "Loading...",
+    "settings.saving": "Saving...",
+    "settings.description": "Manage your application settings and preferences",
+    "settings.maintenanceDesc": "Toggle maintenance mode for your application",
   },
   ru: {
     login: "Войти",
@@ -2502,7 +2522,19 @@ export const translations = {
     "placeholder": "Напишите все вопросы и варианты здесь...",
     "fileName": "voprosy.pdf",
     "pdfcreator": "Создать PDF",
-
+    "maintenance.title": "Ведутся технические работы",
+    "maintenance.description": "В настоящее время в системе проводятся плановые технические работы. Пожалуйста, попробуйте позже.",
+    "maintenance.badge": "Режим обслуживания",
+    "settings": "Настройки",
+    "settings.title": "Системные настройки",
+    "settings.maintenanceTitle": "Режим обслуживания",
+    "settings.active": "АКТИВНО",
+    "settings.inactive": "НЕАКТИВНО",
+    "settings.loading": "Загрузка...",
+    "settings.saving": "Сохраняется...",
+    "settings.description": "Управляйте настройками и параметрами приложения",
+    "settings.maintenanceDesc": "Включить режим технического обслуживания",
+ 
   }
 }
 

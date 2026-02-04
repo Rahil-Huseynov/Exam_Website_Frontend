@@ -5,6 +5,8 @@ import { AuthProvider } from "@/contexts/auth-context"
 import { LocaleProvider } from "@/contexts/locale-context"
 import "./globals.css"
 import { ToastContainer } from "react-toastify"
+import { MaintenanceWatcher } from "@/components/MaintenanceWatcher"
+import MaintenanceClient from "@/components/MaintenanceClient"
 
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
@@ -39,7 +41,11 @@ export default function RootLayout({
     <html lang="az">
       <body className="font-sans antialiased">
         <LocaleProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <MaintenanceClient />
+            <MaintenanceWatcher />
+            {children}
+          </AuthProvider>
 
           <ToastContainer
             position="top-right"
