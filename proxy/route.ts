@@ -1,7 +1,6 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function middleware(req: NextRequest) {
+export async function GET(req: NextRequest) {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   const res = await fetch(`${API_URL}/feature/maintenance`, {
@@ -9,7 +8,7 @@ export async function middleware(req: NextRequest) {
   });
 
   if (!res.ok) {
-    return NextResponse.next();
+    return NextResponse.redirect(new URL(req.nextUrl.pathname, req.url));
   }
 
   const data: { key: string; enabled: boolean } = await res.json();
@@ -18,9 +17,5 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/maintenance", req.url));
   }
 
-  return NextResponse.next();
+  return NextResponse.redirect(new URL(req.nextUrl.pathname, req.url));
 }
-
-export const config = {
-  matcher: ["/((?!_next|api|maintenance|favicon.ico).*)"],
-};

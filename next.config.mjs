@@ -6,6 +6,14 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  async rewrites() {
+    return [
+      {
+        source: "/:path*",
+        destination: "/proxy",
+      },
+    ];
+  },
 }
 
 export default nextConfig
