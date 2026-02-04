@@ -15,9 +15,9 @@ export function MaintenanceWatcher() {
       const maintenance = localStorage.getItem("maintenance"); 
       if (!maintenance) return;
 
-      if (maintenance === "true") {
-        if (user?.role === "superadmin" || user?.role === "admin") return;
+      if (user?.role === "superadmin" || user?.role === "admin") return;
 
+      if (maintenance === "true") {
         const isAllowed = allowedPaths.some(p => pathname.startsWith(p));
         if (!isAllowed) {
           router.replace("/maintenance");
