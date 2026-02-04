@@ -213,9 +213,12 @@ export default function AdminPage() {
                   {t("pdfcreator")}
                 </TabsTrigger>
 
-                <TabsTrigger value="settings" className="text-xs sm:text-sm whitespace-nowrap">
-                  {t("settings")}
-                </TabsTrigger>
+                {isSuperAdmin && (
+                  <TabsTrigger value="settings" className="text-xs sm:text-sm whitespace-nowrap">
+                    {t("settings")}
+                  </TabsTrigger>
+                )}
+                
               </TabsList>
 
             </div>
@@ -251,12 +254,15 @@ export default function AdminPage() {
             <TabsContent value="results" className="overflow-x-auto">
               <ResultsTab />
             </TabsContent>
+
             <TabsContent value="pdfconverter" className="overflow-x-auto">
               <PdfConverterPage />
             </TabsContent>
+
             <TabsContent value="pdfcreator" className="overflow-x-auto">
               <PDFCreatorPage />
             </TabsContent>
+
             <TabsContent value="settings" className="overflow-x-auto">
               <SettingsPage />
             </TabsContent>

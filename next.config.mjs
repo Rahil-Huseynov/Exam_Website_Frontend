@@ -9,7 +9,7 @@ const nextConfig = {
   async rewrites() {
     return [
       {
-        source: "/:path*",
+        source: "/((?!_next|api|maintenance|favicon.ico).*)",
         destination: "/proxy",
       },
     ];
