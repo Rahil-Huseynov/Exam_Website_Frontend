@@ -85,9 +85,18 @@ export function ExamsTab() {
   const draftScrollRef = useRef<HTMLDivElement | null>(null)
   const listRef = useRef<any>(null)
   const [draftExamType, setDraftExamType] = useState<string>("")
+  const [search, setSearch] = useState("")
+  const [filterUniversityId, setFilterUniversityId] = useState("all")
+  const [filterSubjectId, setFilterSubjectId] = useState("all")
+  const [filterYear, setFilterYear] = useState("")
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
   useEffect(() => {
-    loadData()
+    loadUniversitiesAndSubjects()
   }, [])
+  useEffect(() => {
+    loadExams()
+  }, [page, search, filterUniversityId, filterSubjectId, filterYear])
   useEffect(() => {
     const len = newOptions.length
     setNewOptImages((prev) => {
@@ -136,17 +145,32 @@ export function ExamsTab() {
       listRef.current.scrollToIndex({ index, align: "start" })
     }
   }
-  async function loadData() {
+  async function loadUniversitiesAndSubjects() {
     try {
-      setLoading(true)
-      const [examsData, universitiesData, subjectsData] = await Promise.all([
-        api.getExamsForAdmin(),
+      const [universitiesData, subjectsData] = await Promise.all([
         api.getUniversities(),
         api.getSubjects(),
       ])
-      setExams(examsData)
       setUniversities(universitiesData)
       setSubjects(subjectsData)
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : t("exams.errors.load_data_failed"))
+    }
+  }
+  async function loadExams() {
+    try {
+      setLoading(true)
+      const examsData = await api.getExamsForAdmin({
+        universityId: filterUniversityId === "all" ? undefined : filterUniversityId,
+        subjectId: filterSubjectId === "all" ? undefined : filterSubjectId,
+        year: filterYear ? Number(filterYear) : undefined,
+        search: search.trim() || undefined,
+        page,
+        limit: 10,
+      })
+
+      setExams(examsData)          
+      setTotalPages(1)           
     } catch (err) {
       toastError(err instanceof Error ? err.message : t("exams.errors.load_data_failed"))
     } finally {
@@ -239,7 +263,7 @@ export function ExamsTab() {
         type: "TEST",
       })
       toastSuccess(t("exams.success.exam_created"))
-      await loadData()
+      await loadExams()
     } catch (err) {
       toastError(err instanceof Error ? err.message : t("exams.errors.create_failed"))
     } finally {
@@ -354,7 +378,7 @@ export function ExamsTab() {
       toastSuccess(t("exams.success.saved_to_db"))
       resetDraftState()
       setFile(null)
-      await loadData()
+      await loadExams()
     } catch (err) {
       toastError(err instanceof Error ? err.message : t("exams.errors.commit_failed"))
     } finally {
@@ -415,7 +439,7 @@ export function ExamsTab() {
         random: Boolean(manageExamRandom),
       })
       toastSuccess(t("exams.success.exam_updated"))
-      await loadData()
+      await loadExams()
     } catch (err) {
       toastError(err instanceof Error ? err.message : t("exams.errors.update_failed"))
     } finally {
@@ -458,7 +482,7 @@ export function ExamsTab() {
           setBusy(true)
           await api.deleteBank(bankId)
           toastSuccess(t("exams.success.deleted"))
-          await loadData()
+          await loadExams()
           if (manageBankId === bankId) setManageModalOpen(false)
         } catch (err) {
           toastError(err instanceof Error ? err.message : t("exams.errors.delete_failed"))
@@ -475,7 +499,7 @@ export function ExamsTab() {
           await api.deleteQuestion(questionId)
           setBankQuestions((prev) => prev.filter((x) => x.id !== questionId))
           toastSuccess(t("exams.success.question_deleted"))
-          await loadData()
+          await loadExams()
         } catch (err) {
           toastError(err instanceof Error ? err.message : t("exams.errors.delete_failed"))
         } finally {
@@ -511,7 +535,7 @@ export function ExamsTab() {
         options: updated.options.map((o: any) => ({ ...o, imageUrls: o.images ? o.images.sort((a: any, b: any) => a.sort - b.sort).map((img: any) => img.url) : [] }))
       } : x)))
       toastSuccess(t("exams.success.saved"))
-      await loadData()
+      await loadExams()
     } catch (err) {
       toastError(err instanceof Error ? err.message : t("exams.errors.save_failed"))
     } finally {
@@ -583,7 +607,7 @@ export function ExamsTab() {
       }, ...prev])
       toastSuccess(t("exams.success.question_added"))
       resetAddState()
-      await loadData()
+      await loadExams()
     } catch (err) {
       toastError(err instanceof Error ? err.message : t("exams.errors.add_failed"))
     } finally {
@@ -706,10 +730,10 @@ export function ExamsTab() {
                 <Input type="number" value={examForm.year} onChange={(e) => setExamForm({ ...examForm, year: e.target.value })} disabled={busy} />
               </div>
               <div className="space-y-2">
-                <Label>{t("university")}</Label>
+                <Label>{t("examtype")}</Label>
                 <Select value={examForm.universityId} onValueChange={(v) => setExamForm({ ...examForm, universityId: v })}>
                   <SelectTrigger>
-                    <SelectValue placeholder={t("university")} />
+                    <SelectValue placeholder={t("examtype")} />
                   </SelectTrigger>
                   <SelectContent>
                     {universities.map((u) => (
@@ -902,7 +926,7 @@ export function ExamsTab() {
               <Virtuoso
                 ref={listRef}
                 data={draft as any[]}
-                itemContent={(idx:any, q:any) => {
+                itemContent={(idx: any, q: any) => {
                   const no = q.qNo ?? idx + 1
                   const isWriting = draftExamType === "WRITING"
                   return (
@@ -1129,7 +1153,7 @@ export function ExamsTab() {
               />
             </div>
           )}
-          {! (draftExamType === "WRITING") && (
+          {!(draftExamType === "WRITING") && (
             <div className="mt-4 border-t pt-4 space-y-2">
               <Label>{t("exams.ui.bulk_pick_label")}</Label>
               <div className="flex gap-2">
@@ -1174,6 +1198,50 @@ export function ExamsTab() {
           <CardDescription>{t("exams.ui.existing_desc")}</CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="space-y-4 mb-4">
+            <div className="grid gap-4 md:grid-cols-4">
+              <div className="space-y-2">
+                <Label>{t("search")}</Label>
+                <Input value={search} onChange={(e) => setSearch(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>{t("examtype")}</Label>
+                <Select value={filterUniversityId} onValueChange={setFilterUniversityId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("all")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t("all")}</SelectItem>
+                    {universities.map((u) => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>{t("subject")}</Label>
+                <Select value={filterSubjectId} onValueChange={setFilterSubjectId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("all")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t("all")}</SelectItem>
+                    {subjects.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>{t("year")}</Label>
+                <Input type="number" value={filterYear} onChange={(e) => setFilterYear(e.target.value)} />
+              </div>
+            </div>
+          </div>
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
@@ -1208,6 +1276,19 @@ export function ExamsTab() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+          {!loading && totalPages > 1 && (
+            <div className="flex justify-center items-center gap-4 mt-4">
+              <Button variant="outline" disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
+                {t("previous")}
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                {page} / {totalPages}
+              </span>
+              <Button variant="outline" disabled={page === totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>
+                {t("next")}
+              </Button>
             </div>
           )}
         </CardContent>
