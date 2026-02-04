@@ -1,35 +1,27 @@
 "use client";
-
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { api } from "@/lib/api";
 
-export function useMaintenance(pollInterval = 60_000) {
-  const cancelledRef = useRef(false);
-
+export function useMaintenance() {
   useEffect(() => {
-    cancelledRef.current = false;
-
-    async function check() {
+    async function fetchMaintenance() {
       try {
-        const data = await api.getFeature("maintenance");
-        if (data && (typeof data === "object")) {
-          localStorage.setItem("maintenance", JSON.stringify(data));
-        } else {
-          localStorage.removeItem("maintenance");
+        const data: { key: string; enabled: boolean } = await api.getFeature("maintenance");
+
+        // enabled true/false kimi localStorage-da saxla
+        localStorage.setItem("maintenance", data.enabled ? "true" : "false");
+
+        // redirect flag-ı resetlə yalnız enabled true olduqda
+        if (data.enabled) {
+          localStorage.setItem("maintenance_redirected", "false");
         }
+
       } catch (err) {
-        console.error("Maintenance check failed:", err);
+        console.error("Maintenance check failed", err);
+        localStorage.setItem("maintenance", "false");
       }
     }
 
-    check();
-    const id = setInterval(() => {
-      if (!cancelledRef.current) check();
-    }, pollInterval);
-
-    return () => {
-      cancelledRef.current = true;
-      clearInterval(id);
-    };
-  }, [pollInterval]);
+    fetchMaintenance();
+  }, []);
 }
