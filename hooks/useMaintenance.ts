@@ -28,6 +28,10 @@ export function useMaintenance() {
 
         if (data.enabled) {
           localStorage.setItem("maintenance_redirected", "false");
+
+          if (!pathname.startsWith("/maintenance")) {
+            window.location.reload();
+          }
         } else {
           localStorage.removeItem("maintenance_redirected");
         }
@@ -46,7 +50,7 @@ export function useMaintenance() {
 
     return () => {
       cancelled = true;
-      clearInterval(timer); 
+      clearInterval(timer);
     };
   }, [pathname]);
 }
