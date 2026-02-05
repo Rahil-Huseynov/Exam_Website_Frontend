@@ -17,6 +17,8 @@ export function useMaintenance() {
     let cancelled = false;
     let timer: NodeJS.Timeout;
 
+    const reloadKey = `maintenance_reloaded_${pathname}`;
+
     async function fetchMaintenance() {
       try {
         const data: { key: string; enabled: boolean } =
@@ -29,11 +31,17 @@ export function useMaintenance() {
         if (data.enabled) {
           localStorage.setItem("maintenance_redirected", "false");
 
-          if (!pathname.startsWith("/maintenance")) {
+          if (pathname.startsWith("/maintenance")) return;
+
+          const alreadyReloaded = sessionStorage.getItem(reloadKey);
+
+          if (!alreadyReloaded) {
+            sessionStorage.setItem(reloadKey, "true");
             window.location.reload();
           }
         } else {
           localStorage.removeItem("maintenance_redirected");
+          sessionStorage.removeItem(reloadKey);
         }
       } catch (err) {
         console.error("Maintenance check failed", err);
