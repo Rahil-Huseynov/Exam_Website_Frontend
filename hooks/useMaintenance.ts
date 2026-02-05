@@ -2,13 +2,14 @@
 
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
 import type { User } from "@/lib/api";
 
 export function useMaintenance() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user } = useAuth(); 
 
   useEffect(() => {
     if (pathname.startsWith("/login") || pathname.startsWith("/admin")) {
@@ -31,20 +32,10 @@ export function useMaintenance() {
 
     async function fetchMaintenance() {
       try {
-        const res = await fetch("/api/feature/maintenance", {
-          method: "GET",
-          signal: controller.signal,
-        });
+        const data: { key: string; enabled: boolean } =
+          await api.getFeature("maintenance");
 
         if (cancelled) return;
-
-        if (!res.ok) {
-          localStorage.setItem("maintenance", "false");
-          localStorage.removeItem("maintenance_redirected");
-          return;
-        }
-
-        const data: { key: string; enabled: boolean } = await res.json();
 
         localStorage.setItem("maintenance", data.enabled ? "true" : "false");
 
