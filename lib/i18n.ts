@@ -842,7 +842,15 @@ export const translations = {
     "settings.saving": "Yadda saxlanılır...",
     "settings.description": "Tətbiq ayarlarını və seçimlərini idarə edin",
     "settings.maintenanceDesc": "Tətbiq üçün texniki xidmət rejimini aktiv et",
-
+    "notFound.title": "Səhifə tapılmadı",
+    "notFound.description": "Axtardığınız səhifə tapılmadı. Ola bilər ki, o köçürülüb və ya silinib.",
+    "notFound.badge": "404 — Tapılmadı",
+    "notFound.back": "Ana səhifəyə qayıt",
+    "error.title": "Nəsə səhv getdi",
+    "error.description": "Gözlənilməz bir səhv baş verdi. Yenidən sınaqdan keçirin və ya daha sonra qaytarın.",
+    "error.badge": "Səhv",
+    "error.retry": "Yenidən cəhd et",
+    "error.home": "Ana səhifə"
   },
   en: {
     login: "Login",
@@ -1682,6 +1690,16 @@ export const translations = {
     "settings.saving": "Saving...",
     "settings.description": "Manage your application settings and preferences",
     "settings.maintenanceDesc": "Toggle maintenance mode for your application",
+    "notFound.title": "Page not found",
+    "notFound.description": "The page you are looking for could not be found. It may have been moved or deleted.",
+    "notFound.badge": "404 — Not Found",
+    "notFound.back": "Go back to home",
+    "error.title": "Something went wrong",
+    "error.description": "An unexpected error occurred. Please try again or come back later.",
+    "error.badge": "Error",
+    "error.retry": "Try again",
+    "error.home": "Home",
+
   },
   ru: {
     login: "Войти",
@@ -2534,7 +2552,17 @@ export const translations = {
     "settings.saving": "Сохраняется...",
     "settings.description": "Управляйте настройками и параметрами приложения",
     "settings.maintenanceDesc": "Включить режим технического обслуживания",
- 
+    "notFound.title": "Страница не найдена",
+    "notFound.description": "Запрашиваемая страница не найдена. Возможно, она была перемещена или удалена.",
+    "notFound.badge": "404 — Не найдено",
+    "notFound.back": "Вернуться на главную",
+    "error.title": "Что-то пошло не так",
+    "error.description": "Произошла непредвиденная ошибка. Пожалуйста, попробуйте снова или вернитесь позже.",
+    "error.badge": "Ошибка",
+    "error.retry": "Повторить попытку",
+    "error.home": "Главная",
+
+
   }
 }
 
