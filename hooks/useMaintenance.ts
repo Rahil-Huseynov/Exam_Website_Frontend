@@ -1,16 +1,13 @@
 "use client";
 
 import { useEffect } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 
 export function useMaintenance() {
-  const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
-    if (pathname.startsWith("/login")) return;
-
     let cancelled = false;
     let timer: NodeJS.Timeout;
 
@@ -21,12 +18,15 @@ export function useMaintenance() {
 
         if (cancelled) return;
 
+        const pathname = window.location.pathname;
+
+        if (pathname.startsWith("/login")) return;
+
         if (data.enabled) {
           if (!pathname.startsWith("/maintenance")) {
             router.replace("/maintenance");
           }
         }
-
         else {
           if (pathname.startsWith("/maintenance")) {
             router.replace("/");
@@ -45,5 +45,5 @@ export function useMaintenance() {
       cancelled = true;
       clearInterval(timer);
     };
-  }, [pathname, router]);
+  }, [router]); 
 }
