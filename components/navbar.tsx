@@ -178,13 +178,13 @@ export function Navbar() {
                   )}
 
                   <DropdownMenuSeparator />
-                  <button
+                  <Button
                     onClick={logout}
                     className="flex items-center gap-2 rounded-xl cursor-pointer text-destructive"
                   >
                     <LogOut className="h-4 w-4" />
                     {t("logout")}
-                  </button>
+                  </Button>
                 </DropdownMenuContent>
               </DropdownMenu>
 
