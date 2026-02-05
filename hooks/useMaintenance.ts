@@ -9,53 +9,37 @@ export function useMaintenance() {
   const router = useRouter();
 
   useEffect(() => {
-    if (pathname.startsWith("/login")) {
-      return;
-    }
+    if (pathname.startsWith("/login")) return;
 
     let cancelled = false;
     let timer: NodeJS.Timeout;
 
-    async function fetchMaintenance() {
+    async function checkMaintenance() {
       try {
         const data: { key: string; enabled: boolean } =
           await api.getFeature("maintenance");
 
         if (cancelled) return;
 
-        localStorage.setItem("maintenance", data.enabled ? "true" : "false");
-
         if (data.enabled) {
           if (!pathname.startsWith("/maintenance")) {
-            const alreadyRedirected = sessionStorage.getItem(
-              "maintenance_redirected"
-            );
-
-            if (!alreadyRedirected) {
-              sessionStorage.setItem("maintenance_redirected", "true");
-              router.replace("/maintenance");
-            }
+            router.replace("/maintenance");
           }
         }
 
         else {
-          sessionStorage.removeItem("maintenance_redirected");
-
           if (pathname.startsWith("/maintenance")) {
             router.replace("/");
           }
         }
       } catch (err) {
         console.error("Maintenance check failed", err);
-        if (!cancelled) {
-          localStorage.setItem("maintenance", "false");
-        }
       }
     }
 
-    fetchMaintenance();
+    checkMaintenance();
 
-    timer = setInterval(fetchMaintenance, 10_000);
+    timer = setInterval(checkMaintenance, 10_000);
 
     return () => {
       cancelled = true;
