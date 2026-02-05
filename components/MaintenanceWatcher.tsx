@@ -31,7 +31,6 @@ export function MaintenanceWatcher() {
     }
 
     checkMaintenance();
-
     window.addEventListener("storage", checkMaintenance);
     return () => window.removeEventListener("storage", checkMaintenance);
   }, [pathname, user, router]);

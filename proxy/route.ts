@@ -2,22 +2,23 @@ import { NextRequest, NextResponse } from "next/server";
 
 type FeatureResp = { key: string; enabled: boolean };
 
+function normalizeBase(base?: string) {
+  if (!base) return "";
+  return base.replace(/\/+$/, ""); 
+}
+
 export async function GET(req: NextRequest) {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
-  const originPathHeader = req.headers.get("x-origin-path") || "";
+  const base = normalizeBase(API_URL);
 
+  const originPathHeader = req.headers.get("x-origin-path") || "";
   const referer = req.headers.get("referer") || "";
   let originPath = "";
 
   try {
-    if (originPathHeader) {
-      originPath = originPathHeader;
-    } else if (referer) {
-      originPath = new URL(referer).pathname;
-    } else {
-      originPath = "";
-    }
-  } catch (e) {
+    if (originPathHeader) originPath = originPathHeader;
+    else if (referer) originPath = new URL(referer).pathname;
+  } catch {
     originPath = "";
   }
 
@@ -31,12 +32,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ key: "maintenance", enabled: false } as FeatureResp);
     }
 
-    const res = await fetch(`${API_URL}/feature/maintenance`, {
+    const target = `${base}/feature/maintenance`;
+    const res = await fetch(target, {
       cache: "no-store",
       next: { revalidate: 0 },
     });
 
     if (!res.ok) {
+      console.warn(`Maintenance proxy: ${target} returned ${res.status}`);
       return NextResponse.json({ key: "maintenance", enabled: false } as FeatureResp);
     }
 
