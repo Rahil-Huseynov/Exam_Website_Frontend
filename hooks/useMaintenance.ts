@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 
 export function useMaintenance() {
   const pathname = usePathname();
   const router = useRouter();
+
+  const lastEnabled = useRef<boolean | null>(null);
 
   useEffect(() => {
     if (pathname.startsWith("/login")) return;
@@ -20,6 +22,10 @@ export function useMaintenance() {
           await api.getFeature("maintenance");
 
         if (cancelled) return;
+
+        if (lastEnabled.current === data.enabled) return;
+
+        lastEnabled.current = data.enabled;
 
         if (data.enabled) {
           if (!pathname.startsWith("/maintenance")) {
