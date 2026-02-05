@@ -16,19 +16,19 @@ import { Globe, Menu, Wallet, LogOut, Shield } from "lucide-react"
 import { fromCents, toCents } from "@/lib/utils"
 import { useRouter } from "next/navigation"
 
-function logout() {
-  const router = useRouter()
-
-  if (typeof window !== "undefined") {
-    localStorage.clear();
-  }
-  router.push("/login")
-}
 
 export function Navbar() {
   const { user } = useAuth()
   const { locale, setLocale } = useLocale()
   const { t } = useTranslation(locale)
+  const router = useRouter() 
+
+  const logout = () => {
+    if (typeof window !== "undefined") {
+      localStorage.clear()
+    }
+    router.push("/login")
+  }
 
   const safeUser = user ?? {
     name: t("navbar.guest"),
