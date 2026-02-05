@@ -21,13 +21,13 @@ export function Navbar() {
   const { user } = useAuth()
   const { locale, setLocale } = useLocale()
   const { t } = useTranslation(locale)
-  const router = useRouter() 
+  const router = useRouter()
 
   const logout = () => {
     if (typeof window !== "undefined") {
       localStorage.clear()
     }
-    router.push("/login")
+    window.location.href = "/login"
   }
 
   const safeUser = user ?? {
