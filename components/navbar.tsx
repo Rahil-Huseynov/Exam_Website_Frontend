@@ -204,7 +204,7 @@ export function Navbar() {
               <Button
                 onClick={logout}
                 variant="outline"
-                className="hidden 2xl:inline-flex rounded-full hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 bg-transparent"
+                className="hidden 2xl:inline-flex rounded-full hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 bg-transparent cursor-pointer"
               >
                 <LogOut className="h-4 w-4 mr-2" />
                 {t("logout")}
