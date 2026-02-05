@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
-import { User } from "@/lib/api";
+import type { User } from "@/lib/api";
 
 export function useMaintenance() {
   const pathname = usePathname();
@@ -17,11 +17,10 @@ export function useMaintenance() {
       return;
     }
 
-    const isAdmin =
-      (user as User | null)?.role === "admin" ||
-      (user as User | null)?.role === "superadmin";
+    const role = (user as User | null)?.role;
+    const isPrivileged = role === "admin" || role === "superadmin";
 
-    if (isAdmin) {
+    if (isPrivileged) {
       localStorage.setItem("maintenance", "false");
       localStorage.removeItem("maintenance_redirected");
       return;
@@ -40,7 +39,6 @@ export function useMaintenance() {
         if (cancelled) return;
 
         if (!res.ok) {
-          console.warn("Maintenance proxy returned non-ok status:", res.status);
           localStorage.setItem("maintenance", "false");
           localStorage.removeItem("maintenance_redirected");
           return;
@@ -52,6 +50,7 @@ export function useMaintenance() {
 
         if (data.enabled) {
           localStorage.setItem("maintenance_redirected", "false");
+
           if (!pathname.startsWith("/maintenance")) {
             router.replace("/maintenance");
           }
@@ -60,7 +59,7 @@ export function useMaintenance() {
         }
       } catch (err: any) {
         if (err?.name === "AbortError") return;
-        console.error("Maintenance check failed", err);
+
         if (!cancelled) {
           localStorage.setItem("maintenance", "false");
           localStorage.removeItem("maintenance_redirected");
