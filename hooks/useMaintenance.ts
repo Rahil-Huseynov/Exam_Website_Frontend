@@ -8,7 +8,7 @@ export function useMaintenance() {
   const pathname = usePathname();
   const router = useRouter();
 
-  const lastEnabled = useRef<boolean | null>(null);
+  const lastRedirect = useRef<"toMaintenance" | "toHome" | null>(null);
 
   useEffect(() => {
     if (pathname.startsWith("/login")) return;
@@ -23,19 +23,21 @@ export function useMaintenance() {
 
         if (cancelled) return;
 
-        if (lastEnabled.current === data.enabled) return;
-
-        lastEnabled.current = data.enabled;
-
         if (data.enabled) {
           if (!pathname.startsWith("/maintenance")) {
-            router.replace("/maintenance");
+            if (lastRedirect.current !== "toMaintenance") {
+              lastRedirect.current = "toMaintenance";
+              router.replace("/maintenance");
+            }
           }
         }
 
         else {
           if (pathname.startsWith("/maintenance")) {
-            router.replace("/");
+            if (lastRedirect.current !== "toHome") {
+              lastRedirect.current = "toHome";
+              router.replace("/");
+            }
           }
         }
       } catch (err) {
