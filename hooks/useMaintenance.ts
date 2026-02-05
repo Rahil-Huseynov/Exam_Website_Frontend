@@ -1,14 +1,12 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 
 export function useMaintenance() {
   const pathname = usePathname();
   const router = useRouter();
-
-  const lastRedirect = useRef<"toMaintenance" | "toHome" | null>(null);
 
   useEffect(() => {
     if (pathname.startsWith("/login")) return;
@@ -25,19 +23,13 @@ export function useMaintenance() {
 
         if (data.enabled) {
           if (!pathname.startsWith("/maintenance")) {
-            if (lastRedirect.current !== "toMaintenance") {
-              lastRedirect.current = "toMaintenance";
-              router.replace("/maintenance");
-            }
+            router.replace("/maintenance");
           }
         }
 
         else {
           if (pathname.startsWith("/maintenance")) {
-            if (lastRedirect.current !== "toHome") {
-              lastRedirect.current = "toHome";
-              router.replace("/");
-            }
+            router.replace("/");
           }
         }
       } catch (err) {
