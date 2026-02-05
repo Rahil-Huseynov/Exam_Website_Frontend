@@ -1,6 +1,6 @@
 "use client"
 import type React from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "@/contexts/auth-context"
@@ -21,6 +21,11 @@ export default function LoginPage() {
   const { locale } = useLocale()
   const { t } = useTranslation(locale)
   const router = useRouter()
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.clear();
+    }
+  }, []);
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const em = email.trim()

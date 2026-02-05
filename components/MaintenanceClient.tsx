@@ -3,6 +3,6 @@
 import { useMaintenance } from "@/hooks/useMaintenance";
 
 export default function MaintenanceClient() {
-  useMaintenance();
+  useMaintenance({ skipPaths: ["/login", "/admin"], pollIntervalMs: null });
   return null;
 }
