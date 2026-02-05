@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { api } from "@/lib/api"; 
+import { api } from "@/lib/api";
 
 export function useMaintenance() {
   const pathname = usePathname();
@@ -15,10 +15,12 @@ export function useMaintenance() {
     }
 
     let cancelled = false;
+    let timer: NodeJS.Timeout;
 
     async function fetchMaintenance() {
       try {
-        const data: { key: string; enabled: boolean } = await api.getFeature("maintenance");
+        const data: { key: string; enabled: boolean } =
+          await api.getFeature("maintenance");
 
         if (cancelled) return;
 
@@ -40,8 +42,11 @@ export function useMaintenance() {
 
     fetchMaintenance();
 
+    timer = setInterval(fetchMaintenance, 10_000);
+
     return () => {
       cancelled = true;
+      clearInterval(timer); 
     };
   }, [pathname]);
 }
