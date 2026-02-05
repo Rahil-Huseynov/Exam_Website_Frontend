@@ -2,14 +2,26 @@
 
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { api } from "@/lib/api";
+import { useAuth } from "@/contexts/auth-context";
+import { User } from "@/lib/api";
 
 export function useMaintenance() {
   const pathname = usePathname();
   const router = useRouter();
+  const { user } = useAuth();
 
   useEffect(() => {
     if (pathname.startsWith("/login") || pathname.startsWith("/admin")) {
+      localStorage.setItem("maintenance", "false");
+      localStorage.removeItem("maintenance_redirected");
+      return;
+    }
+
+    const isAdmin =
+      (user as User | null)?.role === "admin" ||
+      (user as User | null)?.role === "superadmin";
+
+    if (isAdmin) {
       localStorage.setItem("maintenance", "false");
       localStorage.removeItem("maintenance_redirected");
       return;
@@ -20,10 +32,21 @@ export function useMaintenance() {
 
     async function fetchMaintenance() {
       try {
-        const data: { key: string; enabled: boolean } =
-          await api.getFeature("maintenance");
+        const res = await fetch("/api/feature/maintenance", {
+          method: "GET",
+          signal: controller.signal,
+        });
 
         if (cancelled) return;
+
+        if (!res.ok) {
+          console.warn("Maintenance proxy returned non-ok status:", res.status);
+          localStorage.setItem("maintenance", "false");
+          localStorage.removeItem("maintenance_redirected");
+          return;
+        }
+
+        const data: { key: string; enabled: boolean } = await res.json();
 
         localStorage.setItem("maintenance", data.enabled ? "true" : "false");
 
@@ -51,5 +74,5 @@ export function useMaintenance() {
       cancelled = true;
       controller.abort();
     };
-  }, [pathname, router]);
+  }, [pathname, router, user]);
 }
