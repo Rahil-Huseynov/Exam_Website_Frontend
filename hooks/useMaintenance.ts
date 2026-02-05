@@ -14,15 +14,13 @@ export function useMaintenance() {
       return;
     }
 
-    let cancelled = false;
-    let timer: NodeJS.Timeout;
+    let timerId: number | undefined;
+    const controller = new AbortController();
 
     async function fetchMaintenance() {
       try {
         const data: { key: string; enabled: boolean } =
           await api.getFeature("maintenance");
-
-        if (cancelled) return;
 
         localStorage.setItem("maintenance", data.enabled ? "true" : "false");
 
@@ -32,21 +30,20 @@ export function useMaintenance() {
           localStorage.removeItem("maintenance_redirected");
         }
       } catch (err) {
-        console.error("Maintenance check failed", err);
-        if (!cancelled) {
-          localStorage.setItem("maintenance", "false");
-          localStorage.removeItem("maintenance_redirected");
+        if ((err as any)?.name === "AbortError") {
+          return;
         }
+        localStorage.setItem("maintenance", "false");
+        localStorage.removeItem("maintenance_redirected");
       }
     }
 
     fetchMaintenance();
-
-    timer = setInterval(fetchMaintenance, 10_000);
+    timerId = window.setInterval(fetchMaintenance, 10_000);
 
     return () => {
-      cancelled = true;
-      clearInterval(timer); 
+      controller.abort();
+      if (timerId !== undefined) window.clearInterval(timerId);
     };
   }, [pathname]);
 }
