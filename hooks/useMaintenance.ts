@@ -1,49 +1,52 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { api } from "@/lib/api";
 
 export function useMaintenance() {
-  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
+    if (pathname.startsWith("/login") || pathname.startsWith("/admin")) {
+      localStorage.setItem("maintenance", "false");
+      localStorage.removeItem("maintenance_redirected");
+      return;
+    }
+
     let cancelled = false;
     let timer: NodeJS.Timeout;
 
-    async function checkMaintenance() {
+    async function fetchMaintenance() {
       try {
         const data: { key: string; enabled: boolean } =
           await api.getFeature("maintenance");
 
         if (cancelled) return;
 
-        const pathname = window.location.pathname;
-
-        if (pathname.startsWith("/login")) return;
+        localStorage.setItem("maintenance", data.enabled ? "true" : "false");
 
         if (data.enabled) {
-          if (!pathname.startsWith("/maintenance")) {
-            router.replace("/maintenance");
-          }
-        }
-        else {
-          if (pathname.startsWith("/maintenance")) {
-            router.replace("/");
-          }
+          localStorage.setItem("maintenance_redirected", "false");
+        } else {
+          localStorage.removeItem("maintenance_redirected");
         }
       } catch (err) {
         console.error("Maintenance check failed", err);
+        if (!cancelled) {
+          localStorage.setItem("maintenance", "false");
+          localStorage.removeItem("maintenance_redirected");
+        }
       }
     }
 
-    checkMaintenance();
+    fetchMaintenance();
 
-    timer = setInterval(checkMaintenance, 10_000);
+    timer = setInterval(fetchMaintenance, 10_000);
 
     return () => {
       cancelled = true;
-      clearInterval(timer);
+      clearInterval(timer); 
     };
-  }, [router]); 
+  }, [pathname]);
 }
