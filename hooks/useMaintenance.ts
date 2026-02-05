@@ -9,8 +9,7 @@ export function useMaintenance() {
   const router = useRouter();
 
   useEffect(() => {
-    if (pathname.startsWith("/login") || pathname.startsWith("/admin")) {
-      localStorage.setItem("maintenance", "false");
+    if (pathname.startsWith("/login")) {
       return;
     }
 
@@ -29,21 +28,18 @@ export function useMaintenance() {
         if (data.enabled) {
           if (!pathname.startsWith("/maintenance")) {
             const alreadyRedirected = sessionStorage.getItem(
-              "maintenance_redirected_to_page"
+              "maintenance_redirected"
             );
 
             if (!alreadyRedirected) {
-              sessionStorage.setItem(
-                "maintenance_redirected_to_page",
-                "true"
-              );
+              sessionStorage.setItem("maintenance_redirected", "true");
               router.replace("/maintenance");
             }
           }
         }
 
         else {
-          sessionStorage.removeItem("maintenance_redirected_to_page");
+          sessionStorage.removeItem("maintenance_redirected");
 
           if (pathname.startsWith("/maintenance")) {
             router.replace("/");
