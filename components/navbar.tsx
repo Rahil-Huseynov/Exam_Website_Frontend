@@ -14,9 +14,19 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Globe, Menu, Wallet, LogOut, Shield } from "lucide-react"
 import { fromCents, toCents } from "@/lib/utils"
+import { useRouter } from "next/navigation"
+
+function logout() {
+  const router = useRouter()
+
+  if (typeof window !== "undefined") {
+    localStorage.clear();
+  }
+  router.push("/login")
+}
 
 export function Navbar() {
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
   const { locale, setLocale } = useLocale()
   const { t } = useTranslation(locale)
 
@@ -168,13 +178,13 @@ export function Navbar() {
                   )}
 
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem
+                  <button
                     onClick={logout}
                     className="flex items-center gap-2 rounded-xl cursor-pointer text-destructive"
                   >
                     <LogOut className="h-4 w-4" />
                     {t("logout")}
-                  </DropdownMenuItem>
+                  </button>
                 </DropdownMenuContent>
               </DropdownMenu>
 
