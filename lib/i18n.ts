@@ -134,7 +134,7 @@ export const translations = {
     dataUsage: "Məlumat istifadəsi",
     dataUsageText: "Məlumatlarınız yalnız xidmət göstərmək və platformanı təkmilləşdirmək üçün istifadə olunur.",
     dataSecurity: "Məlumat təhlükəsizliyi",
-    dataSecurityText: "Məlumatlarınız şifrələnir və təhlükəsiz serverlərde saxlanılır.",
+    dataSecurityText: "Məlumatlarınız şifrələnir və təhlükəsiz serverlərdə saxlanılır.",
     faqTitle: "Tez-tez verilən suallar",
     faqQ1: "Necə qeydiyyatdan keçim?",
     faqA1: "Qeydiyyat səhifəsində e-poçt və şifrə daxil edərək qeydiyyatdan keçə bilərsiniz.",
