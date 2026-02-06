@@ -850,7 +850,16 @@ export const translations = {
     "error.description": "Gözlənilməz bir səhv baş verdi. Yenidən sınaqdan keçirin və ya daha sonra qaytarın.",
     "error.badge": "Səhv",
     "error.retry": "Yenidən cəhd et",
-    "error.home": "Ana səhifə"
+    "error.home": "Ana səhifə",
+    "payment.success.title": "Ödəniş uğurla tamamlandı",
+    "payment.success.description": "Ödənişiniz qəbul edildi və balansınıza əlavə olundu.",
+    "payment.success.badge": "Uğurlu əməliyyat",
+    "payment.error.title": "Ödəniş uğursuz oldu",
+    "payment.error.description": "Ödəniş zamanı xəta baş verdi. Zəhmət olmasa yenidən cəhd edin.",
+    "payment.error.badge": "Uğursuz əməliyyat",
+    "payment.redirect": "{{seconds}} saniyə sonra idarəetmə panelinə yönləndiriləcəksiniz",
+
+ 
   },
   en: {
     login: "Login",
@@ -1699,7 +1708,14 @@ export const translations = {
     "error.badge": "Error",
     "error.retry": "Try again",
     "error.home": "Home",
-
+    "payment.success.title": "Payment completed successfully",
+    "payment.success.description": "Your payment has been accepted and added to your balance.",
+    "payment.success.badge": "Successful transaction",
+    "payment.error.title": "Payment failed",
+    "payment.error.description": "An error occurred during the payment. Please try again.",
+    "payment.error.badge": "Failed transaction",
+    "payment.redirect": "You will be redirected to the dashboard in {{seconds}} seconds",
+  
   },
   ru: {
     login: "Войти",
@@ -2561,8 +2577,15 @@ export const translations = {
     "error.badge": "Ошибка",
     "error.retry": "Повторить попытку",
     "error.home": "Главная",
+    "payment.success.title": "Платёж успешно завершён",
+    "payment.success.description": "Ваш платёж принят и добавлен на ваш баланс.",
+    "payment.success.badge": "Успешная операция",
+    "payment.error.title": "Платёж не выполнен",
+    "payment.error.description": "Во время оплаты произошла ошибка. Пожалуйста, попробуйте ещё раз.",
+    "payment.error.badge": "Неудачная операция",
+    "payment.redirect": "Вы будете перенаправлены на панель управления через {{seconds}} секунд"
 
-
+  
   }
 }
 
