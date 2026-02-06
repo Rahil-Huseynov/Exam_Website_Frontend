@@ -230,7 +230,7 @@ export type CreateNewsPayload = {
   isPublished?: boolean
 }
 export type UpdateNewsPayload = Partial<CreateNewsPayload>
-export type BalanceTxnType = "EXAM_PURCHASE" | "ADMIN_TOPUP"
+export type BalanceTxnType = "EXAM_PURCHASE" | "ADMIN_TOPUP" | "PAYMENT_TOPUP"
 export type BalanceTransactionItem = {
   id: string
   userId: number
@@ -1102,6 +1102,18 @@ class ApiClient {
     return this.request<Feature[]>('/feature');
   }
 
+  // ================== PAYMENT ==================
+  async initiatePayment(
+    userId: number,
+    amount: number,
+    orderId: string,
+    description: string
+  ): Promise<{ data: string }> {
+    return this.request<{ data: string }>("/payment/initiate", {
+      method: "POST",
+      json: { userId, amount, orderId, description },
+    })
+  }
 
 }
 export const api = new ApiClient()

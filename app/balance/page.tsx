@@ -1,18 +1,17 @@
 "use client"
 
+import { useState } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { useLocale } from "@/contexts/locale-context"
 import { useTranslation } from "@/lib/i18n"
-
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-
-import { Wallet, CreditCard, Sparkles, MessageCircle } from "lucide-react"
+import { Wallet, CreditCard, Sparkles, Loader2 } from "lucide-react"
+import { api } from "@/lib/api"
 
 const PRESET_AMOUNTS = [5, 10, 20, 50, 100]
 
@@ -20,32 +19,66 @@ export default function BalancePage() {
   const { user } = useAuth()
   const { locale } = useLocale()
   const { t } = useTranslation(locale)
-
-  const phone = "994515593172"
-  const publicId = user?.publicId || "-"
-  const firstName = user?.firstName || "-"
-  const lastName = user?.lastName || "-"
-
-  const whatsappText = `Salam, balansımı artırmaq istəyirəm. IDim: ${publicId}. Ad: ${firstName}, Soyad: ${lastName}`
-  const WHATSAPP_LINK = `https://wa.me/${phone}?text=${encodeURIComponent(whatsappText)}`
+  const [amount, setAmount] = useState<number | "">("")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
 
   const currentBalance = typeof user?.balance === "number" ? user.balance : Number(user?.balance || 0)
 
+  async function handlePay() {
+    setError("")
+    if (!amount || Number(amount) <= 0) {
+      setError("Məbləğ daxil edin (pozitiv rəqəm)")
+      return
+    }
+    if (!user?.id) {
+      setError("İstifadəçi ID tapılmadı")
+      return
+    }
+
+    setLoading(true)
+    try {
+      const { data } = await api.initiatePayment(
+        user.id,
+        Number(amount),
+        `balance_${user.id}_${Date.now()}`,
+        "Balans artırılması"
+      )
+
+      const form = document.createElement("form")
+      form.method = "POST"
+      form.action = "https://epoint.az/api/1/checkout"
+      form.style.display = "none"
+
+      const input = document.createElement("input")
+      input.type = "hidden"
+      input.name = "data"
+      input.value = data
+
+      form.appendChild(input)
+      document.body.appendChild(form)
+      form.submit()
+    } catch (err: any) {
+      setError(err.message || "Ödəniş başlatmaq alınmadı")
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/5 to-accent/5 flex flex-col relative">
-      {/* NAVBAR: z-50 (always on top) */}
       <div className="fixed top-0 left-0 right-0 z-50">
         <Navbar />
       </div>
-
-      {/* MAIN CONTENT: blur only here (does NOT affect navbar) */}
-      <main className="container mx-auto px-4 py-8 flex-1 blur-[6px] pointer-events-none select-none pt-24">
+      <main className="container mx-auto px-4 py-8 pt-24">
         <div className="max-w-2xl mx-auto space-y-6">
           <div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-violet-600 via-blue-600 to-cyan-600 bg-clip-text text-transparent">
               {t("addBalance")}
             </h1>
-            <p className="text-muted-foreground mt-2 text-lg">{t("balanceSubtitle")}</p>
+            <p className="text-muted-foreground mt-2 text-lg">
+              {t("balanceSubtitle")}
+            </p>
           </div>
 
           <Card className="bg-white/80 dark:bg-gray-950/80 shadow-2xl">
@@ -68,56 +101,56 @@ export default function BalancePage() {
                 {t("selectAmount")}
               </CardTitle>
             </CardHeader>
-
-            <CardContent className="grid grid-cols-3 gap-3">
-              {PRESET_AMOUNTS.map((amount) => (
-                <Button key={amount} variant="outline" className="h-16">
-                  {amount} AZN
-                </Button>
-              ))}
-
-              <div className="col-span-3">
-                <Label>{t("customAmount")}</Label>
-                <Input placeholder="0.00" />
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-3 gap-3">
+                {PRESET_AMOUNTS.map((preset) => (
+                  <Button
+                    key={preset}
+                    variant={amount === preset ? "default" : "outline"}
+                    className="h-16"
+                    onClick={() => setAmount(preset)}
+                    disabled={loading}
+                  >
+                    {preset} AZN
+                  </Button>
+                ))}
               </div>
 
-              <Button className="col-span-3 h-14">
-                <CreditCard className="mr-2 h-5 w-5" />
-                {t("payNow")}
+              <div>
+                <Label className="pb-2">{t("customAmount")}</Label>
+                <Input
+                  type="number"
+                  placeholder="0.00"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value ? Number(e.target.value) : "")}
+                  disabled={loading}
+                />
+              </div>
+
+              {error && <p className="text-red-600 text-center font-medium">{error}</p>}
+
+              <Button
+                className="w-full h-14 text-lg"
+                onClick={handlePay}
+                disabled={loading || !amount || Number(amount) <= 0}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Hazırlanır...
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="mr-2 h-5 w-5" />
+                    {t("payNow")}
+                  </>
+                )}
               </Button>
             </CardContent>
           </Card>
         </div>
       </main>
-
       <Footer />
-
-      {/* WHATSAPP MODAL: z-49 (below navbar) */}
-      <div className="fixed inset-0 z-49 grid place-items-center p-4">
-        {/* overlay (below navbar) */}
-        <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
-
-        {/* modal card */}
-        <div className="relative max-w-md w-full bg-white dark:bg-gray-950 rounded-2xl shadow-2xl p-6 text-center">
-          <div className="mx-auto mb-4 h-14 w-14 rounded-full bg-green-500/10 flex items-center justify-center">
-            <MessageCircle className="h-7 w-7 text-green-600" />
-          </div>
-
-          <h2 className="text-xl font-bold mb-2">{t("balanceWhatsappTitle")}</h2>
-
-          <p className="text-muted-foreground mb-6">{t("balanceWhatsappDesc")}</p>
-
-          <a
-            href={WHATSAPP_LINK}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-3 text-white font-semibold hover:bg-green-700 transition"
-          >
-            <MessageCircle className="h-5 w-5" />
-            {t("balanceWhatsappBtn")}
-          </a>
-        </div>
-      </div>
     </div>
   )
 }
