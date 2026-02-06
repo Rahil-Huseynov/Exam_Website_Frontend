@@ -858,8 +858,9 @@ export const translations = {
     "payment.error.description": "Ödəniş zamanı xəta baş verdi. Zəhmət olmasa yenidən cəhd edin.",
     "payment.error.badge": "Uğursuz əməliyyat",
     "payment.redirect": "{{seconds}} saniyə sonra idarəetmə panelinə yönləndiriləcəksiniz",
+    "payment.goToDashboard": "İdarəetmə panelinə keç",
 
- 
+
   },
   en: {
     login: "Login",
@@ -1715,7 +1716,8 @@ export const translations = {
     "payment.error.description": "An error occurred during the payment. Please try again.",
     "payment.error.badge": "Failed transaction",
     "payment.redirect": "You will be redirected to the dashboard in {{seconds}} seconds",
-  
+    "payment.goToDashboard": "Go to dashboard"
+ 
   },
   ru: {
     login: "Войти",
@@ -2583,7 +2585,8 @@ export const translations = {
     "payment.error.title": "Платёж не выполнен",
     "payment.error.description": "Во время оплаты произошла ошибка. Пожалуйста, попробуйте ещё раз.",
     "payment.error.badge": "Неудачная операция",
-    "payment.redirect": "Вы будете перенаправлены на панель управления через {{seconds}} секунд"
+    "payment.redirect": "Вы будете перенаправлены на панель управления через {{seconds}} секунд",
+    "payment.goToDashboard": "Перейти в панель управления",
 
   
   }
