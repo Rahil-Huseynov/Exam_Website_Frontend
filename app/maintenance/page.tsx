@@ -1,5 +1,6 @@
 "use client";
 
+import { Footer } from "@/components/footer";
 import { Navbar } from "@/components/navbar";
 import { PublicNavbar } from "@/components/public-navbar";
 import { useAuth } from "@/contexts/auth-context";
@@ -137,6 +138,7 @@ export default function MaintenancePage() {
           }
         `}</style>
       </div>
+      <Footer />
     </>
   );
 }
