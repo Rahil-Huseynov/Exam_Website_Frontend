@@ -1,8 +1,7 @@
-// app/payment-success/page.tsx  (or pages/payment-success.tsx) — client component
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 import { Navbar } from "@/components/navbar";
 import { PublicNavbar } from "@/components/public-navbar";
@@ -16,25 +15,18 @@ export default function PaymentSuccessPage() {
   const { user } = useAuth();
 
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const [checking, setChecking] = useState(true);
   const [allowed, setAllowed] = useState(false);
   const [seconds, setSeconds] = useState(5);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  // try multiple common param names
-  const orderId = searchParams?.get("order_id") ?? searchParams?.get("orderId") ?? searchParams?.get("order");
-  // optionally you can pass transaction param if you want
-  const transaction = searchParams?.get("transaction") ?? searchParams?.get("tx");
-
-  // backend verify URL (adjust if your API lives on another origin)
-  const VERIFY_URL =
-    (process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/payments/verify-redirect` : "/api/payments/verify-redirect");
 
   useEffect(() => {
-    // verify redirect with backend
-    const verify = async () => {
+    const run = async () => {
+      const qs = typeof window !== "undefined" ? window.location.search : "";
+      const params = new URLSearchParams(qs);
+      const orderId = params.get("order_id") ?? params.get("orderId") ?? params.get("order");
+      const transaction = params.get("transaction") ?? params.get("tx");
+
       if (!orderId) {
         router.replace("/dashboard");
         return;
@@ -42,38 +34,37 @@ export default function PaymentSuccessPage() {
 
       try {
         setChecking(true);
-        const url = new URL(VERIFY_URL, typeof window !== 'undefined' ? window.location.origin : undefined);
+
+        const base = process.env.NEXT_PUBLIC_API_URL ?? "";
+        const verifyUrl = base ? `${base}/payments/verify-redirect` : `/api/payments/verify-redirect`;
+
+        const url = new URL(verifyUrl, typeof window !== "undefined" ? window.location.origin : undefined);
         url.searchParams.set("orderId", orderId);
         url.searchParams.set("expect", "success");
-
-        // optional: include transaction if present
         if (transaction) url.searchParams.set("transaction", transaction);
 
         const resp = await fetch(url.toString(), { credentials: "include" });
+        if (!resp.ok) {
+          router.replace("/dashboard");
+          return;
+        }
         const json = await resp.json();
-
         if (json && json.allowed) {
           setAllowed(true);
-          setChecking(false);
         } else {
-          setAllowed(false);
-          setChecking(false);
-          setErrorMsg(json?.reason || "Not allowed");
           router.replace("/dashboard");
         }
       } catch (err) {
         console.error("verify error", err);
-        setChecking(false);
-        setErrorMsg("verify_failed");
         router.replace("/dashboard");
+      } finally {
+        setChecking(false);
       }
     };
 
-    verify();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orderId]);
+    run();
+  }, []);
 
-  // start countdown only when allowed
   useEffect(() => {
     if (!allowed) return;
 
@@ -89,12 +80,11 @@ export default function PaymentSuccessPage() {
   if (checking) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div>Yoxlanılır…</div>
+        <div>{t("common.loading") ?? "Yoxlanılır…"}</div>
       </div>
     );
   }
 
-  // if not allowed we already redirected — this is just fallback
   if (!allowed) return null;
 
   return (
@@ -116,9 +106,7 @@ export default function PaymentSuccessPage() {
 
             <span className="badge success">{t("payment.success.badge")}</span>
 
-            <p className="redirect-text">
-              {t("payment.redirect", { seconds })}
-            </p>
+            <p className="redirect-text">{t("payment.redirect", { seconds })}</p>
           </div>
         </div>
 

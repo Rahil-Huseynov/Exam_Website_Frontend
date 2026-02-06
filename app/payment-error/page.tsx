@@ -1,8 +1,7 @@
-// app/payment-error/page.tsx  (or pages/payment-error.tsx) — client component
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 import { Navbar } from "@/components/navbar";
 import { PublicNavbar } from "@/components/public-navbar";
@@ -16,20 +15,18 @@ export default function PaymentErrorPage() {
   const { user } = useAuth();
 
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const [checking, setChecking] = useState(true);
   const [allowed, setAllowed] = useState(false);
   const [seconds, setSeconds] = useState(5);
 
-  const orderId = searchParams?.get("order_id") ?? searchParams?.get("orderId") ?? searchParams?.get("order");
-  const transaction = searchParams?.get("transaction") ?? searchParams?.get("tx");
-
-  const VERIFY_URL =
-    (process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/payments/verify-redirect` : "/api/payments/verify-redirect");
-
   useEffect(() => {
-    const verify = async () => {
+    const run = async () => {
+      const qs = typeof window !== "undefined" ? window.location.search : "";
+      const params = new URLSearchParams(qs);
+      const orderId = params.get("order_id") ?? params.get("orderId") ?? params.get("order");
+      const transaction = params.get("transaction") ?? params.get("tx");
+
       if (!orderId) {
         router.replace("/dashboard");
         return;
@@ -37,33 +34,36 @@ export default function PaymentErrorPage() {
 
       try {
         setChecking(true);
-        const url = new URL(VERIFY_URL, typeof window !== 'undefined' ? window.location.origin : undefined);
+        const base = process.env.NEXT_PUBLIC_API_URL ?? "";
+        const verifyUrl = base ? `${base}/payments/verify-redirect` : `/api/payments/verify-redirect`;
+
+        const url = new URL(verifyUrl, typeof window !== "undefined" ? window.location.origin : undefined);
         url.searchParams.set("orderId", orderId);
         url.searchParams.set("expect", "failed");
-
         if (transaction) url.searchParams.set("transaction", transaction);
 
         const resp = await fetch(url.toString(), { credentials: "include" });
-        const json = await resp.json();
+        if (!resp.ok) {
+          router.replace("/dashboard");
+          return;
+        }
 
+        const json = await resp.json();
         if (json && json.allowed) {
           setAllowed(true);
-          setChecking(false);
         } else {
-          setAllowed(false);
-          setChecking(false);
           router.replace("/dashboard");
         }
       } catch (err) {
         console.error("verify error", err);
-        setChecking(false);
         router.replace("/dashboard");
+      } finally {
+        setChecking(false);
       }
     };
 
-    verify();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orderId]);
+    run();
+  }, []);
 
   useEffect(() => {
     if (!allowed) return;
@@ -78,7 +78,7 @@ export default function PaymentErrorPage() {
   if (checking) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div>Yoxlanılır…</div>
+        <div>{t("common.loading") ?? "Yoxlanılır…"}</div>
       </div>
     );
   }
@@ -143,10 +143,10 @@ export default function PaymentErrorPage() {
           }
 
           .icon-wrapper.error::before {
-            content: '';
+            content: "";
             position: absolute;
             inset: -8px;
-            background: linear-gradient(135deg, rgba(239,68,68,0.15), rgba(239,68,68,0.05));
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.05));
             border-radius: 50%;
             filter: blur(24px);
           }
