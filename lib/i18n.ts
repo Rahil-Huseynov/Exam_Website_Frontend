@@ -859,6 +859,12 @@ export const translations = {
     "payment.error.badge": "Uğursuz əməliyyat",
     "payment.redirect": "{{seconds}} saniyə sonra idarəetmə panelinə yönləndiriləcəksiniz",
     "payment.goToDashboard": "İdarəetmə panelinə keç",
+    "invalidAmount": "Məbləğ düzgün deyil",
+    "pleaseLogin": "Zəhmət olmasa sistemə daxil olun",
+    "redirectingToGateway": "Ödəniş səhifəsinə yönləndirilir...",
+    "paymentLinkNotReceived": "Ödəniş linki alınmadı",
+    "paymentError": "Ödəniş zamanı xəta baş verdi",
+
 
 
   },
@@ -1716,8 +1722,14 @@ export const translations = {
     "payment.error.description": "An error occurred during the payment. Please try again.",
     "payment.error.badge": "Failed transaction",
     "payment.redirect": "You will be redirected to the dashboard in {{seconds}} seconds",
-    "payment.goToDashboard": "Go to dashboard"
- 
+    "payment.goToDashboard": "Go to dashboard",
+    "invalidAmount": "Invalid amount",
+    "pleaseLogin": "Please login",
+    "redirectingToGateway": "Redirecting to payment page...",
+    "paymentLinkNotReceived": "Payment link was not received",
+    "paymentError": "Payment error occurred",
+
+
   },
   ru: {
     login: "Войти",
@@ -2587,8 +2599,14 @@ export const translations = {
     "payment.error.badge": "Неудачная операция",
     "payment.redirect": "Вы будете перенаправлены на панель управления через {{seconds}} секунд",
     "payment.goToDashboard": "Перейти в панель управления",
+    "invalidAmount": "Неверная сумма",
+    "pleaseLogin": "Пожалуйста, войдите в систему",
+    "redirectingToGateway": "Перенаправление на страницу оплаты...",
+    "paymentLinkNotReceived": "Ссылка для оплаты не получена",
+    "paymentError": "Произошла ошибка при оплате",
 
-  
+
+
   }
 }
 

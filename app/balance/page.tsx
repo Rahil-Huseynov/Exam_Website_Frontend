@@ -1,8 +1,10 @@
 "use client"
 
+import { useState } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { useLocale } from "@/contexts/locale-context"
 import { useTranslation } from "@/lib/i18n"
+import { api } from "@/lib/api"
 
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
@@ -12,7 +14,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-import { Wallet, CreditCard, Sparkles, MessageCircle } from "lucide-react"
+import { Wallet, CreditCard, Sparkles } from "lucide-react"
+
+import { ToastContainer, toast } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
 
 const PRESET_AMOUNTS = [5, 10, 20, 50, 100]
 
@@ -21,31 +26,91 @@ export default function BalancePage() {
   const { locale } = useLocale()
   const { t } = useTranslation(locale)
 
-  const phone = "994515593172"
-  const publicId = user?.publicId || "-"
-  const firstName = user?.firstName || "-"
-  const lastName = user?.lastName || "-"
+  const [customAmount, setCustomAmount] = useState("") 
+  const [loading, setLoading] = useState(false)
 
-  const whatsappText = `Salam, balansımı artırmaq istəyirəm. IDim: ${publicId}. Ad: ${firstName}, Soyad: ${lastName}`
-  const WHATSAPP_LINK = `https://wa.me/${phone}?text=${encodeURIComponent(whatsappText)}`
+  const currentBalance =
+    typeof user?.balance === "number" ? user.balance : Number(user?.balance || 0)
 
-  const currentBalance = typeof user?.balance === "number" ? user.balance : Number(user?.balance || 0)
+  const selectedAmount = (() => {
+    const n = parseFloat(customAmount)
+    return Number.isFinite(n) ? n : 0
+  })()
+
+  function handlePresetClick(a: number) {
+    setCustomAmount(String(a))
+  }
+
+  function handleCustomChange(vRaw: string) {
+    let v = vRaw.replace(/[^\d.]/g, "")
+    const parts = v.split(".")
+    if (parts.length > 2) {
+      v = parts[0] + "." + parts.slice(1).join("")
+    }
+    if (parts[1]?.length > 2) {
+      v = parts[0] + "." + parts[1].slice(0, 2)
+    }
+    setCustomAmount(v)
+  }
+
+  async function handlePay() {
+    if (!selectedAmount || selectedAmount <= 0) {
+      toast.error(t("invalidAmount") || "Məbləğ düzgün deyil")
+      return
+    }
+
+    if (!user) {
+      toast.info(t("pleaseLogin") || "Zəhmət olmasa daxil olun")
+      return
+    }
+
+    setLoading(true)
+    try {
+      const orderId = `BALANCE_${user.id}_${Date.now()}`
+      const res = await api.createPayment({
+        amount: selectedAmount,
+        order_id: orderId,
+        description: "Balans artırılması",
+        userId: user.id,
+      })
+
+      const redirect = (res && (res.redirect_url || res.redirectUrl || res.url)) as string | undefined
+
+      if (redirect) {
+        toast.info(t("redirectingToGateway") || "Ödəniş səhifəsinə yönləndirilir...")
+        window.location.href = redirect
+      } else {
+        const serverMsg =
+          (res && (res.message || (res as any).error || JSON.stringify(res))) || ""
+        toast.error(t("paymentLinkNotReceived") || "Ödəniş linki alınmadı")
+        if (serverMsg) {
+          toast.error(serverMsg)
+        }
+      }
+    } catch (err: any) {
+      const msg = err?.message || (t("paymentError") || "Ödəniş zamanı xəta baş verdi")
+      toast.error(msg)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-secondary/5 to-accent/5 flex flex-col relative">
-      {/* NAVBAR: z-50 (always on top) */}
-      <div className="fixed top-0 left-0 right-0 z-50">
-        <Navbar />
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-background via-secondary/5 to-accent/5 flex flex-col">
+      {/* ToastContainer: əgər layihənin rootunda varsa, buradan çıxara bilərsən */}
+      <ToastContainer position="top-right" autoClose={5000} hideProgressBar={false} newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
 
-      {/* MAIN CONTENT: blur only here (does NOT affect navbar) */}
-      <main className="container mx-auto px-4 py-8 flex-1 blur-[6px] pointer-events-none select-none pt-24">
+      <Navbar />
+
+      <main className="container mx-auto px-4 py-8 flex-1 pt-24">
         <div className="max-w-2xl mx-auto space-y-6">
           <div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-violet-600 via-blue-600 to-cyan-600 bg-clip-text text-transparent">
               {t("addBalance")}
             </h1>
-            <p className="text-muted-foreground mt-2 text-lg">{t("balanceSubtitle")}</p>
+            <p className="text-muted-foreground mt-2 text-lg">
+              {t("balanceSubtitle")}
+            </p>
           </div>
 
           <Card className="bg-white/80 dark:bg-gray-950/80 shadow-2xl">
@@ -57,7 +122,9 @@ export default function BalancePage() {
               <Wallet className="h-10 w-10 text-violet-600" />
             </CardHeader>
             <CardContent>
-              <p className="text-4xl font-bold">{currentBalance.toFixed(2)} AZN</p>
+              <p className="text-4xl font-bold">
+                {currentBalance.toFixed(2)} AZN
+              </p>
             </CardContent>
           </Card>
 
@@ -70,20 +137,34 @@ export default function BalancePage() {
             </CardHeader>
 
             <CardContent className="grid grid-cols-3 gap-3">
-              {PRESET_AMOUNTS.map((amount) => (
-                <Button key={amount} variant="outline" className="h-16">
-                  {amount} AZN
+              {PRESET_AMOUNTS.map((amt) => (
+                <Button
+                  key={amt}
+                  variant={selectedAmount === amt ? "default" : "outline"}
+                  className="h-16"
+                  onClick={() => handlePresetClick(amt)}
+                >
+                  {amt} AZN
                 </Button>
               ))}
 
               <div className="col-span-3">
-                <Label>{t("customAmount")}</Label>
-                <Input placeholder="0.00" />
+                <Label className="pb-2">{t("customAmount")}</Label>
+                <Input
+                  placeholder="0.00"
+                  value={customAmount}
+                  inputMode="decimal"
+                  onChange={(e) => handleCustomChange(e.target.value)}
+                />
               </div>
 
-              <Button className="col-span-3 h-14">
+              <Button
+                className="col-span-3 h-14"
+                onClick={handlePay}
+                disabled={loading || selectedAmount <= 0}
+              >
                 <CreditCard className="mr-2 h-5 w-5" />
-                {t("payNow")}
+                {loading ? (t("loading") || "Yüklənir...") : `${t("payNow") || "Ödə"} ${selectedAmount ? `(${selectedAmount} AZN)` : ""}`}
               </Button>
             </CardContent>
           </Card>
@@ -91,33 +172,6 @@ export default function BalancePage() {
       </main>
 
       <Footer />
-
-      {/* WHATSAPP MODAL: z-49 (below navbar) */}
-      <div className="fixed inset-0 z-49 grid place-items-center p-4">
-        {/* overlay (below navbar) */}
-        <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
-
-        {/* modal card */}
-        <div className="relative max-w-md w-full bg-white dark:bg-gray-950 rounded-2xl shadow-2xl p-6 text-center">
-          <div className="mx-auto mb-4 h-14 w-14 rounded-full bg-green-500/10 flex items-center justify-center">
-            <MessageCircle className="h-7 w-7 text-green-600" />
-          </div>
-
-          <h2 className="text-xl font-bold mb-2">{t("balanceWhatsappTitle")}</h2>
-
-          <p className="text-muted-foreground mb-6">{t("balanceWhatsappDesc")}</p>
-
-          <a
-            href={WHATSAPP_LINK}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-3 text-white font-semibold hover:bg-green-700 transition"
-          >
-            <MessageCircle className="h-5 w-5" />
-            {t("balanceWhatsappBtn")}
-          </a>
-        </div>
-      </div>
     </div>
   )
 }
