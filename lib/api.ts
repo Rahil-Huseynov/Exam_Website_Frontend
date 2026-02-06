@@ -1108,8 +1108,8 @@ class ApiClient {
     amount: number,
     orderId: string,
     description: string
-  ): Promise<{ data: string }> {
-    return this.request<{ data: string }>("/payment/initiate", {
+  ): Promise<{ redirect_url: string }> {
+    return this.request<{ redirect_url: string }>("/payment/initiate", {
       method: "POST",
       json: { userId, amount, orderId, description },
     })

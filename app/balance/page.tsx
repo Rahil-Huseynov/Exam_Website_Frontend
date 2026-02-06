@@ -38,26 +38,14 @@ export default function BalancePage() {
 
     setLoading(true)
     try {
-      const { data } = await api.initiatePayment(
+      const { redirect_url } = await api.initiatePayment(
         user.id,
         Number(amount),
         `balance_${user.id}_${Date.now()}`,
         "Balans artırılması"
       )
 
-      const form = document.createElement("form")
-      form.method = "POST"
-      form.action = "https://epoint.az/api/1/checkout"
-      form.style.display = "none"
-
-      const input = document.createElement("input")
-      input.type = "hidden"
-      input.name = "data"
-      input.value = data
-
-      form.appendChild(input)
-      document.body.appendChild(form)
-      form.submit()
+      window.location.href = redirect_url
     } catch (err: any) {
       setError(err.message || "Ödəniş başlatmaq alınmadı")
     } finally {
