@@ -58,21 +58,13 @@ export default function PaymentSuccessClient() {
       searchParams.get("orderId") ??
       searchParams.get("order");
 
-    try {
-      if (orderId) {
-        sessionStorage.removeItem(`payment_token:${orderId}`);
-      }
-      sessionStorage.removeItem("payment_token");
-    } catch (e) {
-    }
-
     const interval = setInterval(() => {
       setSeconds((s) => Math.max(0, s - 1));
     }, 1000);
 
     const timeout = setTimeout(() => {
       router.push("/dashboard");
-    }, 50000);
+    }, 5000);
 
     return () => {
       clearInterval(interval);
