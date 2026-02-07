@@ -14,7 +14,6 @@ export default function PaymentErrorPage() {
   const { t } = useTranslation(locale);
   const { user } = useAuth();
   const searchParams = useSearchParams();
-
   const router = useRouter();
 
   const [seconds, setSeconds] = useState(5);
@@ -28,16 +27,21 @@ export default function PaymentErrorPage() {
 
     let foundKey: string | null = null;
 
-    if (orderId) {
-      const orderKey = `payment_token:${orderId}`;
-      if (sessionStorage.getItem(orderKey)) {
-        foundKey = orderKey;
+    try {
+      if (orderId) {
+        const orderKey = `payment_token:${orderId}`;
+        if (sessionStorage.getItem(orderKey)) {
+          foundKey = orderKey;
+        }
       }
+
+      if (!foundKey && sessionStorage.getItem("payment_token")) {
+        foundKey = "payment_token";
+      }
+    } catch (e) {
+      foundKey = null;
     }
 
-    if (!foundKey && sessionStorage.getItem("payment_token")) {
-      foundKey = "payment_token";
-    }
     if (!foundKey) {
       router.replace(user ? "/dashboard" : "/");
       return;
@@ -46,6 +50,35 @@ export default function PaymentErrorPage() {
     setAllowed(true);
   }, [searchParams, router, user]);
 
+  useEffect(() => {
+    if (!allowed) return;
+
+    const orderId =
+      searchParams.get("order_id") ??
+      searchParams.get("orderId") ??
+      searchParams.get("order");
+
+    try {
+      if (orderId) {
+        sessionStorage.removeItem(`payment_token:${orderId}`);
+      }
+      sessionStorage.removeItem("payment_token");
+    } catch (e) {
+    }
+
+    const interval = setInterval(() => {
+      setSeconds((s) => Math.max(0, s - 1));
+    }, 1000);
+
+    const timeout = setTimeout(() => {
+      router.push("/dashboard");
+    }, 5000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [allowed, searchParams, router]);
 
   if (!allowed) return null;
 
@@ -57,7 +90,7 @@ export default function PaymentErrorPage() {
         <div className="containerspecific">
           <div className="card">
             <div className="icon-wrapper error">
-              <svg className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </div>

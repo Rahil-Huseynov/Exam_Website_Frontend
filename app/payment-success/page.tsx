@@ -13,9 +13,8 @@ export default function PaymentSuccessPage() {
   const { locale } = useLocale();
   const { t } = useTranslation(locale);
   const { user } = useAuth();
-
-  const router = useRouter();
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   const [seconds, setSeconds] = useState(5);
   const [allowed, setAllowed] = useState(false);
@@ -28,16 +27,21 @@ export default function PaymentSuccessPage() {
 
     let foundKey: string | null = null;
 
-    if (orderId) {
-      const orderKey = `payment_token:${orderId}`;
-      if (sessionStorage.getItem(orderKey)) {
-        foundKey = orderKey;
+    try {
+      if (orderId) {
+        const orderKey = `payment_token:${orderId}`;
+        if (sessionStorage.getItem(orderKey)) {
+          foundKey = orderKey;
+        }
       }
+
+      if (!foundKey && sessionStorage.getItem("payment_token")) {
+        foundKey = "payment_token";
+      }
+    } catch (e) {
+      foundKey = null;
     }
 
-    if (!foundKey && sessionStorage.getItem("payment_token")) {
-      foundKey = "payment_token";
-    }
     if (!foundKey) {
       router.replace(user ? "/dashboard" : "/");
       return;
@@ -54,24 +58,16 @@ export default function PaymentSuccessPage() {
       searchParams.get("orderId") ??
       searchParams.get("order");
 
-    if (orderId) {
-      try {
-        sessionStorage.removeItem(`payment_token:${orderId}`);
-      } catch (e) {
-      }
-    }
     try {
+      if (orderId) {
+        sessionStorage.removeItem(`payment_token:${orderId}`);
+      }
       sessionStorage.removeItem("payment_token");
     } catch (e) {
     }
 
     const interval = setInterval(() => {
-      setSeconds((s) => {
-        if (s <= 1) {
-          return 0;
-        }
-        return s - 1;
-      });
+      setSeconds((s) => Math.max(0, s - 1));
     }, 1000);
 
     const timeout = setTimeout(() => {
@@ -94,7 +90,7 @@ export default function PaymentSuccessPage() {
         <div className="containerspecific">
           <div className="card">
             <div className="icon-wrapper success">
-              <svg className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 13l4 4L19 7" />
               </svg>
             </div>
