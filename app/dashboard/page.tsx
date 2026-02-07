@@ -78,6 +78,9 @@ export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth()
   const { locale } = useLocale()
   const { t } = useTranslation(locale)
+  if (typeof window !== "undefined") {
+    sessionStorage.clear();
+  }
 
   const [attempts, setAttempts] = useState<Attempt[]>([])
   const [loading, setLoading] = useState(true)
