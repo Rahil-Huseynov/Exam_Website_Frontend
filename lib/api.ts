@@ -1104,13 +1104,23 @@ class ApiClient {
 
 
   // ================== PAYMENT ==================
-  async createPayment(payload: {
+ async createPayment(payload: {
     amount: number
     order_id: string
     description?: string
     userId?: number
   }) {
     return this.request<any>("/payment/create", {
+      method: "POST",
+      json: payload,
+    })
+  }
+
+  async checkPaymentStatus(payload: {
+    transaction?: string
+    order_id?: string
+  }) {
+    return this.request<any>("/payment/check-status", {
       method: "POST",
       json: payload,
     })

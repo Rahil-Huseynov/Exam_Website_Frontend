@@ -23,7 +23,7 @@ export default function PaymentResultPage() {
   const [seconds, setSeconds] = useState(5);
 
   const VERIFY_URL =
-    (process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/payments/verify-redirect` : "/api/payments/verify-redirect");
+    (process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/payment/verify-redirect` : "/api/payment/verify-redirect");
 
   useEffect(() => {
     const run = async () => {

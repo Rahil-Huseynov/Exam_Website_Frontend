@@ -35,7 +35,7 @@ export default function PaymentErrorPage() {
       try {
         setChecking(true);
         const base = process.env.NEXT_PUBLIC_API_URL ?? "";
-        const verifyUrl = base ? `${base}/payments/verify-redirect` : `/api/payments/verify-redirect`;
+        const verifyUrl = base ? `${base}/payment/verify-redirect` : `/api/payment/verify-redirect`;
 
         const url = new URL(verifyUrl, typeof window !== "undefined" ? window.location.origin : undefined);
         url.searchParams.set("orderId", orderId);
