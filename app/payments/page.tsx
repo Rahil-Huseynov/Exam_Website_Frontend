@@ -47,7 +47,7 @@ function buildDescription(tx: BalanceTransactionItem) {
 }
 
 function mapTx(tx: BalanceTransactionItem): Transaction {
-  const amount = num(tx.amount) 
+  const amount = num(tx.amount)
   const type: UiTxType = tx.type === "ADMIN_TOPUP" ? "deposit" : "purchase"
 
   return {
@@ -68,6 +68,9 @@ export default function PaymentsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const [totalTransactions, setTotalTransactions] = useState<number>(0)
+  const [totalSpent, setTotalSpent] = useState<number>(0)
+
 
   const [page, setPage] = useState(1)
   const [limit] = useState(50)
@@ -92,7 +95,8 @@ export default function PaymentsPage() {
 
       setTotal(res.total || 0)
       setPage(res.page || nextPage)
-
+      setTotalSpent(res.totalSpent)
+      setTotalTransactions(res.totalTransactions)
       if (reset) {
         setTransactions(mapped)
       } else {
@@ -129,13 +133,6 @@ export default function PaymentsPage() {
 
   const balance = num((user as any)?.balance)
 
-  const totalSpent = useMemo(() => {
-    return transactions.reduce((sum, tx) => {
-      if (tx.type !== "purchase") return sum
-      const a = tx.amount
-      return a < 0 ? sum + Math.abs(a) : sum + a
-    }, 0)
-  }, [transactions])
 
   const txCount = transactions.length
 
@@ -186,7 +183,7 @@ export default function PaymentsPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-cyan-600 bg-clip-text text-transparent">
-                  {fmtMoneyAZN(totalSpent)}
+                  {totalSpent} AZN
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
                   {locale === "az" && "Ümumi xərc"}
@@ -207,7 +204,7 @@ export default function PaymentsPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-cyan-600 bg-clip-text text-transparent">
-                  {txCount}
+                  {totalTransactions}
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
                   {locale === "az" && "Ümumi əməliyyat"}
@@ -247,19 +244,35 @@ export default function PaymentsPage() {
                       <div className="flex items-center gap-4">
                         {getTransactionIcon(tx.type)}
                         <div>
-                          <p className="font-medium">{tx.description}</p>
-                          <p className="text-sm text-muted-foreground">{new Date(tx.date).toLocaleString()}</p>
+                          <p className="font-medium break-all [word-break:break-all] [overflow-wrap:anywhere]">{tx.description}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {(() => {
+                              const d = new Date(tx.date);
+                              const day = String(d.getDate()).padStart(2, "0");
+                              const month = String(d.getMonth() + 1).padStart(2, "0");
+                              const year = d.getFullYear();
+                              const hour = String(d.getHours()).padStart(2, "0");
+                              const minute = String(d.getMinutes()).padStart(2, "0");
+
+                              return `${day}-${month}-${year} ${hour}:${minute}`;
+                            })()}
+                          </p>
                         </div>
                       </div>
 
-                      <div className="text-right flex items-center gap-3">
+                      <div className="text-right grid sm:flex items-center gap-3">
                         <Badge variant="secondary" className={getStatusColor(tx.status)}>
                           {t(tx.status)}
                         </Badge>
 
-                        <p className="font-bold text-lg bg-gradient-to-r from-purple-600 to-cyan-600 bg-clip-text text-transparent">
-                          {tx.amount.toFixed(2)} AZN
-                        </p>
+                        <div className="grid sm:flex items-center gap-1">
+                          <p className="font-bold text-lg bg-gradient-to-r from-purple-600 to-cyan-600 bg-clip-text text-transparent">
+                            {tx.amount.toFixed(2)}
+                          </p>
+                          <p className="font-bold text-lg bg-gradient-to-r from-purple-600 to-cyan-600 bg-clip-text text-transparent">
+                            AZN
+                          </p>
+                        </div>
                       </div>
                     </div>
                   ))}

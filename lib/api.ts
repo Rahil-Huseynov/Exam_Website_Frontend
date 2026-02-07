@@ -248,6 +248,8 @@ export type BalanceHistoryResponse = {
   page: number
   limit: number
   total: number
+  totalSpent: number
+  totalTransactions: number
   items: BalanceTransactionItem[]
 }
 export type DraftOption = { tempOptionId: string; text: string }

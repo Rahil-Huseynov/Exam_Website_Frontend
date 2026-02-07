@@ -139,14 +139,19 @@ export default function ResultsPage() {
                             <Clock className="h-4 w-4" />
                             <span className="text-sm">
                               {attempt.finishedAt
-                                ? new Date(attempt.finishedAt).toLocaleString(locale, {
-                                  year: "numeric",
-                                  month: "2-digit",
-                                  day: "2-digit",
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                })
-                                : isWaitingAI ? t("checking") : t("notCompleted")}
+                                ? (() => {
+                                  const d = new Date(attempt.finishedAt);
+                                  const day = String(d.getDate()).padStart(2, "0");
+                                  const month = String(d.getMonth() + 1).padStart(2, "0");
+                                  const year = d.getFullYear();
+                                  const hour = String(d.getHours()).padStart(2, "0");
+                                  const minute = String(d.getMinutes()).padStart(2, "0");
+
+                                  return `${day}-${month}-${year} ${hour}:${minute}`;
+                                })()
+                                : isWaitingAI
+                                  ? t("checking")
+                                  : t("notCompleted")}
                             </span>
                           </div>
                         </div>
