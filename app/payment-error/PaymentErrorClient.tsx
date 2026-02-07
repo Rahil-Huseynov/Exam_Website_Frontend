@@ -72,7 +72,7 @@ export default function PaymentErrorClient() {
 
     const timeout = setTimeout(() => {
       router.push("/dashboard");
-    }, 5000);
+    }, 20000);
 
     return () => {
       clearInterval(interval);

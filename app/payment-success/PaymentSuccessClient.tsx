@@ -72,7 +72,7 @@ export default function PaymentSuccessClient() {
 
     const timeout = setTimeout(() => {
       router.push("/dashboard");
-    }, 5000);
+    }, 50000);
 
     return () => {
       clearInterval(interval);
