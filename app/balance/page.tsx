@@ -26,7 +26,7 @@ export default function BalancePage() {
   const { locale } = useLocale()
   const { t } = useTranslation(locale)
 
-  const [customAmount, setCustomAmount] = useState("") 
+  const [customAmount, setCustomAmount] = useState("")
   const [loading, setLoading] = useState(false)
 
   const currentBalance =
@@ -73,6 +73,10 @@ export default function BalancePage() {
         description: "Balans artırılması",
         userId: user.id,
       })
+
+      if (res.oneTimeToken) {
+        sessionStorage.setItem("payment_token", res.oneTimeToken);
+      }
 
       const redirect = (res && (res.redirect_url || res.redirectUrl || res.url)) as string | undefined
 
