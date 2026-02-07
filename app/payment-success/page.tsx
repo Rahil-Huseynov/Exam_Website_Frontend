@@ -16,57 +16,11 @@ export default function PaymentSuccessPage() {
 
   const router = useRouter();
 
-  const [checking, setChecking] = useState(true);
-  const [allowed, setAllowed] = useState(false);
   const [seconds, setSeconds] = useState(5);
 
-  useEffect(() => {
-    const run = async () => {
-      const qs = typeof window !== "undefined" ? window.location.search : "";
-      const params = new URLSearchParams(qs);
-      const orderId = params.get("order_id") ?? params.get("orderId") ?? params.get("order");
-      const transaction = params.get("transaction") ?? params.get("tx");
 
-      if (!orderId) {
-        router.replace("/dashboard");
-        return;
-      }
-
-      try {
-        setChecking(true);
-
-        const base = process.env.NEXT_PUBLIC_API_URL ?? "";
-        const verifyUrl = base ? `${base}/payment/verify-redirect` : `/api/payment/verify-redirect`;
-
-        const url = new URL(verifyUrl, typeof window !== "undefined" ? window.location.origin : undefined);
-        url.searchParams.set("orderId", orderId);
-        url.searchParams.set("expect", "success");
-        if (transaction) url.searchParams.set("transaction", transaction);
-
-        const resp = await fetch(url.toString(), { credentials: "include" });
-        if (!resp.ok) {
-          router.replace("/dashboard");
-          return;
-        }
-        const json = await resp.json();
-        if (json && json.allowed) {
-          setAllowed(true);
-        } else {
-          router.replace("/dashboard");
-        }
-      } catch (err) {
-        console.error("verify error", err);
-        router.replace("/dashboard");
-      } finally {
-        setChecking(false);
-      }
-    };
-
-    run();
-  }, []);
 
   useEffect(() => {
-    if (!allowed) return;
 
     const interval = setInterval(() => setSeconds((s) => s - 1), 1000);
     const timeout = setTimeout(() => router.push("/dashboard"), 5000);
@@ -75,17 +29,8 @@ export default function PaymentSuccessPage() {
       clearInterval(interval);
       clearTimeout(timeout);
     };
-  }, [allowed, router]);
+  }, [router]);
 
-  if (checking) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div>{t("common.loading") ?? "Yoxlanılır…"}</div>
-      </div>
-    );
-  }
-
-  if (!allowed) return null;
 
   return (
     <>
