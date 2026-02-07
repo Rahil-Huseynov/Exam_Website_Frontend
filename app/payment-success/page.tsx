@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { Navbar } from "@/components/navbar";
 import { PublicNavbar } from "@/components/public-navbar";
@@ -15,40 +15,74 @@ export default function PaymentSuccessPage() {
   const { user } = useAuth();
 
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [seconds, setSeconds] = useState(5);
   const [allowed, setAllowed] = useState(false);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const orderId = params.get("order_id") ?? params.get("orderId") ?? params.get("order");
-
-    const keysToCheck = orderId ? [`payment_token:${orderId}`, "payment_token"] : ["payment_token"];
+    const orderId =
+      searchParams.get("order_id") ??
+      searchParams.get("orderId") ??
+      searchParams.get("order");
 
     let foundKey: string | null = null;
-    for (const k of keysToCheck) {
-      if (sessionStorage.getItem(k)) {
-        foundKey = k;
-        break;
+
+    if (orderId) {
+      const orderKey = `payment_token:${orderId}`;
+      if (sessionStorage.getItem(orderKey)) {
+        foundKey = orderKey;
       }
     }
 
+    if (!foundKey && sessionStorage.getItem("payment_token")) {
+      foundKey = "payment_token";
+    }
     if (!foundKey) {
       router.replace(user ? "/dashboard" : "/");
       return;
     }
 
-    sessionStorage.removeItem(foundKey);
     setAllowed(true);
+  }, [searchParams, router, user]);
 
-    const interval = setInterval(() => setSeconds((s) => s - 1), 1000);
-    const timeout = setTimeout(() => router.push("/dashboard"), 5000);
+  useEffect(() => {
+    if (!allowed) return;
+
+    const orderId =
+      searchParams.get("order_id") ??
+      searchParams.get("orderId") ??
+      searchParams.get("order");
+
+    if (orderId) {
+      try {
+        sessionStorage.removeItem(`payment_token:${orderId}`);
+      } catch (e) {
+      }
+    }
+    try {
+      sessionStorage.removeItem("payment_token");
+    } catch (e) {
+    }
+
+    const interval = setInterval(() => {
+      setSeconds((s) => {
+        if (s <= 1) {
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+
+    const timeout = setTimeout(() => {
+      router.push("/dashboard");
+    }, 5000);
 
     return () => {
       clearInterval(interval);
       clearTimeout(timeout);
     };
-  }, [router]);
+  }, [allowed, searchParams, router]);
 
   if (!allowed) return null;
 

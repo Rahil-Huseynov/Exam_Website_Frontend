@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { Navbar } from "@/components/navbar";
 import { PublicNavbar } from "@/components/public-navbar";
@@ -13,6 +13,7 @@ export default function PaymentErrorPage() {
   const { locale } = useLocale();
   const { t } = useTranslation(locale);
   const { user } = useAuth();
+  const searchParams = useSearchParams();
 
   const router = useRouter();
 
@@ -20,34 +21,31 @@ export default function PaymentErrorPage() {
   const [allowed, setAllowed] = useState(false);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const orderId = params.get("order_id") ?? params.get("orderId") ?? params.get("order");
-
-    const keysToCheck = orderId ? [`payment_token:${orderId}`, "payment_token"] : ["payment_token"];
+    const orderId =
+      searchParams.get("order_id") ??
+      searchParams.get("orderId") ??
+      searchParams.get("order");
 
     let foundKey: string | null = null;
-    for (const k of keysToCheck) {
-      if (sessionStorage.getItem(k)) {
-        foundKey = k;
-        break;
+
+    if (orderId) {
+      const orderKey = `payment_token:${orderId}`;
+      if (sessionStorage.getItem(orderKey)) {
+        foundKey = orderKey;
       }
     }
 
+    if (!foundKey && sessionStorage.getItem("payment_token")) {
+      foundKey = "payment_token";
+    }
     if (!foundKey) {
       router.replace(user ? "/dashboard" : "/");
       return;
     }
 
-    sessionStorage.removeItem(foundKey);
     setAllowed(true);
+  }, [searchParams, router, user]);
 
-    const interval = setInterval(() => setSeconds((s) => s - 1), 1000);
-    const timeout = setTimeout(() => router.push("/dashboard"), 5000);
-    return () => {
-      clearInterval(interval);
-      clearTimeout(timeout);
-    };
-  }, [router]);
 
   if (!allowed) return null;
 
