@@ -17,9 +17,30 @@ export default function PaymentErrorPage() {
   const router = useRouter();
 
   const [seconds, setSeconds] = useState(5);
-
+  const [allowed, setAllowed] = useState(false);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const orderId = params.get("order_id") ?? params.get("orderId") ?? params.get("order");
+
+    const keysToCheck = orderId ? [`payment_token:${orderId}`, "payment_token"] : ["payment_token"];
+
+    let foundKey: string | null = null;
+    for (const k of keysToCheck) {
+      if (sessionStorage.getItem(k)) {
+        foundKey = k;
+        break;
+      }
+    }
+
+    if (!foundKey) {
+      router.replace(user ? "/dashboard" : "/");
+      return;
+    }
+
+    sessionStorage.removeItem(foundKey);
+    setAllowed(true);
+
     const interval = setInterval(() => setSeconds((s) => s - 1), 1000);
     const timeout = setTimeout(() => router.push("/dashboard"), 5000);
     return () => {
@@ -27,6 +48,8 @@ export default function PaymentErrorPage() {
       clearTimeout(timeout);
     };
   }, [router]);
+
+  if (!allowed) return null;
 
   return (
     <>
