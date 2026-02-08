@@ -6,14 +6,6 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  async rewrites() {
-    return [
-      {
-        source: "/((?!_next|api|maintenance|favicon.ico).*)",
-        destination: "/proxy",
-      },
-    ];
-  },
 }
 
 export default nextConfig
