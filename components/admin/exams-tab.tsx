@@ -169,8 +169,8 @@ export function ExamsTab() {
         limit: 10,
       })
 
-      setExams(examsData)          
-      setTotalPages(1)           
+      setExams(examsData)
+      setTotalPages(1)
     } catch (err) {
       toastError(err instanceof Error ? err.message : t("exams.errors.load_data_failed"))
     } finally {
@@ -1202,7 +1202,7 @@ export function ExamsTab() {
             <div className="grid gap-4 md:grid-cols-4">
               <div className="space-y-2">
                 <Label>{t("search")}</Label>
-                <Input value={search} onChange={(e) => setSearch(e.target.value)} />
+                <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("search")}/>
               </div>
               <div className="space-y-2">
                 <Label>{t("examtype")}</Label>
@@ -1238,7 +1238,7 @@ export function ExamsTab() {
               </div>
               <div className="space-y-2">
                 <Label>{t("year")}</Label>
-                <Input type="number" value={filterYear} onChange={(e) => setFilterYear(e.target.value)} />
+                <Input type="number" value={filterYear} onChange={(e) => setFilterYear(e.target.value)} placeholder={t("year")} min={1} className="appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]"/>
               </div>
             </div>
           </div>
@@ -1299,81 +1299,83 @@ export function ExamsTab() {
             <DialogTitle>{t("exams.ui.manage_modal_title")}</DialogTitle>
             <DialogDescription>{t("exams.ui.manage_modal_desc")}</DialogDescription>
           </DialogHeader>
-          <Card className="border-muted">
-            <CardHeader>
-              <CardTitle className="text-base">{t("exams.ui.edit_exam_modal_title")}</CardTitle>
-              <CardDescription className="text-sm">
-                {(manageExamUniversityName || manageExamSubjectName) && (
-                  <>
-                    {manageExamUniversityName} • {manageExamSubjectName} • {manageExamType}
-                  </>
-                )}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="space-y-2 md:col-span-1">
-                  <Label>{t("exams.ui.exam_title_label")}</Label>
-                  <Input value={manageExamTitle} onChange={(e) => setManageExamTitle(e.target.value)} disabled={qBusy} />
+          {user?.role === "superadmin" ?
+            <Card className="border-muted">
+              <CardHeader>
+                <CardTitle className="text-base">{t("exams.ui.edit_exam_modal_title")}</CardTitle>
+                <CardDescription className="text-sm">
+                  {(manageExamUniversityName || manageExamSubjectName) && (
+                    <>
+                      {manageExamUniversityName} • {manageExamSubjectName} • {manageExamType}
+                    </>
+                  )}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="space-y-2 md:col-span-1">
+                    <Label>{t("exams.ui.exam_title_label")}</Label>
+                    <Input value={manageExamTitle} onChange={(e) => setManageExamTitle(e.target.value)} disabled={qBusy} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t("common.year")}</Label>
+                    <Input type="number" value={manageExamYear} onChange={(e) => setManageExamYear(e.target.value)} disabled={qBusy} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t("exams.ui.price_label")} (AZN)</Label>
+                    <Input type="number" step="0.01" value={manageExamPrice} onChange={(e) => setManageExamPrice(e.target.value)} disabled={qBusy} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t("exams.ui.question_count")}</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={manageExamQuestionCount}
+                      onChange={(e) => setManageExamQuestionCount(e.target.value)}
+                      disabled={qBusy}
+                      placeholder="25"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t("exams.ui.duration_minutes")}</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={manageExamDurationMinutes}
+                      onChange={(e) => setManageExamDurationMinutes(e.target.value)}
+                      disabled={qBusy}
+                      placeholder="60"
+                    />
+                  </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>{t("common.year")}</Label>
-                  <Input type="number" value={manageExamYear} onChange={(e) => setManageExamYear(e.target.value)} disabled={qBusy} />
+                  <Label>{t("exams.ui.random_mode")}</Label>
+                  <Select
+                    value={manageExamRandom ? "true" : "false"}
+                    onValueChange={(v) => setManageExamRandom(v === "true")}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="true">🎲 {t("exams.ui.random")}</SelectItem>
+                      <SelectItem value="false">📄 {t("exams.ui.sequential")}</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label>{t("exams.ui.price_label")} (AZN)</Label>
-                  <Input type="number" step="0.01" value={manageExamPrice} onChange={(e) => setManageExamPrice(e.target.value)} disabled={qBusy} />
+                <div className="flex gap-2 flex-wrap">
+                  <Button onClick={handleSaveManageExam} disabled={qBusy || !canSaveManageExam} type="button">
+                    <Save className="h-4 w-4 mr-2" />
+                    {qBusy ? t("exams.ui.saving") : t("common.save")}
+                  </Button>
+                  <Button variant="destructive" onClick={() => handleDeleteExam(manageBankId)} disabled={qBusy || !manageBankId} type="button">
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    {t("common.delete")}
+                  </Button>
                 </div>
-                <div className="space-y-2">
-                  <Label>{t("exams.ui.question_count")}</Label>
-                  <Input
-                    type="number"
-                    min={1}
-                    value={manageExamQuestionCount}
-                    onChange={(e) => setManageExamQuestionCount(e.target.value)}
-                    disabled={qBusy}
-                    placeholder="25"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>{t("exams.ui.duration_minutes")}</Label>
-                  <Input
-                    type="number"
-                    min={1}
-                    value={manageExamDurationMinutes}
-                    onChange={(e) => setManageExamDurationMinutes(e.target.value)}
-                    disabled={qBusy}
-                    placeholder="60"
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>{t("exams.ui.random_mode")}</Label>
-                <Select
-                  value={manageExamRandom ? "true" : "false"}
-                  onValueChange={(v) => setManageExamRandom(v === "true")}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="true">🎲 {t("exams.ui.random")}</SelectItem>
-                    <SelectItem value="false">📄 {t("exams.ui.sequential")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex gap-2 flex-wrap">
-                <Button onClick={handleSaveManageExam} disabled={qBusy || !canSaveManageExam} type="button">
-                  <Save className="h-4 w-4 mr-2" />
-                  {qBusy ? t("exams.ui.saving") : t("common.save")}
-                </Button>
-                <Button variant="destructive" onClick={() => handleDeleteExam(manageBankId)} disabled={qBusy || !manageBankId} type="button">
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  {t("common.delete")}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+            : ''}
           <div className="flex items-center justify-between gap-2 pt-3 pb-2">
             <Button variant="outline" onClick={() => setAddModalOpen(true)} disabled={qBusy || !manageBankId} type="button">
               <Plus className="h-4 w-4 mr-2" />
@@ -1751,6 +1753,6 @@ export function ExamsTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </div >
   )
 }

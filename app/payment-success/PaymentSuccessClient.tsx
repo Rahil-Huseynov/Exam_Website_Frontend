@@ -20,6 +20,15 @@ export default function PaymentSuccessClient() {
   const [allowed, setAllowed] = useState(false);
 
   useEffect(() => {
+    return () => {
+      if (typeof window !== "undefined") {
+        sessionStorage.clear();
+      }
+    };
+  }, []);
+
+
+  useEffect(() => {
     const orderId =
       searchParams.get("order_id") ??
       searchParams.get("orderId") ??

@@ -26,10 +26,18 @@ import PDFCreatorPage from "@/components/admin/pdf-creator"
 import SettingsPage from "@/components/admin/settings"
 
 export default function AdminPage() {
-  const { user, loading, logout } = useAuth()
+  const { user, loading } = useAuth()
   const { locale, setLocale } = useLocale()
   const { t } = useTranslation(locale)
   const router = useRouter()
+
+
+  const logout = () => {
+    if (typeof window !== "undefined") {
+      localStorage.clear()
+    }
+    window.location.href = "/login"
+  }
 
   useEffect(() => {
     if (!loading && user && user.role !== "admin" && user.role !== "superadmin") {
