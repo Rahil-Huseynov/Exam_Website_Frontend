@@ -91,6 +91,7 @@ export function ExamsTab() {
   const [filterYear, setFilterYear] = useState("")
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const qRefs = useRef<Record<string, HTMLDivElement | null>>({})
   useEffect(() => {
     loadUniversitiesAndSubjects()
   }, [])
@@ -109,6 +110,7 @@ export function ExamsTab() {
       return prev
     })
   }, [newOptions.length])
+ 
   useEffect(() => {
     if (draftModalOpen && draft.length > 0) {
       requestAnimationFrame(() => {
@@ -134,15 +136,13 @@ export function ExamsTab() {
   function scrollToTempId(tempId: string) {
     const index = (draft as any[]).findIndex(q => q.tempId === tempId);
     if (index !== -1) {
-      requestAnimationFrame(() => {
-        listRef.current?.scrollToIndex({ index, align: "start" });
-      });
+      listRef.current?.scrollToIndex({ index, align: "start" });
     }
   }
   function scrollToQuestionNo(no: number) {
     const index = (draft as any[]).findIndex((x, idx) => (x.qNo ?? idx + 1) === no)
-    if (index !== -1 && listRef.current) {
-      listRef.current.scrollToIndex({ index, align: "start" })
+    if (index !== -1) {
+      listRef.current?.scrollToIndex({ index, align: "start" });
     }
   }
   async function loadUniversitiesAndSubjects() {
@@ -168,7 +168,6 @@ export function ExamsTab() {
         page,
         limit: 10,
       })
-
       setExams(examsData)
       setTotalPages(1)
     } catch (err) {
@@ -911,7 +910,8 @@ export function ExamsTab() {
       </Card>
       <Dialog open={draftModalOpen} onOpenChange={setDraftModalOpen}>
         <DialogContent
-          className="!w-[98vw] !h-[96vh] max-w-none max-h-none rounded-2xl flex flex-col"
+          ref={draftScrollRef as any}
+          className="!w-[98vw] !h-[96vh] max-w-none max-h-none overflow-y-auto rounded-2xl"
           onOpenAutoFocus={(e) => e.preventDefault()}
           onCloseAutoFocus={(e) => e.preventDefault()}
         >
@@ -922,186 +922,141 @@ export function ExamsTab() {
           {total === 0 ? (
             <div className="text-sm text-muted-foreground">{t("exams.ui.no_draft_yet")}</div>
           ) : (
-            <div className="flex-1 min-h-0">
+            <div className="space-y-4">
               <Virtuoso
                 ref={listRef}
+                style={{ height: '70vh' }} 
                 data={draft as any[]}
-                itemContent={(idx: any, q: any) => {
+                itemContent={(idx, q) => {
                   const no = q.qNo ?? idx + 1
-                  const isWriting = draftExamType === "WRITING"
                   return (
-                    <div className="mb-4">
-                      <div
-                        key={q.tempId}
-                        id={`draft-q-${no}`}
-                        className="scroll-mt-24"
-                      >
-                        <Card className="border-muted">
-                          <CardHeader className="flex flex-row items-center justify-between gap-2">
-                            <CardTitle className="text-base">{no}.</CardTitle>
-                            <div className="flex gap-2">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => addDraftQuestion(idx + 1)}
-                                disabled={busy}
-                                title={t("exams.ui.add_question_after_this")}
-                              >
-                                <Plus className="h-4 w-4 mr-2" />
-                                {t("exams.ui.add_after")}
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => {
-                                  const ok = window.confirm(t("exams.confirm.delete_draft_question"))
-                                  if (ok) removeDraftQuestionCascade(q.tempId)
-                                }}
-                                disabled={busy}
-                                title={t("exams.ui.delete_question")}
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                {t("common.delete")}
-                              </Button>
-                            </div>
-                          </CardHeader>
-                          <CardContent className="space-y-4">
+                    <div
+                      key={q.tempId}
+                      id={`draft-q-${no}`}
+                      className="scroll-mt-24 mb-4" 
+                    >
+                      <Card className="border-muted">
+                        <CardHeader className="flex flex-row items-center justify-between gap-2">
+                          <CardTitle className="text-base">{no}.</CardTitle>
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => addDraftQuestion(idx + 1)}
+                              disabled={busy}
+                              title={t("exams.ui.add_question_after_this")}
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
+                              {t("exams.ui.add_after")}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => {
+                                const ok = window.confirm(t("exams.confirm.delete_draft_question"))
+                                if (ok) removeDraftQuestionCascade(q.tempId)
+                              }}
+                              disabled={busy}
+                              title={t("exams.ui.delete_question")}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              {t("common.delete")}
+                            </Button>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="space-y-2">
+                            <Label>{t("exams.ui.question_text")}</Label>
+                            <SimpleMathEditor
+                              value={q.content.text}
+                              onChange={(text) => updateDraftQuestion(q.tempId, { text })}
+                              placeholder={t("exams.ui.question_placeholder")}
+                              className="min-h-[120px]"
+                            />
+                          </div>
+                          {(q.clipUrls || []).length > 0 && (
                             <div className="space-y-2">
-                              <Label>{t("exams.ui.question_text")}</Label>
-                              <SimpleMathEditor
-                                value={q.content.text}
-                                onChange={(text) => updateDraftQuestion(q.tempId, { text })}
-                                placeholder={t("exams.ui.question_placeholder")}
-                                className="min-h-[120px]"
-                              />
+                              <Label>{t("exams.ui.figures")}</Label>
+                              <div className="grid gap-3 md:grid-cols-2">
+                                {(q.clipUrls || []).map((u: string, i: number) => (
+                                  <div key={i} className="relative">
+                                    <img src={getImageSrc(u)} alt={`q-figure-${i}`} className="w-full rounded-lg border bg-white" />
+                                    <Button
+                                      variant="destructive"
+                                      size="sm"
+                                      className="absolute top-1 right-1"
+                                      onClick={() => {
+                                        setDraft(prev => prev.map(pq => pq.tempId === q.tempId ? { ...pq, clipUrls: (pq.clipUrls || []).filter((_, j) => j !== i) } : pq))
+                                      }}
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
-                            {(q.clipUrls || []).length > 0 && (
-                              <div className="space-y-2">
-                                <Label>{t("exams.ui.figures")}</Label>
-                                <div className="grid gap-3 md:grid-cols-2">
-                                  {(q.clipUrls || []).map((u: string, i: number) => (
-                                    <div key={i} className="relative">
-                                      <img src={getImageSrc(u)} alt={`q-figure-${i}`} className="w-full rounded-lg border bg-white" />
-                                      <Button
-                                        variant="destructive"
-                                        size="sm"
-                                        className="absolute top-1 right-1"
-                                        onClick={() => {
-                                          setDraft(prev => prev.map(pq => pq.tempId === q.tempId ? { ...pq, clipUrls: (pq.clipUrls || []).filter((_, j) => j !== i) } : pq))
-                                        }}
-                                      >
-                                        <X className="h-4 w-4" />
-                                      </Button>
-                                    </div>
-                                  ))}
-                                </div>
+                          )}
+                          <div className="space-y-2">
+                            <Label>{t("exams.ui.add_more_images")}</Label>
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              onChange={(e) => {
+                                const files = e.target.files
+                                if (!files) return
+                                Array.from(files).forEach(f => {
+                                  const reader = new FileReader()
+                                  reader.onload = () => {
+                                    setDraft(prev => prev.map(pq => pq.tempId === q.tempId ? { ...pq, clipUrls: [...(pq.clipUrls || []), reader.result as string] } : pq))
+                                  }
+                                  reader.readAsDataURL(f)
+                                })
+                              }}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>{t("exams.ui.options")}</Label>
+                            {(!Array.isArray(q.options) || q.options.length === 0) && (
+                              <div className="text-sm text-muted-foreground">
+                                {t("exams.ui.no_options_found")}
                               </div>
                             )}
                             <div className="space-y-2">
-                              <Label>{t("exams.ui.add_more_images")}</Label>
-                              <Input
-                                type="file"
-                                accept="image/*"
-                                multiple
-                                onChange={(e) => {
-                                  const files = e.target.files
-                                  if (!files) return
-                                  Array.from(files).forEach(f => {
-                                    const reader = new FileReader()
-                                    reader.onload = () => {
-                                      setDraft(prev => prev.map(pq => pq.tempId === q.tempId ? { ...pq, clipUrls: [...(pq.clipUrls || []), reader.result as string] } : pq))
-                                    }
-                                    reader.readAsDataURL(f)
-                                  })
-                                }}
-                              />
-                            </div>
-                            {isWriting ? (
-                              <div className="space-y-2">
-                                <Label>{t("exams.ui.answer_key")}</Label>
-                                <SimpleMathEditor
-                                  value={q.correctAnswerText || ""}
-                                  onChange={(text) => setDraft((prev: any) => prev.map((pq: any) => pq.tempId === q.tempId ? { ...pq, correctAnswerText: text } : pq))}
-                                  placeholder={t("exams.ui.answer_key_placeholder")}
-                                  className="min-h-[120px]"
-                                />
-                              </div>
-                            ) : (
-                              <div className="space-y-2">
-                                <Label>{t("exams.ui.options")}</Label>
-                                {(!Array.isArray(q.options) || q.options.length === 0) && (
-                                  <div className="text-sm text-muted-foreground">
-                                    {t("exams.ui.no_options_found")}
-                                  </div>
-                                )}
-                                <div className="space-y-2">
-                                  {(q.options || []).map((opt: any, oi: number) => {
-                                    const checked = selectedCorrect[q.tempId] === opt.tempOptionId
-                                    return (
-                                      <div key={opt.tempOptionId} className="flex flex-col gap-2 rounded-lg border p-3">
-                                        <div className="flex items-start gap-2">
-                                          <input
-                                            type="radio"
-                                            name={q.tempId}
-                                            checked={checked}
-                                            onChange={() => setSelectedCorrect((prev) => ({ ...prev, [q.tempId]: opt.tempOptionId }))}
-                                            className="mt-2"
-                                            title={t("exams.ui.correct_answer")}
-                                          />
-                                          <div className="flex-1 space-y-2">
-                                            <SimpleMathEditor
-                                              value={opt.content.text}
-                                              onChange={(text) => updateDraftOption(q.tempId, opt.tempOptionId, { text })}
-                                              placeholder={`${String.fromCharCode(65 + oi)}) ${t("exams.ui.option_n", { n: oi + 1 })}`}
-                                              className="min-h-[80px]"
-                                            />
-                                            {(opt.clipUrls || []).length > 0 && (
-                                              <div className="space-y-2">
-                                                <Label>Images for this Option</Label>
-                                                <div className="grid gap-3 md:grid-cols-2">
-                                                  {opt.clipUrls.map((u: string, j: number) => (
-                                                    <div key={j} className="relative">
-                                                      <img src={getImageSrc(u)} alt={`opt-figure-${oi}-${j}`} className="w-full rounded-lg border bg-white" />
-                                                      <Button
-                                                        variant="destructive"
-                                                        size="sm"
-                                                        className="absolute top-1 right-1"
-                                                        onClick={() => {
-                                                          setDraft(prev =>
-                                                            prev.map(pq => {
-                                                              if (pq.tempId !== q.tempId) return pq
-                                                              return {
-                                                                ...pq,
-                                                                options: pq.options.map((po: any) => {
-                                                                  if (po.tempOptionId !== opt.tempOptionId) return po
-                                                                  return { ...po, clipUrls: (po.clipUrls || []).filter((_: any, m: any) => m !== j) }
-                                                                })
-                                                              }
-                                                            })
-                                                          )
-                                                        }}
-                                                      >
-                                                        <X className="h-4 w-4" />
-                                                      </Button>
-                                                    </div>
-                                                  ))}
-                                                </div>
-                                              </div>
-                                            )}
-                                            <div className="space-y-2">
-                                              <Label>Add Image to this Option</Label>
-                                              <Input
-                                                type="file"
-                                                accept="image/*"
-                                                multiple
-                                                onChange={(e) => {
-                                                  const files = e.target.files
-                                                  if (!files) return
-                                                  Array.from(files).forEach(f => {
-                                                    const reader = new FileReader()
-                                                    reader.onload = () => {
+                              {(q.options || []).map((opt: any, oi: number) => {
+                                const checked = selectedCorrect[q.tempId] === opt.tempOptionId
+                                return (
+                                  <div key={opt.tempOptionId} className="flex flex-col gap-2 rounded-lg border p-3">
+                                    <div className="flex items-start gap-2">
+                                      <input
+                                        type="radio"
+                                        name={q.tempId}
+                                        checked={checked}
+                                        onChange={() => setSelectedCorrect((prev) => ({ ...prev, [q.tempId]: opt.tempOptionId }))}
+                                        className="mt-2"
+                                        title={t("exams.ui.correct_answer")}
+                                      />
+                                      <div className="flex-1 space-y-2">
+                                        <SimpleMathEditor
+                                          value={opt.content.text}
+                                          onChange={(text) => updateDraftOption(q.tempId, opt.tempOptionId, { text })}
+                                          placeholder={`${String.fromCharCode(65 + oi)}) ${t("exams.ui.option_n", { n: oi + 1 })}`}
+                                          className="min-h-[80px]"
+                                        />
+                                        {(opt.clipUrls || []).length > 0 && (
+                                          <div className="space-y-2">
+                                            <Label>Images for this Option</Label>
+                                            <div className="grid gap-3 md:grid-cols-2">
+                                              {opt.clipUrls.map((u: string, j: number) => (
+                                                <div key={j} className="relative">
+                                                  <img src={getImageSrc(u)} alt={`opt-figure-${oi}-${j}`} className="w-full rounded-lg border bg-white" />
+                                                  <Button
+                                                    variant="destructive"
+                                                    size="sm"
+                                                    className="absolute top-1 right-1"
+                                                    onClick={() => {
                                                       setDraft(prev =>
                                                         prev.map(pq => {
                                                           if (pq.tempId !== q.tempId) return pq
@@ -1109,73 +1064,102 @@ export function ExamsTab() {
                                                             ...pq,
                                                             options: pq.options.map((po: any) => {
                                                               if (po.tempOptionId !== opt.tempOptionId) return po
-                                                              return { ...po, clipUrls: [...(po.clipUrls || []), reader.result as string] }
+                                                              return { ...po, clipUrls: (po.clipUrls || []).filter((_: any, m: any) => m !== j) }
                                                             })
                                                           }
                                                         })
                                                       )
-                                                    }
-                                                    reader.readAsDataURL(f)
-                                                  })
-                                                }}
-                                              />
+                                                    }}
+                                                  >
+                                                    <X className="h-4 w-4" />
+                                                  </Button>
+                                                </div>
+                                              ))}
                                             </div>
                                           </div>
-                                          <Button
-                                            type="button"
-                                            variant="outline"
-                                            onClick={() => removeDraftOption(q.tempId, opt.tempOptionId)}
-                                            disabled={(q.options || []).length <= 2}
-                                            title={t("exams.ui.remove_option")}
-                                          >
-                                            <X className="h-4 w-4" />
-                                          </Button>
+                                        )}
+                                        <div className="space-y-2">
+                                          <Label>Add Image to this Option</Label>
+                                          <Input
+                                            type="file"
+                                            accept="image/*"
+                                            multiple
+                                            onChange={(e) => {
+                                              const files = e.target.files
+                                              if (!files) return
+                                              Array.from(files).forEach(f => {
+                                                const reader = new FileReader()
+                                                reader.onload = () => {
+                                                  setDraft(prev =>
+                                                    prev.map(pq => {
+                                                      if (pq.tempId !== q.tempId) return pq
+                                                      return {
+                                                        ...pq,
+                                                        options: pq.options.map((po: any) => {
+                                                          if (po.tempOptionId !== opt.tempOptionId) return po
+                                                          return { ...po, clipUrls: [...(po.clipUrls || []), reader.result as string] }
+                                                        })
+                                                      }
+                                                    })
+                                                  )
+                                                }
+                                                reader.readAsDataURL(f)
+                                              })
+                                            }}
+                                          />
                                         </div>
                                       </div>
-                                    )
-                                  })}
-                                </div>
-                                <div className="flex gap-2 pt-2 items-center">
-                                  <Button type="button" variant="outline" onClick={() => addDraftOption(q.tempId)}>
-                                    <Plus className="h-4 w-4 mr-2" />
-                                    {t("exams.ui.add_option")}
-                                  </Button>
-                                  <div className="text-xs text-muted-foreground">{t("exams.ui.note_min_2_unique")}</div>
-                                </div>
-                              </div>
-                            )}
-                          </CardContent>
-                        </Card>
-                      </div>
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => removeDraftOption(q.tempId, opt.tempOptionId)}
+                                        disabled={(q.options || []).length <= 2}
+                                        title={t("exams.ui.remove_option")}
+                                      >
+                                        <X className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                            <div className="flex gap-2 pt-2 items-center">
+                              <Button type="button" variant="outline" onClick={() => addDraftOption(q.tempId)}>
+                                <Plus className="h-4 w-4 mr-2" />
+                                {t("exams.ui.add_option")}
+                              </Button>
+                              <div className="text-xs text-muted-foreground">{t("exams.ui.note_min_2_unique")}</div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
                     </div>
                   )
                 }}
               />
             </div>
           )}
-          {!(draftExamType === "WRITING") && (
-            <div className="mt-4 border-t pt-4 space-y-2">
-              <Label>{t("exams.ui.bulk_pick_label")}</Label>
-              <div className="flex gap-2">
-                <Input value={bulkPickText} onChange={(e) => setBulkPickText(e.target.value)} placeholder={t("exams.ui.bulk_pick_placeholder")} />
-                <Button type="button" variant="outline" onClick={applyBulkPicks} disabled={busy || total === 0}>
-                  {t("exams.ui.apply")}
-                </Button>
-              </div>
-              {total > 0 && missing5VariantNumbers.length > 0 && (
-                <div className="text-sm text-destructive">
-                  {t("exams.ui.questions_without_5_variants")}:
-                  <span className="flex flex-wrap gap-2 mt-1">
-                    {missing5VariantNumbers.map((no) => (
-                      <button key={no} type="button" className="underline underline-offset-2 hover:opacity-80" onClick={() => scrollToQuestionNo(no)} title={t("exams.ui.jump_to_question", { no })}>
-                        {no}
-                      </button>
-                    ))}
-                  </span>
-                </div>
-              )}
+          <div className="mt-4 border-t pt-4 space-y-2">
+            <Label>{t("exams.ui.bulk_pick_label")}</Label>
+            <div className="flex gap-2">
+              <Input value={bulkPickText} onChange={(e) => setBulkPickText(e.target.value)} placeholder={t("exams.ui.bulk_pick_placeholder")} />
+              <Button type="button" variant="outline" onClick={applyBulkPicks} disabled={busy || total === 0}>
+                {t("exams.ui.apply")}
+              </Button>
             </div>
-          )}
+            {total > 0 && missing5VariantNumbers.length > 0 && (
+              <div className="text-sm text-destructive">
+                {t("exams.ui.questions_without_5_variants")}:
+                <span className="flex flex-wrap gap-2 mt-1">
+                  {missing5VariantNumbers.map((no) => (
+                    <button key={no} type="button" className="underline underline-offset-2 hover:opacity-80" onClick={() => scrollToQuestionNo(no)} title={t("exams.ui.jump_to_question", { no })}>
+                      {no}
+                    </button>
+                  ))}
+                </span>
+              </div>
+            )}
+          </div>
           <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:justify-between">
             <div className="text-sm text-muted-foreground">
               {total > 0 && <>{t("exams.ui.selected_count", { selected: totalHasAnswered, total })}</>}
@@ -1202,7 +1186,7 @@ export function ExamsTab() {
             <div className="grid gap-4 md:grid-cols-4">
               <div className="space-y-2">
                 <Label>{t("search")}</Label>
-                <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("search")}/>
+                <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("search")} />
               </div>
               <div className="space-y-2">
                 <Label>{t("examtype")}</Label>
@@ -1238,7 +1222,7 @@ export function ExamsTab() {
               </div>
               <div className="space-y-2">
                 <Label>{t("year")}</Label>
-                <Input type="number" value={filterYear} onChange={(e) => setFilterYear(e.target.value)} placeholder={t("year")} min={1} className="appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]"/>
+                <Input type="number" value={filterYear} onChange={(e) => setFilterYear(e.target.value)} placeholder={t("year")} min={1} className="appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]" />
               </div>
             </div>
           </div>
@@ -1299,83 +1283,81 @@ export function ExamsTab() {
             <DialogTitle>{t("exams.ui.manage_modal_title")}</DialogTitle>
             <DialogDescription>{t("exams.ui.manage_modal_desc")}</DialogDescription>
           </DialogHeader>
-          {user?.role === "superadmin" ?
-            <Card className="border-muted">
-              <CardHeader>
-                <CardTitle className="text-base">{t("exams.ui.edit_exam_modal_title")}</CardTitle>
-                <CardDescription className="text-sm">
-                  {(manageExamUniversityName || manageExamSubjectName) && (
-                    <>
-                      {manageExamUniversityName} • {manageExamSubjectName} • {manageExamType}
-                    </>
-                  )}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div className="space-y-2 md:col-span-1">
-                    <Label>{t("exams.ui.exam_title_label")}</Label>
-                    <Input value={manageExamTitle} onChange={(e) => setManageExamTitle(e.target.value)} disabled={qBusy} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>{t("common.year")}</Label>
-                    <Input type="number" value={manageExamYear} onChange={(e) => setManageExamYear(e.target.value)} disabled={qBusy} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>{t("exams.ui.price_label")} (AZN)</Label>
-                    <Input type="number" step="0.01" value={manageExamPrice} onChange={(e) => setManageExamPrice(e.target.value)} disabled={qBusy} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>{t("exams.ui.question_count")}</Label>
-                    <Input
-                      type="number"
-                      min={1}
-                      value={manageExamQuestionCount}
-                      onChange={(e) => setManageExamQuestionCount(e.target.value)}
-                      disabled={qBusy}
-                      placeholder="25"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>{t("exams.ui.duration_minutes")}</Label>
-                    <Input
-                      type="number"
-                      min={1}
-                      value={manageExamDurationMinutes}
-                      onChange={(e) => setManageExamDurationMinutes(e.target.value)}
-                      disabled={qBusy}
-                      placeholder="60"
-                    />
-                  </div>
+          <Card className="border-muted">
+            <CardHeader>
+              <CardTitle className="text-base">{t("exams.ui.edit_exam_modal_title")}</CardTitle>
+              <CardDescription className="text-sm">
+                {(manageExamUniversityName || manageExamSubjectName) && (
+                  <>
+                    {manageExamUniversityName} • {manageExamSubjectName}
+                  </>
+                )}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="space-y-2 md:col-span-1">
+                  <Label>{t("exams.ui.exam_title_label")}</Label>
+                  <Input value={manageExamTitle} onChange={(e) => setManageExamTitle(e.target.value)} disabled={qBusy} />
                 </div>
                 <div className="space-y-2">
-                  <Label>{t("exams.ui.random_mode")}</Label>
-                  <Select
-                    value={manageExamRandom ? "true" : "false"}
-                    onValueChange={(v) => setManageExamRandom(v === "true")}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="true">🎲 {t("exams.ui.random")}</SelectItem>
-                      <SelectItem value="false">📄 {t("exams.ui.sequential")}</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label>{t("common.year")}</Label>
+                  <Input type="number" value={manageExamYear} onChange={(e) => setManageExamYear(e.target.value)} disabled={qBusy} />
                 </div>
-                <div className="flex gap-2 flex-wrap">
-                  <Button onClick={handleSaveManageExam} disabled={qBusy || !canSaveManageExam} type="button">
-                    <Save className="h-4 w-4 mr-2" />
-                    {qBusy ? t("exams.ui.saving") : t("common.save")}
-                  </Button>
-                  <Button variant="destructive" onClick={() => handleDeleteExam(manageBankId)} disabled={qBusy || !manageBankId} type="button">
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    {t("common.delete")}
-                  </Button>
+                <div className="space-y-2">
+                  <Label>{t("exams.ui.price_label")} (AZN)</Label>
+                  <Input type="number" step="0.01" value={manageExamPrice} onChange={(e) => setManageExamPrice(e.target.value)} disabled={qBusy} />
                 </div>
-              </CardContent>
-            </Card>
-            : ''}
+                <div className="space-y-2">
+                  <Label>{t("exams.ui.question_count")}</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={manageExamQuestionCount}
+                    onChange={(e) => setManageExamQuestionCount(e.target.value)}
+                    disabled={qBusy}
+                    placeholder="25"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>{t("exams.ui.duration_minutes")}</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={manageExamDurationMinutes}
+                    onChange={(e) => setManageExamDurationMinutes(e.target.value)}
+                    disabled={qBusy}
+                    placeholder="60"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>{t("exams.ui.random_mode")}</Label>
+                <Select
+                  value={manageExamRandom ? "true" : "false"}
+                  onValueChange={(v) => setManageExamRandom(v === "true")}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="true">🎲 {t("exams.ui.random")}</SelectItem>
+                    <SelectItem value="false">📄 {t("exams.ui.sequential")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                <Button onClick={handleSaveManageExam} disabled={qBusy || !canSaveManageExam} type="button">
+                  <Save className="h-4 w-4 mr-2" />
+                  {qBusy ? t("exams.ui.saving") : t("common.save")}
+                </Button>
+                <Button variant="destructive" onClick={() => handleDeleteExam(manageBankId)} disabled={qBusy || !manageBankId} type="button">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  {t("common.delete")}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
           <div className="flex items-center justify-between gap-2 pt-3 pb-2">
             <Button variant="outline" onClick={() => setAddModalOpen(true)} disabled={qBusy || !manageBankId} type="button">
               <Plus className="h-4 w-4 mr-2" />
@@ -1406,12 +1388,7 @@ export function ExamsTab() {
                         />
                       </div>
                     </CardTitle>
-                    {q.type === "MULTIPLE_CHOICE" && (
-                      <CardDescription className="text-sm mt-2">{t("exams.ui.select_correct")}</CardDescription>
-                    )}
-                    {q.type === "OPEN_ENDED" && (
-                      <CardDescription className="text-sm mt-2">{t("exams.ui.answer_key_optional")}</CardDescription>
-                    )}
+                    <CardDescription className="text-sm mt-2">{t("exams.ui.select_correct")}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-2">
                     {(q.imageUrls || []).length > 0 && (
@@ -1455,20 +1432,7 @@ export function ExamsTab() {
                         }}
                       />
                     </div>
-                    {q.type === "OPEN_ENDED" && (
-                      <div className="space-y-2">
-                        <Label>{t("exams.ui.answer_key")}</Label>
-                        <SimpleMathEditor
-                          value={q.correctAnswerText || ""}
-                          onChange={(text) => setBankQuestions(prev =>
-                            prev.map(x => x.id === q.id ? { ...x, correctAnswerText: text } : x)
-                          )}
-                          placeholder={t("exams.ui.answer_key_placeholder")}
-                          className="min-h-[120px]"
-                        />
-                      </div>
-                    )}
-                    {q.type === "MULTIPLE_CHOICE" && q.options.map((opt, oi) => {
+                    {q.options.map((opt, oi) => {
                       const checked = (q.correctAnswerText || "").trim() === (opt.text || "").trim()
                       return (
                         <div key={opt.id} className="flex flex-col gap-2">
@@ -1641,107 +1605,92 @@ export function ExamsTab() {
                 }}
               />
             </div>
-            {manageExamType === "WRITING" && (
+            <div className="space-y-2">
+              <Label>{t("exams.ui.options")}</Label>
               <div className="space-y-2">
-                <Label>{t("exams.ui.answer_key")}</Label>
-                <SimpleMathEditor
-                  value={newCorrectAnswerText}
-                  onChange={setNewCorrectAnswerText}
-                  placeholder={t("exams.ui.answer_key_placeholder")}
-                  className="min-h-[120px]"
-                />
-              </div>
-            )}
-            {manageExamType === "TEST" && (
-              <>
-                <div className="space-y-2">
-                  <Label>{t("exams.ui.options")}</Label>
-                  <div className="space-y-2">
-                    {newOptions.map((opt, i) => (
-                      <div key={i} className="flex flex-col gap-2 rounded-lg border p-3">
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="radio"
-                            checked={newCorrectIndex === i}
-                            onChange={() => setNewCorrectIndex(i)}
-                            title={t("exams.ui.correct_answer")}
-                          />
-                          <div className="flex-1 space-y-2">
-                            <SimpleMathEditor
-                              value={opt.text}
-                              onChange={(text) => setNewOptions((prev) =>
-                                prev.map((x, idx) => (idx === i ? { text } : x))
-                              )}
-                              placeholder={t("exams.ui.option_n", { n: i + 1 })}
-                              className="min-h-[80px]"
-                            />
-                            {newOptImages[i].length > 0 && (
-                              <div className="space-y-2">
-                                <Label>Images for this Option</Label>
-                                <div className="grid gap-3 md:grid-cols-2">
-                                  {newOptImages[i].map((u, j) => (
-                                    <div key={j} className="relative">
-                                      <img src={getImageSrc(u)} alt={`opt-${i}-img-${j}`} className="w-full rounded-lg border bg-white" />
-                                      <Button
-                                        variant="destructive"
-                                        size="sm"
-                                        className="absolute top-1 right-1"
-                                        onClick={() => setNewOptImages(prev => prev.map((arr, k) => k === i ? arr.filter((_, m) => m !== j) : arr))}
-                                      >
-                                        <X className="h-4 w-4" />
-                                      </Button>
-                                    </div>
-                                  ))}
+                {newOptions.map((opt, i) => (
+                  <div key={i} className="flex flex-col gap-2 rounded-lg border p-3">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        checked={newCorrectIndex === i}
+                        onChange={() => setNewCorrectIndex(i)}
+                        title={t("exams.ui.correct_answer")}
+                      />
+                      <div className="flex-1 space-y-2">
+                        <SimpleMathEditor
+                          value={opt.text}
+                          onChange={(text) => setNewOptions((prev) =>
+                            prev.map((x, idx) => (idx === i ? { text } : x))
+                          )}
+                          placeholder={t("exams.ui.option_n", { n: i + 1 })}
+                          className="min-h-[80px]"
+                        />
+                        {newOptImages[i].length > 0 && (
+                          <div className="space-y-2">
+                            <Label>Images for this Option</Label>
+                            <div className="grid gap-3 md:grid-cols-2">
+                              {newOptImages[i].map((u, j) => (
+                                <div key={j} className="relative">
+                                  <img src={getImageSrc(u)} alt={`opt-${i}-img-${j}`} className="w-full rounded-lg border bg-white" />
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    className="absolute top-1 right-1"
+                                    onClick={() => setNewOptImages(prev => prev.map((arr, k) => k === i ? arr.filter((_, m) => m !== j) : arr))}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
                                 </div>
-                              </div>
-                            )}
-                            <div className="space-y-2">
-                              <Label>Add Image to this Option</Label>
-                              <Input
-                                type="file"
-                                accept="image/*"
-                                multiple
-                                onChange={(e) => {
-                                  const files = e.target.files
-                                  if (!files) return
-                                  Array.from(files).forEach(f => {
-                                    const reader = new FileReader()
-                                    reader.onload = () => setNewOptImages(prev => prev.map((arr, k) => k === i ? [...arr, reader.result as string] : arr))
-                                    reader.readAsDataURL(f)
-                                  })
-                                }}
-                              />
+                              ))}
                             </div>
                           </div>
+                        )}
+                        <div className="space-y-2">
+                          <Label>Add Image to this Option</Label>
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={(e) => {
+                              const files = e.target.files
+                              if (!files) return
+                              Array.from(files).forEach(f => {
+                                const reader = new FileReader()
+                                reader.onload = () => setNewOptImages(prev => prev.map((arr, k) => k === i ? [...arr, reader.result as string] : arr))
+                                reader.readAsDataURL(f)
+                              })
+                            }}
+                          />
                         </div>
                       </div>
-                    ))}
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button type="button" variant="outline" onClick={() => setNewOptions((prev) => [...prev, { text: "" }])}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      {t("exams.ui.add_option")}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setNewOptions((prev) => {
-                          if (prev.length <= 2) return prev
-                          const next = prev.slice(0, -1)
-                          if (newCorrectIndex >= next.length) setNewCorrectIndex(Math.max(0, next.length - 1))
-                          return next
-                        })
-                      }}
-                      disabled={newOptions.length <= 2}
-                    >
-                      {t("exams.ui.remove_last_option")}
-                    </Button>
-                  </div>
-                </div>
-                <div className="text-sm text-muted-foreground">{t("exams.ui.note_min_2_unique")}</div>
-              </>
-            )}
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" onClick={() => setNewOptions((prev) => [...prev, { text: "" }])}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  {t("exams.ui.add_option")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setNewOptions((prev) => {
+                      if (prev.length <= 2) return prev
+                      const next = prev.slice(0, -1)
+                      if (newCorrectIndex >= next.length) setNewCorrectIndex(Math.max(0, next.length - 1))
+                      return next
+                    })
+                  }}
+                  disabled={newOptions.length <= 2}
+                >
+                  {t("exams.ui.remove_last_option")}
+                </Button>
+              </div>
+            </div>
+            <div className="text-sm text-muted-foreground">{t("exams.ui.note_min_2_unique")}</div>
           </div>
           <DialogFooter className="flex gap-2">
             <Button variant="outline" onClick={resetAddState} disabled={qBusy} type="button">
