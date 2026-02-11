@@ -462,10 +462,13 @@ export default function ExamsPage() {
                           </span>
                         </div>
 
-                        <div className="flex items-center justify-between text-sm p-3 rounded-lg bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20">
-                          <span className="text-muted-foreground">{t("priceLabel")}:</span>
-                          <span className="font-bold text-blue-600">{Number(exam.price).toFixed(2)} AZN</span>
-                        </div>
+                        {Number(exam.price) === 0 || Number(exam.price) === 0.0 || Number(exam.price) === 0.00 ? (
+                          <span className="font-bold text-green-600">{t("free")}</span>
+                        ) : (
+                          <span className="font-bold text-blue-600">
+                            {Number(exam.price).toFixed(2)} AZN
+                          </span>
+                        )}
                       </div>
                     </CardContent>
 

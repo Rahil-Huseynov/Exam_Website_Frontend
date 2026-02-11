@@ -856,7 +856,13 @@ export default function DashboardPage() {
                             <div className="grid sm:flex items-center gap-3 ml-4">
                               <div className="text-right">
                                 <div className="font-semibold text-sm">
-                                  {fromCents(toCents((exam as any)?.price || 0))} AZN
+                                  {Number((exam as any)?.price) == 0 || Number((exam as any)?.price) == 0.0 || Number((exam as any)?.price) == 0.00 ? (
+                                    <span className="text-green-600">{t("free")}</span>
+                                  ) : (
+                                    <>
+                                      {fromCents(toCents((exam as any)?.price || 0))} AZN
+                                    </>
+                                  )}
                                 </div>
                               </div>
 

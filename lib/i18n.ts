@@ -864,6 +864,7 @@ export const translations = {
     "redirectingToGateway": "Ödəniş səhifəsinə yönləndirilir...",
     "paymentLinkNotReceived": "Ödəniş linki alınmadı",
     "paymentError": "Ödəniş zamanı xəta baş verdi",
+    "free": "Pulsuz",
 
 
 
@@ -1728,6 +1729,7 @@ export const translations = {
     "redirectingToGateway": "Redirecting to payment page...",
     "paymentLinkNotReceived": "Payment link was not received",
     "paymentError": "Payment error occurred",
+    "free": "Free",
 
 
   },
@@ -2604,6 +2606,8 @@ export const translations = {
     "redirectingToGateway": "Перенаправление на страницу оплаты...",
     "paymentLinkNotReceived": "Ссылка для оплаты не получена",
     "paymentError": "Произошла ошибка при оплате",
+    "free": "Бесплатно",
+
 
 
 
