@@ -196,7 +196,7 @@ export default function AdminPage() {
 
                 {isSuperAdmin && (
                   <TabsTrigger value="admin" className="text-xs sm:text-sm whitespace-nowrap">
-                    {t("admin")}
+                    {t("adminsTitle")}
                   </TabsTrigger>
                 )}
 
