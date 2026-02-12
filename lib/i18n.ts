@@ -161,7 +161,7 @@ export const translations = {
     homeFeature2Title: "Təfsilatı İzləmə",
     homeFeature2Desc: "Performansınızı izləyin və nəticələrinizin təfsilatlı analitikasını görün",
     homeFeature3Title: "Çevik Öyrənmə",
-    homeFeature3Desc: "İstədiyiniz vaxt və tempodə öyrənin, limitsiz giriş imkanı",
+    homeFeature3Desc: "İstədiyiniz vaxt və tempdə öyrənin, limitsiz giriş imkanı",
     homeFeature4Title: "Sertifikatlar",
     homeFeature4Desc: "Uğurlu imtahanlardan sonra rəsmi sertifikat əldə edin",
     homeFeature5Title: "Canlı Dəstək",
