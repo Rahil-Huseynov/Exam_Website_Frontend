@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
@@ -20,8 +20,12 @@ import {
   Search,
   FunctionSquare,
   X,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import HTMLEncodedReader from '@/lib/HTML-encodedReader';
+import { useTranslation } from '@/lib/i18n';
+import { useLocale } from '@/contexts/locale-context';
 
 interface SimpleMathEditorProps {
   value: string;
@@ -32,13 +36,11 @@ interface SimpleMathEditorProps {
 }
 
 const ALL_MATH_SYMBOLS = [
-  // Əsas Simvollar
-  { symbol: '√', label: 'Kvadrat Kök', command: '\\sqrt{}', category: 'basic' },
+  { symbol: '√', label: 'Kvadrat Kök', command: '\\sqrt{}', category: 'roots' },
   { symbol: '∛', label: 'Kub kök', command: '\\sqrt[3]{}', category: 'roots' },
   { symbol: '∜', label: '4-cü dərəcəli kök', command: '\\sqrt[4]{}', category: 'roots' },
   { symbol: '²', label: 'Kvadrat', command: '^{2}', category: 'basic' },
   { symbol: '³', label: 'Kub', command: '^{3}', category: 'basic' },
-  { symbol: 'π', label: 'Pi', command: '\\pi', category: 'basic' },
   { symbol: '∞', label: 'Sonsuzluq', command: '\\infty', category: 'basic' },
   { symbol: '∑', label: 'Cəmi', command: '\\sum', category: 'basic' },
   { symbol: '∫', label: 'İnteqral', command: '\\int', category: 'basic' },
@@ -66,7 +68,6 @@ const ALL_MATH_SYMBOLS = [
   { symbol: '℘', label: 'Veierstrass', command: '\\wp', category: 'basic' },
   { symbol: 'ℵ', label: 'Aleph', command: '\\aleph', category: 'basic' },
 
-  // Əməliyyatlar
   { symbol: '+', label: 'Toplama', category: 'operators' },
   { symbol: '-', label: 'Çıxma', category: 'operators' },
   { symbol: '×', label: 'Vurma', command: '\\times', category: 'operators' },
@@ -78,7 +79,6 @@ const ALL_MATH_SYMBOLS = [
   { symbol: '∗', label: 'Konvolyusiya', command: '\\ast', category: 'operators' },
   { symbol: '≀', label: 'Vreath', command: '\\wr', category: 'operators' },
 
-  // Kəsrlər
   { symbol: '½', label: '1/2', command: '\\frac{1}{2}', category: 'fractions' },
   { symbol: '⅓', label: '1/3', command: '\\frac{1}{3}', category: 'fractions' },
   { symbol: '¼', label: '1/4', command: '\\frac{1}{4}', category: 'fractions' },
@@ -95,7 +95,6 @@ const ALL_MATH_SYMBOLS = [
   { symbol: '⅝', label: '5/8', command: '\\frac{5}{8}', category: 'fractions' },
   { symbol: '⅞', label: '7/8', command: '\\frac{7}{8}', category: 'fractions' },
 
-  // Yunan Hərfləri
   { symbol: 'α', label: 'Alfa', command: '\\alpha', category: 'greek' },
   { symbol: 'β', label: 'Beta', command: '\\beta', category: 'greek' },
   { symbol: 'γ', label: 'Qamma', command: '\\gamma', category: 'greek' },
@@ -121,7 +120,6 @@ const ALL_MATH_SYMBOLS = [
   { symbol: 'ψ', label: 'Psi', command: '\\psi', category: 'greek' },
   { symbol: 'ω', label: 'Omega', command: '\\omega', category: 'greek' },
 
-  // Böyük Yunan Hərfləri
   { symbol: 'Γ', label: 'Böyük Qamma', command: '\\Gamma', category: 'greek_upper' },
   { symbol: 'Δ', label: 'Böyük Delta', command: '\\Delta', category: 'greek_upper' },
   { symbol: 'Θ', label: 'Böyük Teta', command: '\\Theta', category: 'greek_upper' },
@@ -134,7 +132,6 @@ const ALL_MATH_SYMBOLS = [
   { symbol: 'Ψ', label: 'Böyük Psi', command: '\\Psi', category: 'greek_upper' },
   { symbol: 'Ω', label: 'Böyük Omega', command: '\\Omega', category: 'greek_upper' },
 
-  // Oxlar
   { symbol: '→', label: 'Sağa ox', command: '\\rightarrow', category: 'arrows' },
   { symbol: '←', label: 'Sola ox', command: '\\leftarrow', category: 'arrows' },
   { symbol: '↑', label: 'Yuxarı ox', command: '\\uparrow', category: 'arrows' },
@@ -149,7 +146,6 @@ const ALL_MATH_SYMBOLS = [
   { symbol: '⟵', label: 'Uzun sola ox', command: '\\longleftarrow', category: 'arrows' },
   { symbol: '⟷', label: 'Uzun sağa-sola ox', command: '\\longleftrightarrow', category: 'arrows' },
 
-  // Çoxluq Simvolları
   { symbol: '∈', label: 'Element', command: '\\in', category: 'set' },
   { symbol: '∉', label: 'Element deyil', command: '\\notin', category: 'set' },
   { symbol: '⊂', label: 'Alt çoxluq', command: '\\subset', category: 'set' },
@@ -168,7 +164,6 @@ const ALL_MATH_SYMBOLS = [
   { symbol: 'ℝ', label: 'Reel ədədlər', command: '\\mathbb{R}', category: 'set' },
   { symbol: 'ℂ', label: 'Kompleks ədədlər', command: '\\mathbb{C}', category: 'set' },
 
-  // Məntiq Simvolları
   { symbol: '∀', label: 'Hamısı üçün', command: '\\forall', category: 'logic' },
   { symbol: '∃', label: 'Mövcuddur', command: '\\exists', category: 'logic' },
   { symbol: '∄', label: 'Mövcud deyil', command: '\\nexists', category: 'logic' },
@@ -180,7 +175,6 @@ const ALL_MATH_SYMBOLS = [
   { symbol: '∴', label: 'Ona görə', command: '\\therefore', category: 'logic' },
   { symbol: '∵', label: 'Çünki', command: '\\because', category: 'logic' },
 
-  // Əlaqə Simvolları
   { symbol: '<', label: 'Kiçikdir', command: '<', category: 'relations' },
   { symbol: '>', label: 'Böyükdür', command: '>', category: 'relations' },
   { symbol: '≡', label: 'Ekvivalenti', command: '\\equiv', category: 'relations' },
@@ -194,7 +188,6 @@ const ALL_MATH_SYMBOLS = [
   { symbol: '∤', label: 'Bölmür', command: '\\nmid', category: 'relations' },
   { symbol: '∣', label: 'Bölür', command: '\\mid', category: 'relations' },
 
-  // Həndəsə Simvolları
   { symbol: '∠', label: 'Bucaq', command: '\\angle', category: 'geometry' },
   { symbol: '△', label: 'Üçbucaq', command: '\\triangle', category: 'geometry' },
   { symbol: '□', label: 'Kvadrat', command: '\\square', category: 'geometry' },
@@ -205,7 +198,6 @@ const ALL_MATH_SYMBOLS = [
   { symbol: '′', label: 'Dərəcə işarəsi', command: "'", category: 'geometry' },
   { symbol: '″', label: 'İkiqat dərəcə işarəsi', command: '"', category: 'geometry' },
 
-  // Riyazi Funksiyalar
   { symbol: 'lim', label: 'Limit', command: '\\lim', category: 'functions' },
   { symbol: 'sin', label: 'Sinus', command: '\\sin', category: 'functions' },
   { symbol: 'cos', label: 'Kosinus', command: '\\cos', category: 'functions' },
@@ -233,13 +225,11 @@ const ALL_MATH_SYMBOLS = [
   { symbol: 'ker', label: 'Nüvə', command: '\\ker', category: 'functions' },
   { symbol: 'hom', label: 'Homomorfizm', command: '\\hom', category: 'functions' },
 
-  // Ədəd növləri
   { symbol: 'ℍ', label: 'Kvaternion', command: '\\mathbb{H}', category: 'numbers' },
   { symbol: '𝔸', label: 'Cəbri ədəd', command: '\\mathbb{A}', category: 'numbers' },
   { symbol: 'ℙ', label: 'Sadə ədəd', command: '\\mathbb{P}', category: 'numbers' },
   { symbol: '𝔹', label: 'Boolean', command: '\\mathbb{B}', category: 'numbers' },
 
-  // Digər xüsusi simvollar
   { symbol: '♭', label: 'Bemol', command: '\\flat', category: 'special' },
   { symbol: '♯', label: 'Diyez', command: '\\sharp', category: 'special' },
   { symbol: '♮', label: 'Natural', command: '\\natural', category: 'special' },
@@ -250,11 +240,39 @@ const ALL_MATH_SYMBOLS = [
   { symbol: '∙', label: 'Kiçik nöqtə', command: '\\bullet', category: 'special' },
   { symbol: '✓', label: 'Çek işarəsi', command: '\\checkmark', category: 'special' },
   { symbol: '✗', label: 'X işarəsi', command: '\\times', category: 'special' },
+
+  { symbol: '\\binom', label: 'Binom əmsalı', command: '\\binom{}{}', category: 'functions' },
+  { symbol: '\\pmatrix', label: 'Matris (mötərizəli)', command: '\\begin{pmatrix} & \\\\ & \\end{pmatrix}', category: 'matrix' },
+  { symbol: '\\bmatrix', label: 'Matris (kvadrat mötərizə)', command: '\\begin{bmatrix} & \\\\ & \\end{bmatrix}', category: 'matrix' },
+  { symbol: '\\Bmatrix', label: 'Matris (qıvrım mötərizə)', command: '\\begin{Bmatrix} & \\\\ & \\end{Bmatrix}', category: 'matrix' },
+  { symbol: '\\vmatrix', label: 'Determinant', command: '\\begin{vmatrix} & \\\\ & \\end{vmatrix}', category: 'matrix' },
+  { symbol: '\\Vmatrix', label: 'Norma', command: '\\begin{Vmatrix} & \\\\ & \\end{Vmatrix}', category: 'matrix' },
+  { symbol: '\\matrix', label: 'Matris (mötərizəsiz)', command: '\\begin{matrix} & \\\\ & \\end{matrix}', category: 'matrix' },
+  { symbol: '\\cases', label: 'Çoxsətirli tənlik', command: '\\begin{cases} & \\\\ & \\end{cases}', category: 'functions' },
+  { symbol: '\\text', label: 'Mətn', command: '\\text{}', category: 'functions' },
+  { symbol: '\\overbrace', label: 'Üst mötərizə', command: '\\overbrace{}', category: 'basic' },
+  { symbol: '\\underbrace', label: 'Alt mötərizə', command: '\\underbrace{}', category: 'basic' },
+  { symbol: '\\widehat', label: 'Vurğu (geniş)', command: '\\widehat{}', category: 'basic' },
+  { symbol: '\\widetilde', label: 'Dalğalı xətt', command: '\\widetilde{}', category: 'basic' },
+  { symbol: '\\bar', label: 'Üst xətt', command: '\\bar{}', category: 'basic' },
+  { symbol: '\\vec', label: 'Vektor', command: '\\vec{}', category: 'basic' },
+  { symbol: '\\dot', label: 'Nöqtə (törəmə)', command: '\\dot{}', category: 'basic' },
+  { symbol: '\\ddot', label: 'İki nöqtə', command: '\\ddot{}', category: 'basic' },
+  { symbol: '\\hat', label: 'Vurğu', command: '\\hat{}', category: 'basic' },
+  { symbol: '\\tilde', label: 'Dalğalı xətt', command: '\\tilde{}', category: 'basic' },
+  { symbol: '\\acute', label: 'Akut vurğu', command: '\\acute{}', category: 'basic' },
+  { symbol: '\\grave', label: 'Qrav vurğu', command: '\\grave{}', category: 'basic' },
+  { symbol: '\\check', label: 'Çek vurğu', command: '\\check{}', category: 'basic' },
+  { symbol: '\\breve', label: 'Breve', command: '\\breve{}', category: 'basic' },
+  { symbol: '\\prime', label: 'Vurğu (törəmə)', command: '\\prime', category: 'basic' },
+  { symbol: '\\backslash', label: 'Əks xətt', command: '\\backslash', category: 'basic' },
+  { symbol: '\\widehat', label: 'Böyük vurğu', command: '\\widehat{}', category: 'basic' },
 ];
 
 const CATEGORIES = [
   { id: 'all', label: 'Hamısı' },
   { id: 'basic', label: 'Əsas Simvollar' },
+  { id: 'roots', label: 'Köklər' },
   { id: 'operators', label: 'Əməliyyatlar' },
   { id: 'fractions', label: 'Kəsrlər' },
   { id: 'greek', label: 'Yunan Hərfləri' },
@@ -266,14 +284,47 @@ const CATEGORIES = [
   { id: 'geometry', label: 'Həndəsə' },
   { id: 'functions', label: 'Funksiyalar' },
   { id: 'numbers', label: 'Ədəd Növləri' },
-  { id: 'roots', label: 'Köklər' },
+  { id: 'matrix', label: 'Matrislər' },
   { id: 'special', label: 'Xüsusi' },
+];
+
+const QUICK_SYMBOLS = [
+  { symbol: '√', command: '\\sqrt{}', label: 'Kök' },
+  { symbol: '∛', command: '\\sqrt[3]{}', label: 'Kub kök' },
+  { symbol: '∜', command: '\\sqrt[4]{}', label: '4-cü kök' },
+  { symbol: '²', command: '^{2}', label: 'Kvadrat' },
+  { symbol: '³', command: '^{3}', label: 'Kub' },
+  { symbol: 'π', command: '\\pi', label: 'Pi' },
+  { symbol: '∑', command: '\\sum', label: 'Cəmi' },
+  { symbol: '∫', command: '\\int', label: 'İnteqral' },
+  { symbol: '∏', command: '\\prod', label: 'Hasil' },
+  { symbol: '∞', command: '\\infty', label: 'Sonsuzluq' },
+  { symbol: 'α', command: '\\alpha', label: 'Alfa' },
+  { symbol: 'β', command: '\\beta', label: 'Beta' },
+  { symbol: 'γ', command: '\\gamma', label: 'Qamma' },
+  { symbol: 'θ', command: '\\theta', label: 'Teta' },
+  { symbol: 'λ', command: '\\lambda', label: 'Lambda' },
+  { symbol: 'μ', command: '\\mu', label: 'Mu' },
+  { symbol: '≠', command: '\\neq', label: 'Bərabər deyil' },
+  { symbol: '≈', command: '\\approx', label: 'Təqribən' },
+  { symbol: '≤', command: '\\leq', label: 'Kiçik/bərabər' },
+  { symbol: '≥', command: '\\geq', label: 'Böyük/bərabər' },
+  { symbol: '½', command: '\\frac{1}{2}', label: '1/2' },
+  { symbol: '¼', command: '\\frac{1}{4}', label: '1/4' },
+  { symbol: '°', command: '^{\\circ}', label: 'Dərəcə' },
+  { symbol: '∈', command: '\\in', label: 'Element' },
+  { symbol: '∉', command: '\\notin', label: 'Daxil deyil' },
+  { symbol: '→', command: '\\rightarrow', label: 'Sağa ox' },
+  { symbol: '∪', command: '\\cup', label: 'Birləşmə' },
+  { symbol: '∩', command: '\\cap', label: 'Kəsişmə' },
+  { symbol: '∀', command: '\\forall', label: 'Hamısı üçün' },
+  { symbol: '∃', command: '\\exists', label: 'Mövcuddur' },
 ];
 
 export function SimpleMathEditor({
   value,
   onChange,
-  placeholder = "Mətni daxil edin...",
+  placeholder,
   className = "",
   preview = true
 }: SimpleMathEditorProps) {
@@ -286,6 +337,12 @@ export function SimpleMathEditor({
   const [customRootDegree, setCustomRootDegree] = useState('');
   const [customPower, setCustomPower] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const quickSymbolsRef = useRef<HTMLDivElement>(null);
+
+  const { locale } = useLocale();
+  const { t } = useTranslation(locale);
+
+  const displayPlaceholder = placeholder || t('mathEditor.enterText');
 
   useEffect(() => {
     setText(value);
@@ -293,11 +350,9 @@ export function SimpleMathEditor({
 
   const filteredSymbols = useMemo(() => {
     let filtered = ALL_MATH_SYMBOLS;
-
     if (selectedCategory !== 'all') {
       filtered = filtered.filter(symbol => symbol.category === selectedCategory);
     }
-
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(symbol =>
@@ -306,7 +361,6 @@ export function SimpleMathEditor({
         (symbol.command && symbol.command.toLowerCase().includes(query))
       );
     }
-
     return filtered;
   }, [searchQuery, selectedCategory]);
 
@@ -319,14 +373,11 @@ export function SimpleMathEditor({
   const insertAtCursor = (textToInsert: string) => {
     const textarea = textareaRef.current;
     if (!textarea) return;
-
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const newText = text.substring(0, start) + textToInsert + text.substring(end);
-
     setText(newText);
     onChange(newText);
-
     setTimeout(() => {
       textarea.focus();
       const newPosition = start + textToInsert.length;
@@ -337,17 +388,14 @@ export function SimpleMathEditor({
   const insertCommand = (command: string, cursorOffset = 0) => {
     const textarea = textareaRef.current;
     if (!textarea) return;
-
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
-
     if (start !== end) {
       const selectedText = text.substring(start, end);
       const newCommand = command.replace('{}', `{${selectedText}}`);
       const newText = text.substring(0, start) + newCommand + text.substring(end);
       setText(newText);
       onChange(newText);
-
       setTimeout(() => {
         textarea.focus();
         const newPosition = start + newCommand.length + cursorOffset;
@@ -357,7 +405,6 @@ export function SimpleMathEditor({
       const newText = text.substring(0, start) + command + text.substring(end);
       setText(newText);
       onChange(newText);
-
       setTimeout(() => {
         textarea.focus();
         const newPosition = start + command.length + cursorOffset;
@@ -379,7 +426,6 @@ export function SimpleMathEditor({
     } else {
       insertAtCursor(symbol);
     }
-    setShowSymbols(false);
   };
 
   const insertCustomRoot = () => {
@@ -407,27 +453,26 @@ export function SimpleMathEditor({
 
     let html = latex.trim();
 
-    // Köklər
     html = html.replace(/\\sqrt\[([^\]]+)\]\{([^}]+)\}/g, (match, degree, content) => {
       return `<span class="math-sqrt"><sup class="sqrt-degree">${degree}</sup><span class="sqrt-symbol">√</span><span class="sqrt-content">${content}</span></span>`;
     });
-
     html = html.replace(/\\sqrt\{([^}]+)\}/g, (match, content) => {
       return `<span class="math-sqrt"><span class="sqrt-symbol">√</span><span class="sqrt-content">${content}</span></span>`;
     });
 
-    // Kəsrlər
     html = html.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, (match, numerator, denominator) => {
       return `<span class="math-frac"><span class="frac-num">${numerator}</span><span class="frac-line">/</span><span class="frac-den">${denominator}</span></span>`;
     });
 
-    // Üst və alt indekslər
+    html = html.replace(/\\binom\{([^}]+)\}\{([^}]+)\}/g, (match, n, k) => {
+      return `<span class="binom">(${n} ${k})</span>`;
+    });
+
     html = html.replace(/\^\{([^}]+)\}/g, '<sup>$1</sup>');
     html = html.replace(/\^([a-zA-Z0-9α-ωΑ-Ω+\-±])/g, '<sup>$1</sup>');
     html = html.replace(/_\{([^}]+)\}/g, '<sub>$1</sub>');
     html = html.replace(/_([a-zA-Z0-9α-ωΑ-Ω+\-±])/g, '<sub>$1</sub>');
 
-    // LaTeX komandalarını Unicode simvollarına çevir
     const replacements: [RegExp, string][] = [
       [/\\pi/g, 'π'],
       [/\\infty/g, '∞'],
@@ -459,7 +504,6 @@ export function SimpleMathEditor({
       [/\\nu/g, 'ν'],
       [/\\xi/g, 'ξ'],
       [/\\omicron/g, 'ο'],
-      [/\\pi/g, 'π'],
       [/\\rho/g, 'ρ'],
       [/\\sigma/g, 'σ'],
       [/\\tau/g, 'τ'],
@@ -505,8 +549,6 @@ export function SimpleMathEditor({
       [/\\neg/g, '¬'],
       [/\\wedge/g, '∧'],
       [/\\vee/g, '∨'],
-      [/\\Rightarrow/g, '⇒'],
-      [/\\Leftrightarrow/g, '⇔'],
       [/\\angle/g, '∠'],
       [/\\triangle/g, '△'],
       [/\\square/g, '□'],
@@ -552,26 +594,41 @@ export function SimpleMathEditor({
       [/\\diamond/g, '⋄'],
       [/\\bullet/g, '∙'],
       [/\\checkmark/g, '✓'],
+      [/\\text\{([^}]+)\}/g, '$1'],
     ];
+
 
     replacements.forEach(([regex, replacement]) => {
       html = html.replace(regex, replacement);
     });
 
-    // Xüsusi işarələr
+    html = html.replace(/\\begin\{([^}]+)\}(.*?)\\end\{\1\}/gs, (match, env) => {
+      return `<span class="math-env" title="${env}">[${env}...]</span>`;
+    });
+
     html = html.replace(/</g, '&lt;').replace(/>/g, '&gt;');
     html = html.replace(/\s+/g, ' ');
 
     return html;
   };
 
-  const contentHtml = text
+  const previewContent = text
     ? `<div class="math-html">${latexToHtml(text)}</div>`
-    : `<span class="text-gray-400 italic">Preview görünəcək...</span>`;
+    : `<span class="text-gray-400 italic">${t('mathEditor.previewWillAppear')}</span>`;
+
+  const scrollQuickSymbols = (direction: 'left' | 'right') => {
+    if (quickSymbolsRef.current) {
+      const scrollAmount = 200;
+      quickSymbolsRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   return (
     <div className={`space-y-2 ${className}`}>
-      <div className="flex flex-wrap gap-1 mb-2">
+      <div className="flex flex-wrap justify-center gap-3 mb-2">
         <Button
           type="button"
           variant="outline"
@@ -580,9 +637,8 @@ export function SimpleMathEditor({
           className="text-xs"
         >
           <Square className="h-3 w-3 mr-1" />
-          Düstur əlavə et (Ctrl+M)
+          {t('mathEditor.addFormula')}
         </Button>
-
         <Button
           type="button"
           variant="outline"
@@ -591,9 +647,8 @@ export function SimpleMathEditor({
           className="text-xs"
         >
           <FunctionSquare className="h-3 w-3 mr-1" />
-          Özəl Kök
+          {t('mathEditor.customRoot')}
         </Button>
-
         <Button
           type="button"
           variant="outline"
@@ -601,10 +656,9 @@ export function SimpleMathEditor({
           onClick={() => setShowCustomPower(true)}
           className="text-xs"
         >
-          <Superscript className="h-3 w-3 mr-1" />
-          Özəl Qüvvət
+          <FunctionSquare className="h-3 w-3 mr-1" />
+          {t('mathEditor.customPower')}
         </Button>
-
         <Button
           type="button"
           variant="outline"
@@ -613,7 +667,7 @@ export function SimpleMathEditor({
           className="text-xs"
         >
           <Superscript className="h-3 w-3 mr-1" />
-          Üst
+          {t('mathEditor.superscript')}
         </Button>
         <Button
           type="button"
@@ -623,7 +677,7 @@ export function SimpleMathEditor({
           className="text-xs"
         >
           <Subscript className="h-3 w-3 mr-1" />
-          Alt
+          {t('mathEditor.subscript')}
         </Button>
         <Button
           type="button"
@@ -633,7 +687,7 @@ export function SimpleMathEditor({
           className="text-xs"
         >
           <Divide className="h-3 w-3 mr-1" />
-          Kəsr
+          {t('mathEditor.fraction')}
         </Button>
         <Button
           type="button"
@@ -643,7 +697,7 @@ export function SimpleMathEditor({
           className="text-xs"
         >
           <Parentheses className="h-3 w-3 mr-1" />
-          Mötərizə
+          {t('mathEditor.parentheses')}
         </Button>
         <Button
           type="button"
@@ -682,45 +736,45 @@ export function SimpleMathEditor({
         value={text}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
-        placeholder={placeholder}
+        placeholder={displayPlaceholder}
         className="w-full min-h-[120px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
       />
 
       {preview && (
         <div className="mt-2 p-3 border rounded bg-gray-50">
-          <div className="text-xs text-gray-500 mb-1">Preview:</div>
-          <HTMLEncodedReader content={contentHtml} />
+          <div className="text-xs text-gray-500 mb-1">{t('mathEditor.preview')}</div>
+          <HTMLEncodedReader content={previewContent} />
         </div>
       )}
 
       <Dialog open={showCustomRoot} onOpenChange={setShowCustomRoot}>
         <DialogContent className="sm:max-w-md h-50 overflow-hidden">
           <DialogHeader>
-            <DialogTitle>Özəl Kök Dərəcəsi</DialogTitle>
+            <DialogTitle>{t('mathEditor.customRootTitle')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="root-degree">Kök Dərəcəsini daxil edin:</Label>
+              <Label htmlFor="root-degree">{t('mathEditor.rootDegreeLabel')}</Label>
               <Input
                 id="root-degree"
                 type="text"
                 value={customRootDegree}
                 onChange={(e) => setCustomRootDegree(e.target.value)}
-                placeholder="Məsələn: 5, 10, 100, n"
+                placeholder={t('mathEditor.rootDegreePlaceholder')}
                 className="mt-1"
               />
               <p className="text-xs text-muted-foreground mt-2">
-                İstənilən ədəd, hərf və ya ifadə daxil edə bilərsiniz (1000, 2n+1, k, vb.)
+                {t('mathEditor.rootDegreeHelp')}
               </p>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowCustomRoot(false)}>
                 <X className="h-4 w-4 mr-2" />
-                Ləğv et
+                {t('mathEditor.cancel')}
               </Button>
               <Button onClick={insertCustomRoot} disabled={!customRootDegree.trim()}>
                 <FunctionSquare className="h-4 w-4 mr-2" />
-                Əlavə et
+                {t('mathEditor.add')}
               </Button>
             </DialogFooter>
           </div>
@@ -730,31 +784,31 @@ export function SimpleMathEditor({
       <Dialog open={showCustomPower} onOpenChange={setShowCustomPower}>
         <DialogContent className="sm:max-w-md h-50 overflow-hidden">
           <DialogHeader>
-            <DialogTitle>Özəl Qüvvət</DialogTitle>
+            <DialogTitle>{t('mathEditor.customPowerTitle')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="power">Qüvvəti daxil edin:</Label>
+              <Label htmlFor="power">{t('mathEditor.powerLabel')}</Label>
               <Input
                 id="power"
                 type="text"
                 value={customPower}
                 onChange={(e) => setCustomPower(e.target.value)}
-                placeholder="Məsələn: 5, n, 2k+1, ∞"
+                placeholder={t('mathEditor.powerPlaceholder')}
                 className="mt-1"
               />
               <p className="text-xs text-muted-foreground mt-2">
-                İstənilən ədəd, hərf və ya ifadə daxil edə bilərsiniz
+                {t('mathEditor.powerHelp')}
               </p>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowCustomPower(false)}>
                 <X className="h-4 w-4 mr-2" />
-                Ləğv et
+                {t('mathEditor.cancel')}
               </Button>
               <Button onClick={insertCustomPower} disabled={!customPower.trim()}>
                 <Superscript className="h-4 w-4 mr-2" />
-                Əlavə et
+                {t('mathEditor.add')}
               </Button>
             </DialogFooter>
           </div>
@@ -764,7 +818,7 @@ export function SimpleMathEditor({
       <Dialog open={showSymbols} onOpenChange={setShowSymbols}>
         <DialogContent className="max-w-8xl max-h-[90vh] overflow-auto">
           <DialogHeader>
-            <DialogTitle>Riyazi Simvollar və Düsturlar</DialogTitle>
+            <DialogTitle>{t('mathEditor.symbolsTitle')}</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
@@ -773,20 +827,19 @@ export function SimpleMathEditor({
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="text"
-                  placeholder="Simvol axtar (adına, simvoluna və ya LaTeX komutuna görə)"
+                  placeholder={t('mathEditor.searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
                 />
               </div>
-
               <div className="text-xs text-muted-foreground">
-                {filteredSymbols.length} simvol tapıldı
+                {t('mathEditor.symbolsFound', { count: filteredSymbols.length })}
               </div>
             </div>
 
             <div className="overflow-x-auto">
-              <div className="flex gap-1 pb-2">
+              <div className="grid grid-cols-3 md:grid-cols-6 lg:grid-cols-8 2xl:flex gap-1 pb-2">
                 {CATEGORIES.map((category) => (
                   <Button
                     key={category.id}
@@ -802,7 +855,7 @@ export function SimpleMathEditor({
               </div>
             </div>
 
-            <div className="grid grid-cols-8 gap-2 max-h-[400px] overflow-y-auto p-2 border rounded">
+            <div className="grid grid-cols-2 md:grid-cols-6 lg:grid-cols-8 gap-2 max-h-[400px] overflow-y-auto p-2 border rounded">
               {filteredSymbols.length > 0 ? (
                 filteredSymbols.map((item, index) => (
                   <Button
@@ -820,35 +873,16 @@ export function SimpleMathEditor({
               ) : (
                 <div className="col-span-8 text-center py-8 text-muted-foreground">
                   <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p>Heç bir simvol tapılmadı</p>
-                  <p className="text-xs mt-1">Başqa açar sözlə cəhd edin</p>
+                  <p>{t('mathEditor.noSymbolsFound')}</p>
+                  <p className="text-xs mt-1">{t('mathEditor.tryAnotherKeyword')}</p>
                 </div>
               )}
             </div>
 
             <div>
-              <h4 className="text-sm font-medium mb-2">Tez-tez istifadə edilənlər:</h4>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { symbol: '√', command: '\\sqrt{}', label: 'Kök' },
-                  { symbol: '∛', command: '\\sqrt[3]{}', label: 'Kub kök' },
-                  { symbol: '∜', command: '\\sqrt[4]{}', label: '4-cü kök' },
-                  { symbol: '²', command: '^{2}', label: 'Kvadrat' },
-                  { symbol: '³', command: '^{3}', label: 'Kub' },
-                  { symbol: 'π', command: '\\pi', label: 'Pi' },
-                  { symbol: '∑', command: '\\sum', label: 'Cəmi' },
-                  { symbol: '∫', command: '\\int', label: 'İnteqral' },
-                  { symbol: 'α', command: '\\alpha', label: 'Alfa' },
-                  { symbol: 'β', command: '\\beta', label: 'Beta' },
-                  { symbol: 'γ', command: '\\gamma', label: 'Qamma' },
-                  { symbol: '≠', command: '\\neq', label: 'Bərabər deyil' },
-                  { symbol: '≈', command: '\\approx', label: 'Təqribən' },
-                  { symbol: '≤', command: '\\leq', label: 'Kiçik/bərabər' },
-                  { symbol: '≥', command: '\\geq', label: 'Böyük/bərabər' },
-                  { symbol: '½', command: '\\frac{1}{2}', label: '1/2' },
-                  { symbol: '¼', command: '\\frac{1}{4}', label: '1/4' },
-                  { symbol: '°', command: '^{\\circ}', label: 'Dərəcə' },
-                ].map((item, index) => (
+              <h4 className="text-sm font-medium mb-2">{t('mathEditor.frequentSymbols')}</h4>
+              <div className="grid grid-cols-3 md:grid-cols-6 lg:grid-cols-8 2xl:flex flex-wrap gap-2">
+                {QUICK_SYMBOLS.map((item, index) => (
                   <Button
                     key={index}
                     type="button"
@@ -869,10 +903,10 @@ export function SimpleMathEditor({
           <DialogFooter>
             <div className="flex items-center justify-between w-full">
               <div className="text-xs text-muted-foreground">
-                Simvolu seçin, avtomatik olaraq mətnə əlavə olunacaq
+                {t('mathEditor.selectSymbolHelp')}
               </div>
               <Button onClick={() => setShowSymbols(false)}>
-                Bağla
+                {t('mathEditor.close')}
               </Button>
             </div>
           </DialogFooter>
