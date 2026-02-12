@@ -202,6 +202,13 @@ export type UpdateAdminPayload = {
   role?: string
   password?: string
 }
+
+export interface Starts {
+  totalUsers: number,
+  totalExams: number,
+  totalAttempts: number,
+  totalRevenue: number
+}
 export interface Exam {
   id: string
   title: string
@@ -571,7 +578,9 @@ class ApiClient {
   async getProfile() {
     return this.request<User>("/auth/me")
   }
-
+  async getDataStarts() {
+    return this.request<Starts>("/admin/stats")
+  }
   async getUsers(params: { page: number; limit: number; search?: string }) {
     const q = new URLSearchParams({
       page: String(params.page),
