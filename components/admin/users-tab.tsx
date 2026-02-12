@@ -143,16 +143,16 @@ export default function AdminUsersModern() {
     );
 
     return (
-        <div className="min-h-screen bg-slate-50 p-6">
+        <div className="min-h-screen bg-slate-50 p-4 sm:p-6">
             <div className="max-w-7xl mx-auto">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
                     <div>
-                        <h1 className="text-2xl font-semibold text-slate-800">{t("users.title")}</h1>
-                        <p className="text-sm text-slate-500">{t("users.subtitle")}</p>
+                        <h1 className="text-2xl font-semibold text-slate-800 break-all [word-break:break-all] [overflow-wrap:anywhere]">{t("users.title")}</h1>
+                        <p className="text-sm text-slate-500 break-all [word-break:break-all] [overflow-wrap:anywhere]">{t("users.subtitle")}</p>
                     </div>
 
-                    <div className="flex items-center gap-3 w-full sm:w-auto">
-                        <div className="relative flex-1 sm:flex-none">
+                    <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                        <div className="relative w-full sm:w-80">
                             <input
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
@@ -165,7 +165,7 @@ export default function AdminUsersModern() {
                             </svg>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                             <button
                                 onClick={() => loadUsers(1, limit, search)}
                                 className="inline-flex items-center gap-2 px-3 py-2 bg-white border rounded-lg shadow-sm text-sm hover:bg-gray-50"
@@ -183,69 +183,56 @@ export default function AdminUsersModern() {
                             </button>
 
                             <div className="px-3 py-2 bg-white border rounded-lg text-sm">
-                                <div className="text-xs text-slate-400">{t("labels.pageSize")}</div>
-                                <div className="font-medium">50</div>
+                                <div className="text-xs text-slate-400 break-all [word-break:break-all] [overflow-wrap:anywhere]">{t("labels.pageSize")}</div>
+                                <div className="font-medium break-all [word-break:break-all] [overflow-wrap:anywhere]">50</div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div className="bg-white rounded-2xl shadow p-4">
+                 <div className="bg-white rounded-2xl shadow p-4">
                     <div className="flex items-center justify-between mb-3">
-                        <div className="text-sm text-slate-600">{t("labels.total")}: <span className="font-medium text-slate-800">{totalCount}</span> {t("labels.users")}</div>
+                        <div className="text-sm text-slate-600 break-all [word-break:break-all] [overflow-wrap:anywhere]">
+                            {t("labels.total")}: <span className="font-medium text-slate-800 break-all [word-break:break-all] [overflow-wrap:anywhere]">{totalCount}</span> {t("labels.users")}
+                        </div>
                         <div className="hidden sm:flex items-center gap-2">
                             <div className="text-sm text-slate-500">{t("labels.page")}</div>
                             <div className="inline-flex items-center gap-2 px-3 py-2 bg-slate-100 rounded-lg text-sm">
-                                <button
-                                    onClick={() => setPage(1)}
-                                    disabled={page <= 1}
-                                    className="px-2 py-1 rounded disabled:opacity-50"
-                                >«</button>
-                                <button
-                                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                                    disabled={page <= 1}
-                                    className="px-2 py-1 rounded disabled:opacity-50"
-                                >‹</button>
+                                <button onClick={() => setPage(1)} disabled={page <= 1} className="px-2 py-1 rounded disabled:opacity-50">«</button>
+                                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1} className="px-2 py-1 rounded disabled:opacity-50">‹</button>
                                 <div className="px-2 font-medium">{page}</div>
                                 <div className="text-xs text-slate-400">/ {totalPages}</div>
-                                <button
-                                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                                    disabled={page >= totalPages}
-                                    className="px-2 py-1 rounded disabled:opacity-50"
-                                >›</button>
-                                <button
-                                    onClick={() => setPage(totalPages)}
-                                    disabled={page >= totalPages}
-                                    className="px-2 py-1 rounded disabled:opacity-50"
-                                >»</button>
+                                <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="px-2 py-1 rounded disabled:opacity-50">›</button>
+                                <button onClick={() => setPage(totalPages)} disabled={page >= totalPages} className="px-2 py-1 rounded disabled:opacity-50">»</button>
                             </div>
                         </div>
                     </div>
-                    <div className="w-full overflow-auto max-h-[66vh] border border-slate-100 rounded-lg">
+
+                    <div className="w-full overflow-x-auto max-h-[66vh] border border-slate-100 rounded-lg">
                         <table className="min-w-[980px] w-full table-auto">
                             <thead className="bg-gradient-to-r from-slate-50 to-slate-50 sticky top-0 z-10">
-                                <tr className="text-sm text-slate-600">
-                                    <th className="px-4 py-3 text-center">№</th>
-                                    <th className="px-4 py-3 text-center">{t("table.publicId")}</th>
-                                    <th className="px-4 py-3 text-center">{t("table.email")}</th>
-                                    <th className="px-4 py-3 text-center">{t("table.name")}</th>
-                                    <th className="px-4 py-3 text-center">{t("table.role")}</th>
-                                    <th className="px-4 py-3 text-center">{t("table.balance")}</th>
-                                    <th className="px-4 py-3 text-center">{t("table.joined")}</th>
-                                    <th className="px-4 py-3 text-center">{t("table.actions")}</th>
+                                <tr className="text-xs sm:text-sm text-slate-600">
+                                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-center">№</th>
+                                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-center">{t("table.publicId")}</th>
+                                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-center">{t("table.email")}</th>
+                                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-center">{t("table.name")}</th>
+                                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-center">{t("table.role")}</th>
+                                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-center">{t("table.balance")}</th>
+                                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-center">{t("table.joined")}</th>
+                                    <th className="px-2 sm:px-4 py-2 sm:py-3 text-center">{t("table.actions")}</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {loading ? (
                                     Array.from({ length: 8 }).map((_, i) => (
                                         <tr key={i} className="animate-pulse">
-                                            <td className="px-4 py-4"><div className="h-4 w-6 bg-slate-200 rounded" /></td>
-                                            <td className="px-4 py-4"><div className="h-8 w-8 bg-slate-200 rounded" /></td>
-                                            <td className="px-4 py-4"><div className="h-4 w-28 bg-slate-200 rounded" /></td>
-                                            <td className="px-4 py-4"><div className="h-4 w-52 bg-slate-200 rounded" /></td>
-                                            <td className="px-4 py-4"><div className="h-4 w-36 bg-slate-200 rounded" /></td>
-                                            <td className="px-4 py-4"><div className="h-4 w-24 bg-slate-200 rounded" /></td>
-                                            <td className="px-4 py-4 text-right"><div className="h-4 w-20 bg-slate-200 rounded ml-auto" /></td>
-                                            <td className="px-4 py-4"><div className="h-4 w-32 bg-slate-200 rounded" /></td>
+                                            <td className="px-2 sm:px-4 py-3"><div className="h-4 w-6 bg-slate-200 rounded" /></td>
+                                            <td className="px-2 sm:px-4 py-3"><div className="h-8 w-8 bg-slate-200 rounded" /></td>
+                                            <td className="px-2 sm:px-4 py-3"><div className="h-4 w-28 bg-slate-200 rounded" /></td>
+                                            <td className="px-2 sm:px-4 py-3"><div className="h-4 w-52 bg-slate-200 rounded" /></td>
+                                            <td className="px-2 sm:px-4 py-3"><div className="h-4 w-36 bg-slate-200 rounded" /></td>
+                                            <td className="px-2 sm:px-4 py-3"><div className="h-4 w-24 bg-slate-200 rounded" /></td>
+                                            <td className="px-2 sm:px-4 py-3 text-right"><div className="h-4 w-20 bg-slate-200 rounded ml-auto" /></td>
+                                            <td className="px-2 sm:px-4 py-3"><div className="h-4 w-32 bg-slate-200 rounded" /></td>
                                         </tr>
                                     ))
                                 ) : error ? (
@@ -255,14 +242,14 @@ export default function AdminUsersModern() {
                                 ) : (
                                     users.map((u, idx) => (
                                         <tr key={u.id} className="hover:bg-slate-50 border-b last:border-b-0">
-                                            <td className="px-4 py-3 text-sm text-slate-600">{(page - 1) * limit + idx + 1}</td>
-                                            <td className="px-4 py-3 font-mono text-xs text-slate-700">{u.publicId ?? "-"}</td>
-                                            <td className="px-4 py-3 text-slate-800">{u.email}</td>
-                                            <td className="px-4 py-3 text-slate-700">{formatName(u)}</td>
-                                            <td className="px-4 py-3 text-slate-600">{u.role ?? "-"}</td>
-                                            <td className="px-4 py-3 text-right font-medium text-slate-800">{formatBalance(u.balance)} <span className="text-xs text-slate-400">AZN</span></td>
-                                            <td className="px-4 py-3 text-slate-500">{formatDate(u.createdAt)}</td>
-                                            <td className="px-4 py-3">
+                                            <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-slate-600 break-all [word-break:break-all] [overflow-wrap:anywhere]">{(page - 1) * limit + idx + 1}</td>
+                                            <td className="px-2 sm:px-4 py-3 font-mono text-xs text-slate-700 break-all [word-break:break-all] [overflow-wrap:anywhere]">{u.publicId ?? "-"}</td>
+                                            <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-slate-800 break-all [word-break:break-all] [overflow-wrap:anywhere]">{u.email}</td>
+                                            <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-slate-700 break-all [word-break:break-all] [overflow-wrap:anywhere]">{formatName(u)}</td>
+                                            <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-slate-600 break-all [word-break:break-all] [overflow-wrap:anywhere]">{u.role ?? "-"}</td>
+                                            <td className="px-2 sm:px-4 py-3 text-right font-medium text-xs sm:text-sm text-slate-800 break-all [word-break:break-all] [overflow-wrap:anywhere]">{formatBalance(u.balance)} <span className="text-xs text-slate-400">AZN</span></td>
+                                            <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-slate-500 break-all [word-break:break-all] [overflow-wrap:anywhere]">{formatDate(u.createdAt)}</td>
+                                            <td className="px-2 sm:px-4 py-3">
                                                 <div className="flex justify-center items-center gap-2">
                                                     <button
                                                         onClick={() => openUser(u)}
@@ -278,6 +265,7 @@ export default function AdminUsersModern() {
                             </tbody>
                         </table>
                     </div>
+
                     <div className="flex items-center justify-between mt-4 sm:hidden">
                         <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1} className="px-3 py-1 rounded border disabled:opacity-50">{t("buttons.prev")}</button>
                         <div className="text-sm">{page} / {totalPages}</div>
@@ -285,6 +273,7 @@ export default function AdminUsersModern() {
                     </div>
                 </div>
             </div>
+
             {showModal && (
                 <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/50" onClick={closeModal} />
@@ -292,8 +281,8 @@ export default function AdminUsersModern() {
                     <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden" style={{ maxHeight: "88vh" }}>
                         <div className="flex items-center justify-between gap-4 p-4 border-b">
                             <div>
-                                <h3 className="text-lg font-semibold text-slate-800">{selectedUser?.email ?? selectedUserFull?.email}</h3>
-                                <div className="text-sm text-slate-500">{selectedUser?.publicId ?? selectedUserFull?.publicId ?? ""}</div>
+                                <h3 className="text-lg font-semibold text-slate-800 break-all [word-break:break-all] [overflow-wrap:anywhere]">{selectedUser?.email ?? selectedUserFull?.email}</h3>
+                                <div className="text-sm text-slate-500 break-all [word-break:break-all] [overflow-wrap:anywhere]">{selectedUser?.publicId ?? selectedUserFull?.publicId ?? ""}</div>
                             </div>
 
                             <div className="flex items-center gap-2">
@@ -303,12 +292,12 @@ export default function AdminUsersModern() {
 
                         <div className="flex gap-6 p-4">
                             <div className="w-full">
-                                <div className="flex items-center gap-2 mb-4">
+                                <div className="flex flex-wrap items-center gap-2 mb-4">
                                     {["overview", "attempts", "payments", "transactions"].map((tkey) => (
                                         <button
                                             key={tkey}
                                             onClick={() => setActiveTab(tkey)}
-                                            className={`px-3 py-1.5 rounded-lg text-sm ${activeTab === tkey ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-700"}`}
+                                            className={`px-3 py-1.5 rounded-lg text-sm ${activeTab === tkey ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-700"} text-left`}
                                         >
                                             {tkey === "overview" && t("tabs.overview")}
                                             {tkey === "attempts" && `${t("tabs.attempts")} (${(selectedUserFull?.attempts || []).length})`}
@@ -330,44 +319,38 @@ export default function AdminUsersModern() {
                                     ) : (
                                         <>
                                             {activeTab === "overview" && (
-                                                <div className="grid grid-cols-2 gap-4 mb-6">
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                                                     <div className="p-4 bg-slate-50 rounded-lg">
                                                         <div className="text-xs text-slate-400">{t("fields.id")}</div>
-                                                        <div className="font-medium">{selectedUserFull.id}</div>
+                                                        <div className="font-medium break-all [word-break:break-all] [overflow-wrap:anywhere]">{selectedUserFull.id}</div>
                                                     </div>
                                                     <div className="p-4 bg-slate-50 rounded-lg">
                                                         <div className="text-xs text-slate-400">{t("fields.publicId")}</div>
-                                                        <div className="font-medium">{selectedUserFull.publicId ?? '-'}</div>
+                                                        <div className="font-medium break-all [word-break:break-all] [overflow-wrap:anywhere]">{selectedUserFull.publicId ?? '-'}</div>
                                                     </div>
-
                                                     <div className="p-4 bg-slate-50 rounded-lg">
                                                         <div className="text-xs text-slate-400">{t("fields.name")}</div>
-                                                        <div className="font-medium">{(selectedUserFull.firstName ?? "") + " " + (selectedUserFull.lastName ?? "")}</div>
+                                                        <div className="font-medium break-all [word-break:break-all] [overflow-wrap:anywhere]">{(selectedUserFull.firstName ?? "") + " " + (selectedUserFull.lastName ?? "")}</div>
                                                     </div>
-
                                                     <div className="p-4 bg-slate-50 rounded-lg">
                                                         <div className="text-xs text-slate-400">{t("fields.role")}</div>
-                                                        <div className="font-medium">{selectedUserFull.role ?? "-"}</div>
+                                                        <div className="font-medium break-all [word-break:break-all] [overflow-wrap:anywhere]">{selectedUserFull.role ?? "-"}</div>
                                                     </div>
-
                                                     <div className="p-4 bg-slate-50 rounded-lg">
                                                         <div className="text-xs text-slate-400">{t("fields.balance")}</div>
-                                                        <div className="font-medium">{selectedUserFull.balance ?? "0.00"} AZN</div>
+                                                        <div className="font-medium break-all [word-break:break-all] [overflow-wrap:anywhere]">{selectedUserFull.balance ?? "0.00"} AZN</div>
                                                     </div>
-
                                                     <div className="p-4 bg-slate-50 rounded-lg">
                                                         <div className="text-xs text-slate-400">{t("fields.verified")}</div>
-                                                        <div className="font-medium">{selectedUserFull.isEmailVerified ? t("common.yes") : t("common.no")}</div>
+                                                        <div className="font-medium break-all [word-break:break-all] [overflow-wrap:anywhere]">{selectedUserFull.isEmailVerified ? t("common.yes") : t("common.no")}</div>
                                                     </div>
-
                                                     <div className="p-4 bg-slate-50 rounded-lg">
                                                         <div className="text-xs text-slate-400">{t("fields.joined")}</div>
-                                                        <div className="font-medium">{formatDate(selectedUserFull.createdAt)}</div>
+                                                        <div className="font-medium break-all [word-break:break-all] [overflow-wrap:anywhere]">{formatDate(selectedUserFull.createdAt)}</div>
                                                     </div>
-
                                                     <div className="p-4 bg-slate-50 rounded-lg">
                                                         <div className="text-xs text-slate-400">{t("fields.updated")}</div>
-                                                        <div className="font-medium">{formatDate(selectedUserFull.updatedAt)}</div>
+                                                        <div className="font-medium break-all [word-break:break-all] [overflow-wrap:anywhere]">{formatDate(selectedUserFull.updatedAt)}</div>
                                                     </div>
                                                 </div>
                                             )}
@@ -376,15 +359,15 @@ export default function AdminUsersModern() {
                                                 <div className="space-y-3">
                                                     {selectedUserFull.attempts && selectedUserFull.attempts.length > 0 ? (
                                                         selectedUserFull.attempts.map((a: any) => (
-                                                            <div key={a.id} className="p-3 bg-white border rounded-lg flex justify-between items-start">
+                                                            <div key={a.id} className="p-3 bg-white border rounded-lg flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                                                                 <div>
-                                                                    <div className="text-sm font-medium">{t("attempts.itemTitle")}: {a.id}</div>
-                                                                    <div className="text-xs text-slate-500">{t("attempts.bank")}: {a.bankId} • {t("attempts.status")}: {a.status}</div>
-                                                                    <div className="text-xs text-slate-400 mt-1">{formatDate(a.startedAt)} → {formatDate(a.finishedAt)}</div>
+                                                                    <div className="text-sm font-medium break-all [word-break:break-all] [overflow-wrap:anywhere]">{t("attempts.itemTitle")}: {a.id}</div>
+                                                                    <div className="text-xs text-slate-500 break-all [word-break:break-all] [overflow-wrap:anywhere]">{t("attempts.bank")}: {a.bankId} • {t("attempts.status")}: {a.status}</div>
+                                                                    <div className="text-xs text-slate-400 mt-1 break-all [word-break:break-all] [overflow-wrap:anywhere]">{formatDate(a.startedAt)} → {formatDate(a.finishedAt)}</div>
                                                                 </div>
-                                                                <div className="text-right">
-                                                                    <div className="text-sm font-semibold">{a.score ?? 0} / {a.total ?? 0}</div>
-                                                                    <div className="text-xs text-slate-400">{a.expiresAt ? formatDate(a.expiresAt) : ""}</div>
+                                                                <div className="text-right flex-shrink-0">
+                                                                    <div className="text-sm font-semibold break-all [word-break:break-all] [overflow-wrap:anywhere]">{a.score ?? 0} / {a.total ?? 0}</div>
+                                                                    <div className="text-xs text-slate-400 break-all [word-break:break-all] [overflow-wrap:anywhere]">{a.expiresAt ? formatDate(a.expiresAt) : ""}</div>
                                                                 </div>
                                                             </div>
                                                         ))
@@ -398,14 +381,14 @@ export default function AdminUsersModern() {
                                                 <div className="space-y-3">
                                                     {selectedUserFull.payments && selectedUserFull.payments.length > 0 ? (
                                                         selectedUserFull.payments.map((p: any) => (
-                                                            <div key={p.id} className="p-3 bg-white border rounded-lg flex justify-between items-center">
+                                                            <div key={p.id} className="p-3 bg-white border rounded-lg flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                                                                 <div>
-                                                                    <div className="text-sm font-medium">{t("payments.order")}: {p.orderId}</div>
-                                                                    <div className="text-xs text-slate-400">{formatDate(p.createdAt)}</div>
+                                                                    <div className="text-sm font-medium break-all [word-break:break-all] [overflow-wrap:anywhere]">{t("payments.order")}: {p.orderId}</div>
+                                                                    <div className="text-xs text-slate-400 break-all [word-break:break-all] [overflow-wrap:anywhere]">{formatDate(p.createdAt)}</div>
                                                                 </div>
-                                                                <div className="text-right">
-                                                                    <div className="font-semibold">{p.amount} {p.currency}</div>
-                                                                    <div className="text-xs text-slate-500">{p.status}</div>
+                                                                <div className="text-right flex-shrink-0">
+                                                                    <div className="font-semibold break-all [word-break:break-all] [overflow-wrap:anywhere]">{p.amount} {p.currency}</div>
+                                                                    <div className="text-xs text-slate-500 break-all [word-break:break-all] [overflow-wrap:anywhere]">{p.status}</div>
                                                                 </div>
                                                             </div>
                                                         ))
@@ -419,14 +402,14 @@ export default function AdminUsersModern() {
                                                 <div className="space-y-3">
                                                     {selectedUserFull.balanceTransactions && selectedUserFull.balanceTransactions.length > 0 ? (
                                                         selectedUserFull.balanceTransactions.map((bt: any) => (
-                                                            <div key={bt.id} className="p-3 bg-white border rounded-lg flex justify-between items-center">
+                                                            <div key={bt.id} className="p-3 bg-white border rounded-lg flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                                                                 <div>
-                                                                    <div className="text-sm font-medium">{bt.type}</div>
-                                                                    <div className="text-xs text-slate-400">{bt.note}</div>
+                                                                    <div className="text-sm font-medium break-all [word-break:break-all] [overflow-wrap:anywhere]">{bt.type}</div>
+                                                                    <div className="text-xs text-slate-400 break-all [word-break:break-all] [overflow-wrap:anywhere]">{bt.note}</div>
                                                                 </div>
-                                                                <div className="text-right">
-                                                                    <div className="font-semibold">{bt.amount} AZN</div>
-                                                                    <div className="text-xs text-slate-500">{formatDate(bt.createdAt)}</div>
+                                                                <div className="text-right flex-shrink-0">
+                                                                    <div className="font-semibold break-all [word-break:break-all] [overflow-wrap:anywhere]">{bt.amount} AZN</div>
+                                                                    <div className="text-xs text-slate-500 break-all [word-break:break-all] [overflow-wrap:anywhere]">{formatDate(bt.createdAt)}</div>
                                                                 </div>
                                                             </div>
                                                         ))
