@@ -922,8 +922,8 @@ export const translations = {
     "csv.filenamePrefix": "istifadəçilərin_ixracı",
     "common.yes": "Bəli",
     "common.no": "Xeyr",
-    "errors.generic": "Xəta baş verdi"
-
+    "errors.generic": "Xəta baş verdi",
+    "exam_ai_check_info": "Bu yazılı imtahan süni intellekt tərəfindən yoxlanılır. Nəticənin hesablanması təxminən 1 saat çəkə bilər.",
   },
   en: {
     login: "Login",
@@ -1843,8 +1843,7 @@ export const translations = {
     "common.yes": "Yes",
     "common.no": "No",
     "errors.generic": "An error occurred",
-
-
+    "exam_ai_check_info": "This written exam is checked by artificial intelligence. Calculating the result may take about 1 hour.",
   },
   ru: {
     login: "Войти",
@@ -2777,7 +2776,7 @@ export const translations = {
     "common.yes": "Да",
     "common.no": "Нет",
     "errors.generic": "Произошла ошибка",
-
+    "exam_ai_check_info": "Этот письменный экзамен проверяется искусственным интеллектом. Подсчёт результата может занять около 1 часа.",
   }
 }
 

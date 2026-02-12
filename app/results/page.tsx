@@ -182,7 +182,7 @@ export default function ResultsPage() {
                             <TriangleAlert color="#ff0000" />
                           </div>
                           <div>
-                            <span>Bu yazılı imtahan süni intellekt tərəfindən yoxlanılır. Nəticənin hesablanması təxminən 1 saat çəkə bilər. </span>
+                            <span>{t("exam_ai_check_info")}</span>
                           </div>
                         </div>
                       ) : null}
