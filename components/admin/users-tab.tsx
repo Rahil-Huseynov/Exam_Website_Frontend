@@ -242,14 +242,14 @@ export default function AdminUsersModern() {
                                 ) : (
                                     users.map((u, idx) => (
                                         <tr key={u.id} className="hover:bg-slate-50 border-b last:border-b-0">
-                                            <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-slate-600 break-all [word-break:break-all] [overflow-wrap:anywhere]">{(page - 1) * limit + idx + 1}</td>
-                                            <td className="px-2 sm:px-4 py-3 font-mono text-xs text-slate-700 break-all [word-break:break-all] [overflow-wrap:anywhere]">{u.publicId ?? "-"}</td>
-                                            <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-slate-800 break-all [word-break:break-all] [overflow-wrap:anywhere]">{u.email}</td>
-                                            <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-slate-700 break-all [word-break:break-all] [overflow-wrap:anywhere]">{formatName(u)}</td>
-                                            <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-slate-600 break-all [word-break:break-all] [overflow-wrap:anywhere]">{u.role ?? "-"}</td>
-                                            <td className="px-2 sm:px-4 py-3 text-right font-medium text-xs sm:text-sm text-slate-800 break-all [word-break:break-all] [overflow-wrap:anywhere]">{formatBalance(u.balance)} <span className="text-xs text-slate-400">AZN</span></td>
-                                            <td className="px-2 sm:px-4 py-3 text-xs sm:text-sm text-slate-500 break-all [word-break:break-all] [overflow-wrap:anywhere]">{formatDate(u.createdAt)}</td>
-                                            <td className="px-2 sm:px-4 py-3">
+                                            <td className="text-center px-2 sm:px-4 py-3 text-xs sm:text-sm text-slate-600 break-all [word-break:break-all] [overflow-wrap:anywhere]">{(page - 1) * limit + idx + 1}</td>
+                                            <td className="text-center px-2 sm:px-4 py-3 font-mono text-xs text-slate-700 break-all [word-break:break-all] [overflow-wrap:anywhere]">{u.publicId ?? "-"}</td>
+                                            <td className="text-center px-2 sm:px-4 py-3 text-xs sm:text-sm text-slate-800 break-all [word-break:break-all] [overflow-wrap:anywhere]">{u.email}</td>
+                                            <td className="text-center px-2 sm:px-4 py-3 text-xs sm:text-sm text-slate-700 break-all [word-break:break-all] [overflow-wrap:anywhere]">{formatName(u)}</td>
+                                            <td className="text-center px-2 sm:px-4 py-3 text-xs sm:text-sm text-slate-600 break-all [word-break:break-all] [overflow-wrap:anywhere]">{u.role ?? "-"}</td>
+                                            <td className="text-center px-2 sm:px-4 py-3 text-right font-medium text-xs sm:text-sm text-slate-800 break-all [word-break:break-all] [overflow-wrap:anywhere]">{formatBalance(u.balance)} <span className="text-xs text-slate-400">AZN</span></td>
+                                            <td className="text-center px-2 sm:px-4 py-3 text-xs sm:text-sm text-slate-500 break-all [word-break:break-all] [overflow-wrap:anywhere]">{formatDate(u.createdAt)}</td>
+                                            <td className="text-center px-2 sm:px-4 py-3">
                                                 <div className="flex justify-center items-center gap-2">
                                                     <button
                                                         onClick={() => openUser(u)}
