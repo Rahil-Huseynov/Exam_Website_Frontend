@@ -13,6 +13,20 @@ export interface User {
   role: "user" | "admin" | "superadmin"
 }
 
+export type ApiUser = {
+  id: number;
+  publicId?: string | null;
+  email: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  role?: string | null;
+  createdAt?: string;
+  balance?: string | number;
+  attempts?: any[];
+  payments?: any[];
+};
+
+
 export type Feature = { key: string; enabled: boolean };
 
 export type LoginResponse = {
@@ -557,6 +571,25 @@ class ApiClient {
   async getProfile() {
     return this.request<User>("/auth/me")
   }
+
+  async getUsers(params: { page: number; limit: number; search?: string }) {
+    const q = new URLSearchParams({
+      page: String(params.page),
+      limit: String(params.limit),
+    });
+    if (params.search) q.set("search", params.search);
+    return this.request<{
+      users: ApiUser[];
+      totalCount: number;
+      totalPages: number;
+      currentPage: number;
+    }>(`/auth/users?${q.toString()}`);
+  }
+
+  async getUserFull(userId: number) {
+    return this.request<any>(`/auth/users/${userId}/full`);
+  }
+
   async forgotPassword(email: string) {
     return this.request<{ message?: string }>(`/auth/forgot-password`, {
       method: "POST",
@@ -1106,7 +1139,7 @@ class ApiClient {
 
 
   // ================== PAYMENT ==================
- async createPayment(payload: {
+  async createPayment(payload: {
     amount: number
     order_id: string
     description?: string

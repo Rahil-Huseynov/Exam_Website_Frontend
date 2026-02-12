@@ -24,6 +24,7 @@ import { ResultsTab } from "@/components/admin/results-tab"
 import PdfConverterPage from "@/components/admin/pdfconverter"
 import PDFCreatorPage from "@/components/admin/pdf-creator"
 import SettingsPage from "@/components/admin/settings"
+import AdminUsersTab from "@/components/admin/users-tab"
 
 export default function AdminPage() {
   const { user, loading } = useAuth()
@@ -199,6 +200,12 @@ export default function AdminPage() {
                   </TabsTrigger>
                 )}
 
+                {isSuperAdmin && (
+                  <TabsTrigger value="users" className="text-xs sm:text-sm whitespace-nowrap">
+                    {t("users.title")}
+                  </TabsTrigger>
+                )}
+
                 <TabsTrigger value="news" className="text-xs sm:text-sm whitespace-nowrap">
                   {t("news")}
                 </TabsTrigger>
@@ -226,7 +233,7 @@ export default function AdminPage() {
                     {t("settings")}
                   </TabsTrigger>
                 )}
-                
+
               </TabsList>
 
             </div>
@@ -249,6 +256,10 @@ export default function AdminPage() {
 
             <TabsContent value="admin" className="overflow-x-auto">
               <AdminsTab />
+            </TabsContent>
+
+            <TabsContent value="users" className="overflow-x-auto">
+              <AdminUsersTab />
             </TabsContent>
 
             <TabsContent value="news" className="overflow-x-auto">
