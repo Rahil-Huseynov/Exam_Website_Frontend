@@ -170,7 +170,7 @@ export const translations = {
     homeFeature6Desc: "Məlumatlarınızın təhlükəsizliyi bizim üçün prioritetdir",
     homeReadyTitle: "İmtahana hazırsınız?",
     homeReadyDesc: "İndi qoşulun və minlərlə tələbə ilə birlikdə öyrənin",
-    homeReadyCta: "Pulsuz başla",
+    homeReadyCta: "Ödənişsiz başla",
     adminCardUsersHint: "Qeydiyyatlı istifadəçilər",
     adminCardExamsHint: "Mövcud imtahanlar",
     adminCardRevenueHint: "Ümumi satış",
@@ -864,7 +864,7 @@ export const translations = {
     "redirectingToGateway": "Ödəniş səhifəsinə yönləndirilir...",
     "paymentLinkNotReceived": "Ödəniş linki alınmadı",
     "paymentError": "Ödəniş zamanı xəta baş verdi",
-    "free": "Pulsuz",
+    "free": "Ödənişsiz",
 
 
     "users.title": "İstifadəçilər",
