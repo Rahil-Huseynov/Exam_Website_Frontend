@@ -37,7 +37,7 @@ export function Footer() {
                   rel="noopener noreferrer"
                   className="ml-2 text-muted-foreground hover:text-primary transition-colors text-sm"
                 >
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/WhatsApp.svg/1022px-WhatsApp.svg.png" alt="WhatsApp" className="w-6 h-6 inline-block mr-2" />
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/WhatsApp.svg/3840px-WhatsApp.svg.png" alt="WhatsApp" className="w-6 h-6 inline-block mr-2" />
                 </a>
               </div>
             </div>
