@@ -27,7 +27,7 @@ export function Footer() {
                   rel="noopener noreferrer"
                   className="ml-2 text-muted-foreground hover:text-primary transition-colors text-sm"
                 >
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Instagram_logo_2016.svg/2048px-Instagram_logo_2016.svg.png" alt="Instagram" className="w-6 h-6 inline-block mr-2" />
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Instagram_logo_2016.svg/330px-Instagram_logo_2016.svg.png?_=20210403190622" alt="Instagram" className="w-6 h-6 inline-block mr-2" />
                 </a>
               </div>
               <div>
