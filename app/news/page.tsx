@@ -15,11 +15,20 @@ import { Button } from "@/components/ui/button"
 import { Calendar, Image as ImageIcon, RefreshCcw } from "lucide-react"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || ""
+const NEXT_PUBLIC_API_URL_FOR_IMAGE = process.env.NEXT_PUBLIC_API_URL_FOR_IMAGE || ""
+
 const toAbs = (u: string) => {
   if (!u) return ""
   if (u.startsWith("blob:")) return u
   if (u.startsWith("http://") || u.startsWith("https://")) return u
   return `${API_URL}${u.startsWith("/") ? "" : "/"}${u}`
+}
+
+const toAbsImage = (u: string) => {
+  if (!u) return ""
+  if (u.startsWith("blob:")) return u
+  if (u.startsWith("http://") || u.startsWith("https://")) return u
+  return `${NEXT_PUBLIC_API_URL_FOR_IMAGE}${u.startsWith("/") ? "" : "/"}${u}`
 }
 
 export default function NewsPage() {
@@ -101,9 +110,9 @@ export default function NewsPage() {
                   {item.imageUrl ? (
                     <div className="relative">
                       <img
-                        src={toAbs(item.imageUrl)}
+                        src={toAbsImage(item.imageUrl)}
                         alt={t("newsImageAlt")}
-                        className="h-56 w-full object-cover"
+                        className="h-full p-4 w-full object-cover"
                         onError={(e) => {
                           ;(e.currentTarget as HTMLImageElement).style.display = "none"
                         }}
