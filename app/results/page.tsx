@@ -9,7 +9,7 @@ import { useTranslation } from "@/lib/i18n"
 import { Navbar } from "@/components/navbar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { BookOpen, Bot, Clock, TrendingUp, TriangleAlert } from "lucide-react"
+import { BookOpen, Clock, TrendingUp, TriangleAlert } from "lucide-react"
 import { api, ExamAttempt } from "@/lib/api"
 import Image from "next/image"
 
@@ -29,7 +29,7 @@ export default function ResultsPage() {
   async function loadAttempts(userId: number) {
     try {
       setLoading(true)
-      const res = await api.getUserExamAttempts(userId, ["FINISHED", "WAITING_AI"])
+      const res = await api.getUserExamAttempts(userId, ["FINISHED", "WAITING_AI", "IN_PROGRESS"])
       setAttempts(res.attempts || [])
     } catch {
       toast.error(t("errGeneric"))
@@ -47,9 +47,7 @@ export default function ResultsPage() {
             <h1 className="text-4xl font-extrabold bg-gradient-to-r from-violet-600 via-blue-600 to-cyan-600 bg-clip-text text-transparent">
               {t("examResults")}
             </h1>
-            <p className="text-muted-foreground mt-2 text-lg">
-              {t("results.subtitle")}
-            </p>
+            <p className="text-muted-foreground mt-2 text-lg">{t("results.subtitle")}</p>
           </div>
 
           {loading ? (
@@ -64,9 +62,7 @@ export default function ResultsPage() {
               <div className="mx-auto mb-6 h-24 w-24 rounded-full bg-gradient-to-br from-violet-100 to-blue-100 dark:from-violet-950/20 dark:to-blue-950/20 flex items-center justify-center shadow-lg">
                 <BookOpen className="h-12 w-12 text-violet-600" />
               </div>
-              <p className="text-muted-foreground text-lg mb-6">
-                {t("noExams")}
-              </p>
+              <p className="text-muted-foreground text-lg mb-6">{t("noExams")}</p>
               <Button asChild className="h-12 px-8 bg-gradient-to-r from-violet-600 to-blue-600 shadow-md">
                 <Link href="/exams">{t("takeExam")}</Link>
               </Button>
@@ -79,7 +75,8 @@ export default function ResultsPage() {
                 const percentage = total > 0 ? (score / total) * 100 : 0
                 const isCompleted = attempt.status === "FINISHED" && !!attempt.finishedAt
                 const isWaitingAI = attempt.status === "WAITING_AI"
-                const bankType = (attempt.bank?.type || attempt.type || "").toString().toUpperCase()
+                const isInProgress = attempt.status === "IN_PROGRESS"
+                const bankType = (attempt.bank?.type || "").toString().toUpperCase()
                 const showAIBadge = bankType === "WRITING"
                 const isTest = bankType === "TEST"
 
@@ -92,32 +89,31 @@ export default function ResultsPage() {
                       <div className="flex items-start justify-between">
                         <div className="space-y-1">
                           <CardTitle className="text-lg">
-                            {attempt.bank.university?.name} — {attempt.bank.title}
+                            {attempt.bank?.university?.name} — {attempt.bank?.title}
                           </CardTitle>
                           <CardDescription className="text-sm text-muted-foreground">
-                            {t("year")}: {attempt.bank.year}
+                            {t("year")}: {attempt.bank?.year}
                           </CardDescription>
                           <CardDescription className="text-sm text-muted-foreground">
-                            {t("examtype")}:   {attempt.bank.type === "TEST"
+                            {t("examtype")}:{" "}
+                            {attempt.bank?.type === "TEST"
                               ? t("examTypeTest")
-                              : attempt.bank.type === "WRITING" || attempt.bank.type === "WRITTING"
+                              : attempt.bank?.type === "WRITING" || attempt.bank?.type === "WRITTING"
                                 ? t("examTypeWritting")
                                 : "-"}
                           </CardDescription>
                         </div>
 
                         {showAIBadge ? (
-                          <div className="absolute right-4 top-4 flex items-center gap-3">
-                            <div className="hidden sm:flex items-center text-muted-foreground">
-                              <Image src="/ai.png" alt="AI icon" width={44} height={44} />
-                            </div>
+                          <div className="absolute right-4 top-4 hidden sm:flex">
+                            <Image src="/ai.png" alt="AI icon" width={44} height={44} />
                           </div>
                         ) : (
-                          <div className="absolute right-4 top-4">
-                            {isTest && (
+                          isTest && (
+                            <div className="absolute right-4 top-4">
                               <Image src="/test.png" alt="Test icon" width={44} height={44} />
-                            )}
-                          </div>
+                            </div>
+                          )
                         )}
                       </div>
                     </CardHeader>
@@ -129,9 +125,19 @@ export default function ResultsPage() {
                             <TrendingUp className="h-4 w-4 text-violet-600" />
                             <div className="flex flex-col leading-none">
                               <span className="font-medium text-sm">
-                                {isCompleted ? `${percentage.toFixed(1)}%` : isWaitingAI ? t("checking") : t("notCompleted")}
+                                {isCompleted
+                                  ? `${percentage.toFixed(1)}%`
+                                  : isWaitingAI
+                                    ? t("checking")
+                                    : isInProgress
+                                      ? t("inProgress") || "Davam edir"
+                                      : t("notCompleted")}
                               </span>
-                              {isCompleted && <span className="text-xs text-muted-foreground">{score}/{total}</span>}
+                              {isCompleted && (
+                                <span className="text-xs text-muted-foreground">
+                                  {score}/{total}
+                                </span>
+                              )}
                             </div>
                           </div>
 
@@ -140,52 +146,68 @@ export default function ResultsPage() {
                             <span className="text-sm">
                               {attempt.finishedAt
                                 ? (() => {
-                                  const d = new Date(attempt.finishedAt);
-                                  const day = String(d.getDate()).padStart(2, "0");
-                                  const month = String(d.getMonth() + 1).padStart(2, "0");
-                                  const year = d.getFullYear();
-                                  const hour = String(d.getHours()).padStart(2, "0");
-                                  const minute = String(d.getMinutes()).padStart(2, "0");
-
-                                  return `${day}-${month}-${year} ${hour}:${minute}`;
-                                })()
+                                    const d = new Date(attempt.finishedAt)
+                                    const day = String(d.getDate()).padStart(2, "0")
+                                    const month = String(d.getMonth() + 1).padStart(2, "0")
+                                    const year = d.getFullYear()
+                                    const hour = String(d.getHours()).padStart(2, "0")
+                                    const minute = String(d.getMinutes()).padStart(2, "0")
+                                    return `${day}-${month}-${year} ${hour}:${minute}`
+                                  })()
                                 : isWaitingAI
                                   ? t("checking")
-                                  : t("notCompleted")}
+                                  : isInProgress
+                                    ? t("inProgress") || "Davam edir"
+                                    : t("notCompleted")}
                             </span>
                           </div>
                         </div>
 
                         <div className="flex items-center gap-3">
                           {isCompleted ? (
-                            <Button asChild size="sm" className="bg-gradient-to-r from-violet-600 to-blue-600 shadow-sm">
-                              <Link href={`/results/${attempt.id}`}>
-                                {t("results.details")}
-                              </Link>
+                            <Button
+                              asChild
+                              size="sm"
+                              className="bg-gradient-to-r from-violet-600 to-blue-600 shadow-sm"
+                            >
+                              <Link href={`/results/${attempt.id}`}>{t("results.details")}</Link>
                             </Button>
                           ) : isWaitingAI ? (
-                            <Button size="sm" disabled className="opacity-80 cursor-not-allowed bg-gradient-to-r from-yellow-400 to-yellow-300 text-black">
+                            <Button
+                              size="sm"
+                              disabled
+                              className="opacity-80 cursor-not-allowed bg-gradient-to-r from-yellow-400 to-yellow-300 text-black"
+                            >
                               {t("checking")}
                             </Button>
-                          ) : (
-                            <Button asChild size="sm" className="bg-gradient-to-r from-violet-600 to-blue-600 shadow-sm">
-                              <Link href={`/exam/${attempt.bank.id}`}>
-                                {t("continue")}
+                          ) : isInProgress ? (
+                            <Button
+                              asChild
+                              size="sm"
+                              className="bg-gradient-to-r from-emerald-600 to-teal-600 shadow-sm"
+                            >
+                              <Link href={`/exam-continue/${attempt.id}`}>
+                                {t("continue") || "Davam et"}
                               </Link>
+                            </Button>
+                          ) : (
+                            <Button
+                              asChild
+                              size="sm"
+                              className="bg-gradient-to-r from-violet-600 to-blue-600 shadow-sm"
+                            >
+                              <Link href="/exams">{t("takeExam")}</Link>
                             </Button>
                           )}
                         </div>
                       </div>
-                      {isWaitingAI ? (
+
+                      {isWaitingAI && (
                         <div className="flex items-center gap-2 pt-3 text-xs text-muted-foreground mt-1">
-                          <div>
-                            <TriangleAlert color="#ff0000" />
-                          </div>
-                          <div>
-                            <span>{t("exam_ai_check_info")}</span>
-                          </div>
+                          <TriangleAlert color="#ff0000" />
+                          <span>{t("exam_ai_check_info")}</span>
                         </div>
-                      ) : null}
+                      )}
                     </CardContent>
                   </Card>
                 )
@@ -193,7 +215,7 @@ export default function ResultsPage() {
             </div>
           )}
         </div>
-      </main >
-    </div >
+      </main>
+    </div>
   )
 }

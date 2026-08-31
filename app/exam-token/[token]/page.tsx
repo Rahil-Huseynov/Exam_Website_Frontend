@@ -32,6 +32,7 @@ export default function ExamTokenPage({ params }: { params: AnyParams }) {
   const [guardEnabled, setGuardEnabled] = useState(false)
 
   const allowingRef = useRef(false)
+  
 
   const confirmLeave = () => {
     if (allowingRef.current) return true
@@ -118,82 +119,72 @@ export default function ExamTokenPage({ params }: { params: AnyParams }) {
     router.replace(url)
   }
   useEffect(() => {
-    if (authLoading) return
+  if (authLoading) return;
 
-    if (!user?.id) {
-      toast.error(t("examTokenNotLoggedIn"))
-      guardedReplace("/login")
-      return
-    }
+  if (!user?.id) {
+    toast.error(t("examTokenNotLoggedIn"));
+    guardedReplace("/login");
+    return;
+  }
 
-    if (!token) {
-      toast.error(t("examTokenMissing"))
-      guardedReplace("/dashboard")
-      return
-    }
+  if (!token) {
+    toast.error(t("examTokenMissing"));
+    guardedReplace("/dashboard");
+    return;
+  }
 
-    ; (async () => {
-      try {
-        setLoading(true)
+  ;(async () => {
+    try {
+      setLoading(true);
 
-        const storedBankId =
-          typeof window !== "undefined"
-            ? window.sessionStorage.getItem(`exam_token_bank_${token}`)
-            : null
+      const storedBankId =
+        typeof window !== "undefined"
+          ? window.sessionStorage.getItem(`exam_token_bank_${token}`)
+          : null;
 
-        if (!storedBankId) {
-          toast.error(t("examTokenBankMissingSession"))
-          guardedReplace("/dashboard")
-          return
-        }
-
-        const bank = String(storedBankId)
-        setBankId(bank)
-
-        const attemptKey = `exam_attempt_${token}`
-        const existingAttemptId =
-          typeof window !== "undefined"
-            ? window.sessionStorage.getItem(attemptKey)
-            : null
-
-        if (existingAttemptId) {
-          setAttemptId(existingAttemptId)
-
-          if (!refreshedOnceRef.current) {
-            refreshedOnceRef.current = true
-            void refreshUser()
-          }
-
-          return
-        }
-
-        const created = await api.createAttemptWithToken(bank, user.id, token)
-
-        const newAttemptId = String((created as any).attemptId || "")
-        if (!newAttemptId) {
-          toast.error(t("examTokenAttemptIdMissing"))
-          guardedReplace("/dashboard")
-          return
-        }
-
-        setAttemptId(newAttemptId)
-
-        if (typeof window !== "undefined") {
-          window.sessionStorage.setItem(attemptKey, newAttemptId)
-        }
-
-        if (!refreshedOnceRef.current) {
-          refreshedOnceRef.current = true
-          void refreshUser()
-        }
-      } catch (e: any) {
-        toast.error(e?.message || t("examTokenStartFail"))
-        guardedReplace("/dashboard")
-      } finally {
-        setLoading(false)
+      if (!storedBankId) {
+        toast.error(t("examTokenBankMissingSession"));
+        guardedReplace("/dashboard");
+        return;
       }
-    })()
-  }, [authLoading, user?.id, token, refreshUser, t])
+
+      setBankId(String(storedBankId));
+
+      const attemptKey = `exam_attempt_${token}`;
+      let existingAttemptId =
+        typeof window !== "undefined"
+          ? window.sessionStorage.getItem(attemptKey)
+          : null;
+
+      // Əgər session-da yoxdursa, backend-dən token ilə cəhd et (köhnə tokenlər üçün fallback)
+      if (!existingAttemptId) {
+        const created = await api.createAttemptWithToken(String(storedBankId), user.id, token);
+        existingAttemptId = String((created as any).attemptId || "");
+        if (existingAttemptId && typeof window !== "undefined") {
+          window.sessionStorage.setItem(attemptKey, existingAttemptId);
+        }
+      }
+
+      if (!existingAttemptId) {
+        toast.error(t("examTokenAttemptIdMissing"));
+        guardedReplace("/dashboard");
+        return;
+      }
+
+      setAttemptId(existingAttemptId);
+
+      if (!refreshedOnceRef.current) {
+        refreshedOnceRef.current = true;
+        void refreshUser();
+      }
+    } catch (e: any) {
+      toast.error(e?.message || t("examTokenStartFail"));
+      guardedReplace("/dashboard");
+    } finally {
+      setLoading(false);
+    }
+  })();
+}, [authLoading, user?.id, token, refreshUser, t]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-50 via-blue-50 to-cyan-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">

@@ -196,43 +196,48 @@ export default function ExamsPage() {
   async function startExam(exam: Exam) {
     try {
       if (!user?.id) {
-        toast.error(t("errLoginRequired"))
-        router.push("/login")
-        return
+        toast.error(t("errLoginRequired"));
+        router.push("/login");
+        return;
       }
 
-      setStartingId(String(exam.id))
+      setStartingId(String(exam.id));
 
-      const bankId = String((exam as any).bankId ?? exam.id ?? "")
+      const bankId = String((exam as any).bankId ?? exam.id ?? "");
       if (!bankId) {
-        toast.error(t("errBankNotFound"))
-        return
+        toast.error(t("errBankNotFound"));
+        return;
       }
 
-      deleteCookie_EXAM_DURATION_COOKIE(EXAM_DURATION_COOKIE)
+      deleteCookie_EXAM_DURATION_COOKIE(EXAM_DURATION_COOKIE);
 
-      const duration = (exam as any).durationMinutes
+      const duration = (exam as any).durationMinutes;
       if (duration !== undefined && duration !== null && !Number.isNaN(Number(duration))) {
-        setCookie_EXAM_DURATION_COOKIE(EXAM_DURATION_COOKIE, String(duration), Number(EXAM_DURATION_COOKIE))
+        setCookie_EXAM_DURATION_COOKIE(EXAM_DURATION_COOKIE, String(duration), Number(EXAM_DURATION_COOKIE));
       }
 
-      const tok = await api.createExamToken(bankId, user.id)
-      const token = String((tok as any)?.token || "")
+      const tok = await api.createExamToken(bankId, user.id);
+      const token = String((tok as any)?.token || "");
+      const attemptId = String((tok as any)?.attemptId || "");
 
-      if (!token) {
-        toast.error(t("errTokenNotCreated"))
-        return
+      if (!token || !attemptId) {
+        toast.error(t("errTokenNotCreated"));
+        return;
       }
 
-      setTokenBank(token, bankId)
-      router.push(`/exam-token/${token}`)
+      // Session-a həm bank, həm attempt yaz
+      setTokenBank(token, bankId);
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem(`exam_attempt_${token}`, attemptId);
+      }
+
+      router.push(`/exam-token/${token}`);
     } catch (e: any) {
-      toast.error(e?.message || t("errStartExam"))
+      toast.error(e?.message || t("errStartExam"));
     } finally {
-      setStartingId("")
+      setStartingId("");
     }
   }
-
   const truncateText = (text: string) => {
     const limit = isMobile ? 10 : 40
     return text.length > limit ? text.slice(0, limit) + "..." : text

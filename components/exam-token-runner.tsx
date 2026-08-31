@@ -11,7 +11,11 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { CheckCircle2, ChevronLeft, ChevronRight, Flag, Loader2, XCircle, Clock, FlagOff } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { deleteCookie_EXAM_DURATION_COOKIE, EXAM_DURATION_COOKIE, getCookie_EXAM_DURATION_COOKIE } from "@/helper/ExamDurationMinutesHelper"
+import {
+  deleteCookie_EXAM_DURATION_COOKIE,
+  EXAM_DURATION_COOKIE,
+  getCookie_EXAM_DURATION_COOKIE,
+} from "@/helper/ExamDurationMinutesHelper"
 import HTMLEncodedReader from "@/lib/HTML-encodedReader"
 import { SimpleMathEditor } from "./simple-math-editor"
 
@@ -21,9 +25,7 @@ function parseServerError(err: SafeErr) {
   try {
     if (!err) return "Unknown error"
     if (typeof err === "string") return err
-    if (err instanceof Error) {
-      return err.message || String(err)
-    }
+    if (err instanceof Error) return err.message || String(err)
     if (err.response?.data) {
       const d = err.response.data
       if (typeof d === "string") return d
@@ -85,7 +87,13 @@ export default function ExamTokenRunner({
   const intervalRef = useRef<number | null>(null)
   const autoFinishedRef = useRef(false)
 
-  const timerKey = useMemo(() => (attemptId ? `exam_timer_started_at:${attemptId}` : ""), [attemptId])
+  const onFinishedRef = useRef(onFinished)
+  onFinishedRef.current = onFinished
+
+  const timerKey = useMemo(
+    () => (attemptId ? `exam_timer_started_at:${attemptId}` : ""),
+    [attemptId],
+  )
 
   function stopTimer() {
     if (intervalRef.current) {
@@ -102,13 +110,13 @@ export default function ExamTokenRunner({
     try {
       const raw = localStorage.getItem(timerKey)
       startedAt = raw ? Number(raw) : 0
-    } catch { }
+    } catch {}
 
     if (!startedAt || Number.isNaN(startedAt)) {
       startedAt = Date.now()
       try {
         localStorage.setItem(timerKey, String(startedAt))
-      } catch { }
+      } catch {}
     }
 
     const tick = () => {
@@ -142,7 +150,7 @@ export default function ExamTokenRunner({
       stopTimer()
       try {
         if (timerKey) localStorage.removeItem(timerKey)
-      } catch { }
+      } catch {}
     }
   }, [summary?.status, timerKey])
 
@@ -168,16 +176,22 @@ export default function ExamTokenRunner({
 
   useEffect(() => {
     if (!attemptId) return
-      ; (async () => {
-        try {
-          const s = await api.getAttemptSummary(attemptId)
-          if (s?.status === "FINISHED") {
-            onFinished?.()
-            router.replace(`/results/${attemptId}`)
-          }
-        } catch { }
-      })()
-  }, [attemptId, router, onFinished])
+    let cancelled = false
+    ;(async () => {
+      try {
+        const raw = await api.getAttemptSummary(attemptId)
+        const s = (raw as any)?.data ?? raw
+        if (cancelled) return
+        if (String(s?.status || "").toUpperCase() === "FINISHED") {
+          onFinishedRef.current?.()
+          router.replace(`/results/${attemptId}`)
+        }
+      } catch {}
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [attemptId])
 
   useEffect(() => {
     if (!attemptId) return
@@ -295,7 +309,9 @@ export default function ExamTokenRunner({
     try {
       setFinishing(true)
 
-      const writingQs = questions.filter((q) => !Array.isArray(q.options) || q.options.length === 0)
+      const writingQs = questions.filter(
+        (q) => !Array.isArray(q.options) || q.options.length === 0,
+      )
       const saves: Promise<any>[] = []
       for (const q of writingQs) {
         const val = String(selectedByQ[q.id] ?? "").trim()
@@ -315,7 +331,9 @@ export default function ExamTokenRunner({
         })
       }
 
-      const writingOnly = questions.length > 0 && questions.every((q) => !Array.isArray(q.options) || q.options.length === 0)
+      const writingOnly =
+        questions.length > 0 &&
+        questions.every((q) => !Array.isArray(q.options) || q.options.length === 0)
 
       const missing = questions.filter((q) => {
         const v = selectedByQ[q.id]
@@ -325,21 +343,23 @@ export default function ExamTokenRunner({
       if (missing.length > 0 && !writingOnly) {
         toast.info(
           t("examRunner.toast.finish_with_unanswered", { count: missing.length }) ||
-          `Diqqət: ${missing.length} sual cavablanmayıb. İmtahanı bitirəndən sonra boş qalanlar düzgün hesablanacaq.`
+            `Diqqət: ${missing.length} sual cavablanmayıb. İmtahanı bitirəndən sonra boş qalanlar düzgün hesablanacaq.`,
         )
       }
 
       await api.finishAttempt(attemptId)
 
-      const s = await api.getAttemptSummary(attemptId)
+      const raw = await api.getAttemptSummary(attemptId)
+      const s = ((raw as any)?.data ?? raw) as AttemptSummary
       setSummary(s)
-      onFinished?.()
+      onFinishedRef.current?.()
 
       const res = await api.getAttemptAnswers(attemptId)
       const list: AttemptAnswer[] = Array.isArray(res?.answers) ? res.answers : []
       const map: Record<string, AttemptAnswer> = {}
       for (const a of list) map[a.questionId] = a
       setReviewAnswers(map)
+
       if (writingOnly) {
         toast.success(t("examRunner.toast.finished_showing_results") || "Imtahan tamamlandı")
         deleteCookie_EXAM_DURATION_COOKIE(EXAM_DURATION_COOKIE)
@@ -422,6 +442,11 @@ export default function ExamTokenRunner({
       <Card className="backdrop-blur-xl bg-white/90 dark:bg-gray-950/85 border-white/20 shadow-xl">
         <CardContent className="py-10 text-center text-sm text-muted-foreground">
           {t("examRunner.ui.no_question")}
+          <div className="mt-4">
+            <Button variant="outline" onClick={() => void loadQuestions()}>
+              Yenidən yüklə
+            </Button>
+          </div>
         </CardContent>
       </Card>
     )
@@ -474,7 +499,9 @@ export default function ExamTokenRunner({
                   <span className="h-3 w-3 rounded-full border border-primary flex items-center justify-center text-[10px] font-semibold text-primary">
                     ⚑
                   </span>
-                  <span>{t("examRunner.result.total.flag")}: {flaggedCount}</span>
+                  <span>
+                    {t("examRunner.result.total.flag")}: {flaggedCount}
+                  </span>
                 </div>
               </>
             ) : (
@@ -502,7 +529,6 @@ export default function ExamTokenRunner({
                   <Clock className="h-4 w-4" />
                   <span>{t("examRunner.ui.time_left") ?? "Qalan vaxt"}</span>
                 </div>
-
                 <div
                   className={cn(
                     "text-sm font-semibold tabular-nums",
@@ -512,7 +538,6 @@ export default function ExamTokenRunner({
                   {formatTime(remainingSec)}
                 </div>
               </div>
-
               {remainingSec <= 60 && (
                 <div className="mt-2 text-[11px] text-red-600">
                   {t("examRunner.ui.last_minute_warning") ?? "Son 1 dəqiqə!"}
@@ -532,7 +557,6 @@ export default function ExamTokenRunner({
                 {t("examRunner.result.title")}
               </CardTitle>
             </CardHeader>
-
             <CardContent className="grid gap-3 sm:grid-cols-3">
               <div className="rounded-xl border p-4">
                 <div className="text-xs text-muted-foreground">{t("examRunner.result.correct")}</div>
@@ -550,204 +574,216 @@ export default function ExamTokenRunner({
           </Card>
         )}
 
-        {currentQ ? (
-          <Card className="backdrop-blur-xl bg-white/90 dark:bg-gray-950/85 border-white/20 shadow-xl">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">
-                <div className="flex items-center gap-3">
-                  {isFlagged ? (
-                    <Flag
-                      className="h-5 w-[50px] text-red-500 cursor-pointer"
-                      onClick={() => toggleFlag(currentQ.id, false)}
-                    />
-                  ) : (
-                    <FlagOff
-                      className="h-5 w-[50px] text-gray-400 cursor-pointer"
-                      onClick={() => toggleFlag(currentQ.id, true)}
-                    />
-                  )}
-                  <div className="flex items-center gap-2">
-                    <div>{activeIndex + 1}.</div>
-                    <div><HTMLEncodedReader content={currentQ.text} /></div>
+        <Card className="backdrop-blur-xl bg-white/90 dark:bg-gray-950/85 border-white/20 shadow-xl">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">
+              <div className="flex items-center gap-3">
+                {isFlagged ? (
+                  <Flag
+                    className="h-5 w-[50px] text-red-500 cursor-pointer"
+                    onClick={() => toggleFlag(currentQ.id, false)}
+                  />
+                ) : (
+                  <FlagOff
+                    className="h-5 w-[50px] text-gray-400 cursor-pointer"
+                    onClick={() => toggleFlag(currentQ.id, true)}
+                  />
+                )}
+                <div className="flex items-center gap-2">
+                  <div>{activeIndex + 1}.</div>
+                  <div>
+                    <HTMLEncodedReader content={currentQ.text} />
                   </div>
                 </div>
-              </CardTitle>
-
-              <div className="text-xs text-muted-foreground">
-                {savingAnswer ? (
-                  <span className="inline-flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    {t("examRunner.ui.answer_saving")}
-                  </span>
-                ) : isFinished ? (
-                  reviewAnswers[currentQ.id]?.isCorrect ? (
-                    <span className="inline-flex items-center gap-2 text-emerald-600">
-                      <CheckCircle2 className="h-4 w-4" />
-                      {t("examRunner.ui.correct_answer")}
-                    </span>
-                  ) : reviewAnswers[currentQ.id] ? (
-                    <span className="inline-flex items-center gap-2 text-red-600">
-                      <XCircle className="h-4 w-4" />
-                      {t("examRunner.ui.wrong_answer")}
-                    </span>
-                  ) : (
-                    <span>{t("examRunner.ui.empty_left")}</span>
-                  )
-                ) : (
-                  <span>
-                    {selectedByQ[currentQ.id] && String(selectedByQ[currentQ.id]).trim() !== ""
-                      ? t("examRunner.ui.answer_selected")
-                      : t("examRunner.ui.answer_not_selected")}
-                  </span>
-                )}
               </div>
-            </CardHeader>
+            </CardTitle>
 
-            <CardContent className="space-y-3">
-              {Array.isArray((currentQ as any).images) && (currentQ as any).images.length > 0 && (
-                <div className="space-y-3">
-                  {(currentQ as any).images
-                    .slice()
-                    .sort((a: any, b: any) => (a?.sort ?? 0) - (b?.sort ?? 0))
-                    .map((im: any) => (
-                      <img
-                        key={im.id || im.url}
-                        src={`${BASE}${im.url}`}
-                        alt="question"
-                        className="w-full object-contain rounded-2xl border bg-white"
-                      />
-                    ))}
-                </div>
-              )}
-
-              {Array.isArray(currentQ.options) && currentQ.options.length > 0 ? (
-                currentQ.options.map((o) => {
-                  const ans = reviewAnswers[currentQ.id]
-                  const correctId = ans?.question?.correctOptionId
-                  const selectedId = isFinished ? ans?.selectedOptionId : selectedByQ[currentQ.id]
-
-                  const selected = selectedId === o.id
-                  const isCorrectOption = isFinished && correctId === o.id
-                  const isWrongSelected = isFinished && selected && !!correctId && correctId !== o.id
-
-                  const timeUp = remainingSec <= 0
-                  const disabled = finishing || summary?.status === "FINISHED" || timeUp
-
-                  return (
-                    <button
-                      key={o.id}
-                      type="button"
-                      disabled={disabled}
-                      onClick={() => void selectOption(currentQ.id, o.id)}
-                      className={cn(
-                        "w-full text-left rounded-2xl border p-4 transition-all",
-                        !isFinished &&
-                        "hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 hover:bg-gradient-to-r hover:from-violet-50 hover:to-blue-50 dark:hover:from-violet-950/20 dark:hover:to-blue-950/20",
-                        selected && !isFinished && "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/20",
-                        isCorrectOption && "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/20",
-                        isWrongSelected && "border-red-600 bg-red-50 dark:bg-red-950/20",
-                        disabled && "opacity-95 cursor-not-allowed",
-                      )}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="text-sm leading-relaxed">
-                          <HTMLEncodedReader content={o.text} />
-                        </div>
-
-                        {isFinished ? (
-                          <>
-                            {isCorrectOption && (
-                              <span className="text-emerald-600 text-xs font-semibold">
-                                {t("examRunner.badge.correct")}
-                              </span>
-                            )}
-                            {isWrongSelected && (
-                              <span className="text-red-600 text-xs font-semibold">
-                                {t("examRunner.badge.your_choice")}
-                              </span>
-                            )}
-                          </>
-                        ) : (
-                          selected && (
-                            <span className="text-emerald-600 text-xs font-semibold">
-                              {t("examRunner.badge.selected")}
-                            </span>
-                          )
-                        )}
-                      </div>
-                    </button>
-                  )
-                })
-              ) : (
-                <div className="space-y-3">
-                  <SimpleMathEditor
-                    value={selectedByQ[currentQ.id] ?? ""}
-                    onChange={(val) =>
-                      setSelectedByQ((p) => ({ ...p, [currentQ.id]: val }))
-                    }
-                    placeholder={t("examRunner.ui.enter_text_answer") || "Cavabınızı bura yazın..."}
-                    className="w-full min-h-[200px] rounded-2xl border p-4 resize-vertical"
-                  />
-                </div>
-              )}
-
-              <div className="mt-4 flex items-center justify-between gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setActiveIndex((x) => Math.max(0, x - 1))}
-                  disabled={isFirst || finishing}
-                  className="rounded-xl"
-                >
-                  <ChevronLeft className="h-4 w-4 mr-2" />
-                  {t("examRunner.ui.prev")}
-                </Button>
-
-                {!isLast ? (
-                  <Button
-                    onClick={() => setActiveIndex((x) => Math.min(total - 1, x + 1))}
-                    disabled={finishing}
-                    className="rounded-xl"
-                  >
-                    {t("examRunner.ui.next")}
-                    <ChevronRight className="h-4 w-4 ml-2" />
-                  </Button>
+            <div className="text-xs text-muted-foreground">
+              {savingAnswer ? (
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {t("examRunner.ui.answer_saving")}
+                </span>
+              ) : isFinished ? (
+                reviewAnswers[currentQ.id]?.isCorrect ? (
+                  <span className="inline-flex items-center gap-2 text-emerald-600">
+                    <CheckCircle2 className="h-4 w-4" />
+                    {t("examRunner.ui.correct_answer")}
+                  </span>
+                ) : reviewAnswers[currentQ.id] ? (
+                  <span className="inline-flex items-center gap-2 text-red-600">
+                    <XCircle className="h-4 w-4" />
+                    {t("examRunner.ui.wrong_answer")}
+                  </span>
                 ) : (
-                  <Button
-                    onClick={() => void finishExam()}
-                    disabled={finishing || summary?.status === "FINISHED"}
-                    className="rounded-xl"
+                  <span>{t("examRunner.ui.empty_left")}</span>
+                )
+              ) : (
+                <span>
+                  {selectedByQ[currentQ.id] && String(selectedByQ[currentQ.id]).trim() !== ""
+                    ? t("examRunner.ui.answer_selected")
+                    : t("examRunner.ui.answer_not_selected")}
+                </span>
+              )}
+            </div>
+          </CardHeader>
+
+          <CardContent className="space-y-3">
+            {Array.isArray((currentQ as any).images) && (currentQ as any).images.length > 0 && (
+              <div className="space-y-3">
+                {(currentQ as any).images
+                  .slice()
+                  .sort((a: any, b: any) => (a?.sort ?? 0) - (b?.sort ?? 0))
+                  .map((im: any) => (
+                    <img
+                      key={im.id || im.url}
+                      src={`${BASE}${im.url}`}
+                      alt="question"
+                      className="w-full object-contain rounded-2xl border bg-white"
+                    />
+                  ))}
+              </div>
+            )}
+
+            {Array.isArray(currentQ.options) && currentQ.options.length > 0 ? (
+              currentQ.options.map((o) => {
+                const ans = reviewAnswers[currentQ.id]
+                const correctId = ans?.question?.correctOptionId
+                const selectedId = isFinished ? ans?.selectedOptionId : selectedByQ[currentQ.id]
+                const selected = selectedId === o.id
+                const isCorrectOption = isFinished && correctId === o.id
+                const isWrongSelected = isFinished && selected && !!correctId && correctId !== o.id
+                const timeUp = remainingSec <= 0
+                const disabled = finishing || summary?.status === "FINISHED" || timeUp
+
+                return (
+                  <button
+                    key={o.id}
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => void selectOption(currentQ.id, o.id)}
+                    className={cn(
+                      "w-full text-left rounded-2xl border p-4 transition-all",
+                      !isFinished &&
+                        "hover:shadow-md hover:-translate-y-[1px] active:translate-y-0 hover:bg-gradient-to-r hover:from-violet-50 hover:to-blue-50 dark:hover:from-violet-950/20 dark:hover:to-blue-950/20",
+                      selected && !isFinished && "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/20",
+                      isCorrectOption && "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/20",
+                      isWrongSelected && "border-red-600 bg-red-50 dark:bg-red-950/20",
+                      disabled && "opacity-95 cursor-not-allowed",
+                    )}
                   >
-                    {finishing ? (
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="text-sm leading-relaxed">
+                        <HTMLEncodedReader content={o.text} />
+                      </div>
+                      {isFinished ? (
+                        <>
+                          {isCorrectOption && (
+                            <span className="text-emerald-600 text-xs font-semibold">
+                              {t("examRunner.badge.correct")}
+                            </span>
+                          )}
+                          {isWrongSelected && (
+                            <span className="text-red-600 text-xs font-semibold">
+                              {t("examRunner.badge.your_choice")}
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        selected && (
+                          <span className="text-emerald-600 text-xs font-semibold">
+                            {t("examRunner.badge.selected")}
+                          </span>
+                        )
+                      )}
+                    </div>
+                  </button>
+                )
+              })
+            ) : (
+              <div className="space-y-3">
+                <SimpleMathEditor
+                  value={selectedByQ[currentQ.id] ?? ""}
+                  onChange={(val) => setSelectedByQ((p) => ({ ...p, [currentQ.id]: val }))}
+                  placeholder={t("examRunner.ui.enter_text_answer") || "Cavabınızı bura yazın..."}
+                  className="w-full min-h-[200px] rounded-2xl border p-4 resize-vertical"
+                />
+                {!isFinished && (
+                  <Button
+                    variant="secondary"
+                    className="rounded-xl"
+                    disabled={savingAnswer || finishing}
+                    onClick={() => void saveTextAnswer(currentQ.id)}
+                  >
+                    {savingAnswer ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        {t("examRunner.ui.finishing")}
+                        {t("examRunner.ui.answer_saving")}
                       </>
                     ) : (
-                      <>
-                        <Flag className="h-4 w-4 mr-2" />
-                        {t("examRunner.ui.finish_exam")}
-                      </>
+                      t("examRunner.ui.save_answer") || "Cavabı yadda saxla"
                     )}
                   </Button>
                 )}
               </div>
+            )}
 
-              <div className="pt-2">
-                <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-                  <span>{t("examRunner.ui.progress")}</span>
-                  <span>{t("examRunner.ui.progress_stats", { answered: answeredCount, total, percent: progress })}</span>
-                </div>
-                <Progress value={progress} />
+            <div className="mt-4 flex items-center justify-between gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setActiveIndex((x) => Math.max(0, x - 1))}
+                disabled={isFirst || finishing}
+                className="rounded-xl"
+              >
+                <ChevronLeft className="h-4 w-4 mr-2" />
+                {t("examRunner.ui.prev")}
+              </Button>
+
+              {!isLast ? (
+                <Button
+                  onClick={() => setActiveIndex((x) => Math.min(total - 1, x + 1))}
+                  disabled={finishing}
+                  className="rounded-xl"
+                >
+                  {t("examRunner.ui.next")}
+                  <ChevronRight className="h-4 w-4 ml-2" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => void finishExam()}
+                  disabled={finishing || summary?.status === "FINISHED"}
+                  className="rounded-xl"
+                >
+                  {finishing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      {t("examRunner.ui.finishing")}
+                    </>
+                  ) : (
+                    <>
+                      <Flag className="h-4 w-4 mr-2" />
+                      {t("examRunner.ui.finish_exam")}
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
+
+            <div className="pt-2">
+              <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+                <span>{t("examRunner.ui.progress")}</span>
+                <span>
+                  {t("examRunner.ui.progress_stats", {
+                    answered: answeredCount,
+                    total,
+                    percent: progress,
+                  })}
+                </span>
               </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className="backdrop-blur-xl bg-white/90 dark:bg-gray-950/85 border-white/20 shadow-xl">
-            <CardContent className="py-10 text-center text-sm text-muted-foreground">
-              {t("examRunner.ui.no_question")}
-            </CardContent>
-          </Card>
-        )}
+              <Progress value={progress} />
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
