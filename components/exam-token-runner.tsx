@@ -85,6 +85,7 @@ export default function ExamTokenRunner({
 
   const [remainingSec, setRemainingSec] = useState<number>(FALLBACK_DURATION_SEC)
   const [expiresAtMs, setExpiresAtMs] = useState<number | null>(null)
+  const [clockOffsetMs, setClockOffsetMs] = useState<number>(0)  
   const intervalRef = useRef<number | null>(null)
   const autoFinishedRef = useRef(false)
 
@@ -98,11 +99,17 @@ export default function ExamTokenRunner({
     }
   }
 
-  function startOrResumeTimer(serverExpiresAt?: string | Date | null) {
+  function calcRemaining(endMs: number, offset: number) {
+    const nowServer = Date.now() + offset
+    return Math.floor((endMs - nowServer) / 1000)
+  }
+
+  function startOrResumeTimer(serverExpiresAt?: string | Date | null, serverNow?: string | null) {
     if (!attemptId) return
     if (summary?.status === "FINISHED") return
 
     let endMs: number | null = null
+    let offset = clockOffsetMs
 
     if (serverExpiresAt) {
       endMs = new Date(serverExpiresAt).getTime()
@@ -110,14 +117,20 @@ export default function ExamTokenRunner({
       endMs = expiresAtMs
     }
 
+    if (serverNow) {
+      const serverMs = new Date(serverNow).getTime()
+      offset = serverMs - Date.now()
+      setClockOffsetMs(offset)
+    }
+
     if (!endMs || Number.isNaN(endMs)) {
-      endMs = Date.now() + FALLBACK_DURATION_SEC * 1000
+      endMs = Date.now() + offset + FALLBACK_DURATION_SEC * 1000
     }
 
     setExpiresAtMs(endMs)
 
     const tick = () => {
-      const left = Math.floor((endMs! - Date.now()) / 1000)
+      const left = calcRemaining(endMs!, offset)
       setRemainingSec(left)
 
       if (left <= 0 && !autoFinishedRef.current) {
@@ -139,7 +152,7 @@ export default function ExamTokenRunner({
     if (summary?.status === "FINISHED") return
     startOrResumeTimer()
     return () => stopTimer()
-  }, [attemptId, loading, questions.length, summary?.status, expiresAtMs])
+  }, [attemptId, loading, questions.length, summary?.status, expiresAtMs, clockOffsetMs])
 
   useEffect(() => {
     if (summary?.status === "FINISHED") {
@@ -203,9 +216,9 @@ export default function ExamTokenRunner({
     autoFinishedRef.current = false
     setExpiresAtMs(null)
     setRemainingSec(FALLBACK_DURATION_SEC)
+    setClockOffsetMs(0)
 
     try {
-      // 1. Summary → expiresAt və status yoxla
       try {
         const rawSummary = await api.getAttemptSummary(attemptId)
         const s = (rawSummary as any)?.data ?? rawSummary
@@ -219,14 +232,20 @@ export default function ExamTokenRunner({
         if (s?.expiresAt) {
           const end = new Date(s.expiresAt).getTime()
           setExpiresAtMs(end)
-          const left = Math.floor((end - Date.now()) / 1000)
-          setRemainingSec(Math.max(0, left))
+
+          if (s.serverNow) {
+            const offset = new Date(s.serverNow).getTime() - Date.now()
+            setClockOffsetMs(offset)
+            const left = calcRemaining(end, offset)
+            setRemainingSec(Math.max(0, left))
+          } else {
+            const left = Math.floor((end - Date.now()) / 1000)
+            setRemainingSec(Math.max(0, left))
+          }
         }
       } catch {
-        // summary alınmasa davam et
       }
 
-      // 2. Sualları yüklə
       const res = await api.getAttemptQuestions(attemptId, userId)
       const list = Array.isArray(res?.questions) ? res.questions : []
       setQuestions(list)
@@ -234,8 +253,18 @@ export default function ExamTokenRunner({
       if ((res as any)?.expiresAt) {
         const end = new Date((res as any).expiresAt).getTime()
         setExpiresAtMs(end)
-        const left = Math.floor((end - Date.now()) / 1000)
-        setRemainingSec(Math.max(0, left))
+
+        const serverNow = (res as any)?.serverNow
+        if (serverNow) {
+          const offset = new Date(serverNow).getTime() - Date.now()
+          setClockOffsetMs(offset)
+          const left = calcRemaining(end, offset)
+          setRemainingSec(Math.max(0, left))
+          startOrResumeTimer((res as any).expiresAt, serverNow)
+        } else {
+          const left = Math.floor((end - Date.now()) / 1000)
+          setRemainingSec(Math.max(0, left))
+        }
       }
 
       const sel: Record<string, string> = {}
