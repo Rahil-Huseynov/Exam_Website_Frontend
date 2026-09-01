@@ -56,8 +56,8 @@ export default function ExamTokenRunner({
   userId: number
   onFinished?: () => void
 }) {
-  const duration = getCookie_EXAM_DURATION_COOKIE(EXAM_DURATION_COOKIE) || "60"
-  const EXAM_DURATION_SEC = Number(duration) * 60
+  const cookieDuration = getCookie_EXAM_DURATION_COOKIE(EXAM_DURATION_COOKIE) || "60"
+  const FALLBACK_DURATION_SEC = Number(cookieDuration) * 60
 
   function formatTime(totalSec: number) {
     const sec = Math.max(0, totalSec)
@@ -83,17 +83,13 @@ export default function ExamTokenRunner({
   const [reviewAnswers, setReviewAnswers] = useState<Record<string, AttemptAnswer>>({})
   const [reviewMode, setReviewMode] = useState(false)
 
-  const [remainingSec, setRemainingSec] = useState<number>(EXAM_DURATION_SEC)
+  const [remainingSec, setRemainingSec] = useState<number>(FALLBACK_DURATION_SEC)
+  const [expiresAtMs, setExpiresAtMs] = useState<number | null>(null)
   const intervalRef = useRef<number | null>(null)
   const autoFinishedRef = useRef(false)
 
   const onFinishedRef = useRef(onFinished)
   onFinishedRef.current = onFinished
-
-  const timerKey = useMemo(
-    () => (attemptId ? `exam_timer_started_at:${attemptId}` : ""),
-    [attemptId],
-  )
 
   function stopTimer() {
     if (intervalRef.current) {
@@ -102,26 +98,26 @@ export default function ExamTokenRunner({
     }
   }
 
-  function startOrResumeTimer() {
+  function startOrResumeTimer(serverExpiresAt?: string | Date | null) {
     if (!attemptId) return
     if (summary?.status === "FINISHED") return
 
-    let startedAt = 0
-    try {
-      const raw = localStorage.getItem(timerKey)
-      startedAt = raw ? Number(raw) : 0
-    } catch {}
+    let endMs: number | null = null
 
-    if (!startedAt || Number.isNaN(startedAt)) {
-      startedAt = Date.now()
-      try {
-        localStorage.setItem(timerKey, String(startedAt))
-      } catch {}
+    if (serverExpiresAt) {
+      endMs = new Date(serverExpiresAt).getTime()
+    } else if (expiresAtMs) {
+      endMs = expiresAtMs
     }
 
+    if (!endMs || Number.isNaN(endMs)) {
+      endMs = Date.now() + FALLBACK_DURATION_SEC * 1000
+    }
+
+    setExpiresAtMs(endMs)
+
     const tick = () => {
-      const elapsed = Math.floor((Date.now() - startedAt) / 1000)
-      const left = EXAM_DURATION_SEC - elapsed
+      const left = Math.floor((endMs! - Date.now()) / 1000)
       setRemainingSec(left)
 
       if (left <= 0 && !autoFinishedRef.current) {
@@ -143,16 +139,13 @@ export default function ExamTokenRunner({
     if (summary?.status === "FINISHED") return
     startOrResumeTimer()
     return () => stopTimer()
-  }, [attemptId, loading, questions.length, summary?.status])
+  }, [attemptId, loading, questions.length, summary?.status, expiresAtMs])
 
   useEffect(() => {
     if (summary?.status === "FINISHED") {
       stopTimer()
-      try {
-        if (timerKey) localStorage.removeItem(timerKey)
-      } catch {}
     }
-  }, [summary?.status, timerKey])
+  }, [summary?.status])
 
   const total = questions.length
   const answeredCount = Object.keys(selectedByQ).filter((qid) => {
@@ -208,12 +201,42 @@ export default function ExamTokenRunner({
     setReviewAnswers({})
     setFlagByQ({})
     autoFinishedRef.current = false
-    setRemainingSec(EXAM_DURATION_SEC)
+    setExpiresAtMs(null)
+    setRemainingSec(FALLBACK_DURATION_SEC)
 
     try {
+      // 1. Summary → expiresAt və status yoxla
+      try {
+        const rawSummary = await api.getAttemptSummary(attemptId)
+        const s = (rawSummary as any)?.data ?? rawSummary
+
+        if (String(s?.status || "").toUpperCase() === "FINISHED") {
+          onFinishedRef.current?.()
+          router.replace(`/results/${attemptId}`)
+          return
+        }
+
+        if (s?.expiresAt) {
+          const end = new Date(s.expiresAt).getTime()
+          setExpiresAtMs(end)
+          const left = Math.floor((end - Date.now()) / 1000)
+          setRemainingSec(Math.max(0, left))
+        }
+      } catch {
+        // summary alınmasa davam et
+      }
+
+      // 2. Sualları yüklə
       const res = await api.getAttemptQuestions(attemptId, userId)
       const list = Array.isArray(res?.questions) ? res.questions : []
       setQuestions(list)
+
+      if ((res as any)?.expiresAt) {
+        const end = new Date((res as any).expiresAt).getTime()
+        setExpiresAtMs(end)
+        const left = Math.floor((end - Date.now()) / 1000)
+        setRemainingSec(Math.max(0, left))
+      }
 
       const sel: Record<string, string> = {}
       const flags: Record<string, boolean> = {}

@@ -61,6 +61,7 @@ export type AttemptReviewItem = {
   createdAt: string
   isCorrect: boolean
   flag: boolean
+  expiresAt: string
   score: number
   feedback?: string | null
   studentTextAnswer?: string | null
@@ -77,6 +78,7 @@ export type ExamAttempt = {
   id: string
   status: "IN_PROGRESS" | "FINISHED" | "WAITING_AI"
   startedAt: string
+  expiresAt: string
   finishedAt?: string | null
   score: number
   type: "TEST" | "WRITING"
@@ -97,6 +99,7 @@ export type AttemptReviewResponse = {
     id: string
     status: string
     startedAt: string
+    expiresAt: string
     finishedAt?: string | null
     score: number
     total: number
@@ -123,6 +126,7 @@ export type AdminResultItem = {
   id: string
   status: "IN_PROGRESS" | "FINISHED" | "WAITING_AI"
   startedAt: string
+  expiresAt:  string
   finishedAt?: string | null
   score: number
   total: number
@@ -357,6 +361,7 @@ export type UserAttemptsResponse = { attempts: any[] }
 export type AttemptSummary = {
   attemptId: string
   status: string
+  expiresAt: string
   startedAt: string
   finishedAt?: string
   answered: number

@@ -953,6 +953,7 @@ export const translations = {
     "mathEditor.close": "Bağla",
     "mathEditor.preview": "Ön baxış:",
     "mathEditor.previewWillAppear": "Ön baxış burada görünəcək...",
+    "willFinish": "Bitəcək",
   },
   en: {
     login: "Login",
@@ -1901,7 +1902,9 @@ export const translations = {
     "mathEditor.selectSymbolHelp": "Select a symbol and it will be automatically added to the text",
     "mathEditor.close": "Close",
     "mathEditor.preview": "Preview:",
-    "mathEditor.previewWillAppear": "Preview will appear here..."
+    "mathEditor.previewWillAppear": "Preview will appear here...",
+    "willFinish": "Will finish"
+
   },
   ru: {
     login: "Войти",
@@ -2863,7 +2866,9 @@ export const translations = {
     "mathEditor.selectSymbolHelp": "Выберите символ, и он автоматически добавится в текст",
     "mathEditor.close": "Закрыть",
     "mathEditor.preview": "Предпросмотр:",
-    "mathEditor.previewWillAppear": "Предпросмотр появится здесь..."
+    "mathEditor.previewWillAppear": "Предпросмотр появится здесь...",
+    "willFinish": "Завершится"
+
   }
 }
 
