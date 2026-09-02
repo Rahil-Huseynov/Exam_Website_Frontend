@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": NEXT_PUBLIC_API_KEY, // ApiKeyGuard üçün mütləqdir
+        "x-api-key": NEXT_PUBLIC_API_KEY,
       },
       cache: "no-store",
     });
@@ -76,15 +76,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           ? [
               {
                 url: imageUrl,
-                width: 600,
-                height: 400,
+                width: 600, // Kvadrat nisbəti şəklin kəsilmədən (contain) görünməsini təmin edir
+                height: 600,
                 alt: title,
               },
             ]
           : [],
       },
       twitter: {
-        card: "summary_large_image",
+        card: "summary", // 'summary' rejimi şəkli kəsmədən contain kimi göstərir
         title: title,
         description: description,
         images: imageUrl ? [imageUrl] : [],
