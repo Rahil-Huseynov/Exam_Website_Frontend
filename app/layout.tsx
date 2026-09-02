@@ -37,11 +37,8 @@ export const metadata: Metadata = {
     "İmtahanVer.net universitet, doktorantura və digər onlayn imtahanlara hazırlaşmaq üçün müasir platformadır.",
 
   keywords: [
-    // Brand
     "İmtahanVer",
     "İmtahanVer.net",
-
-    // Generic
     "imtahan",
     "onlayn imtahan",
     "online exam",
@@ -50,8 +47,6 @@ export const metadata: Metadata = {
     "imtahan portalı",
     "imtahan proqramı",
     "imtahan hazırlığı",
-
-    // Tests
     "test",
     "testlər",
     "onlayn test",
@@ -59,8 +54,6 @@ export const metadata: Metadata = {
     "sınaq imtahanı",
     "onlayn sınaq imtahanı",
     "real imtahan",
-
-    // University
     "universitet",
     "universitet imtahanı",
     "ali təhsil",
@@ -71,33 +64,23 @@ export const metadata: Metadata = {
     "doktorantura",
     "doktorantura imtahanı",
     "doktorantura testləri",
-
-    // Azerbaijan
     "Azərbaycan",
     "Azərbaycan imtahan",
     "Azərbaycan təhsil",
     "DİM",
     "Dövlət İmtahan Mərkəzi",
-
-    // Education
     "təhsil",
     "education",
     "learning",
     "e-learning",
-
-    // AI
     "AI exam",
     "AI assessment",
     "süni intellekt",
     "AI qiymətləndirmə",
-
-    // Results
     "imtahan nəticəsi",
     "nəticə",
     "qiymətləndirmə",
     "sertifikat",
-
-    // Search phrases
     "imtahan ver",
     "imtahan həll et",
     "imtahan sualları",
@@ -118,14 +101,11 @@ export const metadata: Metadata = {
   ],
 
   creator: "İmtahanVer.net",
-
   publisher: "İmtahanVer.net",
-
   category: "Education",
 
-  alternates: {
-    canonical: SITE_URL,
-  },
+  // XƏTANIN BAŞLICA SƏBƏBİ BURADA İDİ:
+  // Layout səviyyəsində bərk 'canonical' saxlamırıq ki, alt səhifələr öz URL-ni verə bilsin.
 
   robots: {
     index: true,
@@ -143,19 +123,10 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "az_AZ",
-    url: SITE_URL,
     siteName: "İmtahanVer.net",
     title: "İmtahanVer.net | Onlayn İmtahan Platforması",
     description:
       "Universitet və doktorantura imtahanlarına hazırlaşmaq üçün onlayn platforma.",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "İmtahanVer.net",
-      },
-    ],
   },
 
   twitter: {
@@ -163,7 +134,6 @@ export const metadata: Metadata = {
     title: "İmtahanVer.net",
     description:
       "Universitet və doktorantura imtahanlarına hazırlaşmaq üçün platforma.",
-    images: ["/og-image.png"],
   },
 
   icons: {
@@ -185,7 +155,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-
   const jsonLd = {
     "@context": "https://schema.org",
     "@graph": [
