@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import Link from "next/link"
 import { toast } from "react-toastify"
 import { useAuth } from "@/contexts/auth-context"
 import { useLocale } from "@/contexts/locale-context"
@@ -41,7 +42,10 @@ export default function NewsPage() {
   const [page, setPage] = useState(1)
   const [pages, setPages] = useState(1)
 
-  const lang = useMemo(() => (locale === "ru" ? "ru" : locale === "en" ? "en" : "az") as "az" | "en" | "ru", [locale])
+  const lang = useMemo(
+    () => (locale === "ru" ? "ru" : locale === "en" ? "en" : "az") as "az" | "en" | "ru",
+    [locale]
+  )
 
   const load = async (p = page) => {
     setLoading(true)
@@ -60,6 +64,13 @@ export default function NewsPage() {
     setPage(1)
     load(1)
   }, [lang])
+
+  // Siyahıda qısa məzmun göstərmək üçün
+  const truncate = (text: string, max = 220) => {
+    if (!text) return ""
+    if (text.length <= max) return text
+    return text.slice(0, max).trim() + "…"
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/5 to-accent/5 flex flex-col">
@@ -103,18 +114,15 @@ export default function NewsPage() {
           ) : (
             <div className="grid gap-4">
               {items.map((item) => (
-                <Card
-                  key={item.id}
-                  className="border-2 rounded-3xl shadow-xl backdrop-blur-sm bg-card/50 hover:shadow-2xl transition-all duration-300 overflow-hidden"
-                >
+                <Card className="border-2 rounded-3xl shadow-xl backdrop-blur-sm bg-card/50 hover:shadow-2xl transition-all duration-300 overflow-hidden group-hover:border-primary/40">
                   {item.imageUrl ? (
-                    <div className="relative">
+                    <div className="relative flex items-center justify-center">
                       <img
                         src={toAbsImage(item.imageUrl)}
                         alt={t("newsImageAlt")}
-                        className="h-full p-4 w-full object-cover"
+                        className="w-1/2 h-full object-cover p-4 rounded-2xl"
                         onError={(e) => {
-                          ;(e.currentTarget as HTMLImageElement).style.display = "none"
+                          ; (e.currentTarget as HTMLImageElement).style.display = "none"
                         }}
                       />
                     </div>
@@ -130,7 +138,9 @@ export default function NewsPage() {
                   <CardHeader>
                     <div className="flex items-start justify-between gap-4">
                       <div className="space-y-2 flex-1">
-                        <CardTitle className="text-balance text-xl">{item.title}</CardTitle>
+                        <CardTitle className="text-balance text-xl group-hover:text-primary transition-colors">
+                          {item.title}
+                        </CardTitle>
                         <CardDescription className="flex items-center gap-2">
                           <Calendar className="h-4 w-4" />
                           {new Date(item.publishedAt || item.createdAt).toLocaleDateString()}
@@ -144,7 +154,16 @@ export default function NewsPage() {
                   </CardHeader>
 
                   <CardContent>
-                    <p className="text-muted-foreground leading-relaxed whitespace-pre-line">{item.content}</p>
+                    {/* Siyahıda yalnız qısa mətn */}
+                    <p className="text-muted-foreground leading-relaxed whitespace-pre-line">
+                      {truncate(item.content, 220)}
+                    </p>
+                    <Link key={item.id} href={`/news/${item.id}`} className="block group">
+
+                      <p className="mt-3 text-sm font-medium text-primary group-hover:underline">
+                        {t("newsReadMore") || "Ətraflı oxu →"}
+                      </p>
+                    </Link>
                   </CardContent>
                 </Card>
               ))}

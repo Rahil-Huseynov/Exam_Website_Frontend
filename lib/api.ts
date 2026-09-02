@@ -583,6 +583,10 @@ class ApiClient {
   async getProfile() {
     return this.request<User>("/auth/me")
   }
+  async getNewsById(id: string, lang: "az" | "en" | "ru" = "az") {
+    const qs = new URLSearchParams({ lang }).toString()
+    return this.request<PublicNewsItem>(`/news/${encodeURIComponent(id)}?${qs}`)
+  }
   async getDataStarts() {
     return this.request<Starts>("/admin/stats")
   }

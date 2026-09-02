@@ -954,6 +954,12 @@ export const translations = {
     "mathEditor.preview": "Ön baxış:",
     "mathEditor.previewWillAppear": "Ön baxış burada görünəcək...",
     "willFinish": "Bitəcək",
+    newsBack: "Xəbərlərə qayıt",
+    newsNotFound: "Xəbər tapılmadı",
+    newsReadMore: "Ətraflı oxu →",
+    shareNews: "Paylaş",
+    linkCopied: "Link kopyalandı!",
+    linkCopy: "Linki kopyala",
   },
   en: {
     login: "Login",
@@ -1903,7 +1909,13 @@ export const translations = {
     "mathEditor.close": "Close",
     "mathEditor.preview": "Preview:",
     "mathEditor.previewWillAppear": "Preview will appear here...",
-    "willFinish": "Will finish"
+    "willFinish": "Will finish",
+    newsBack: "Back to News",
+    newsNotFound: "News not found",
+    newsReadMore: "Read more →",
+    shareNews: "Share",
+    linkCopied: "Link copied!",
+    linkCopy: "Copy link",
 
   },
   ru: {
@@ -2867,8 +2879,13 @@ export const translations = {
     "mathEditor.close": "Закрыть",
     "mathEditor.preview": "Предпросмотр:",
     "mathEditor.previewWillAppear": "Предпросмотр появится здесь...",
-    "willFinish": "Завершится"
-
+    "willFinish": "Завершится",
+    newsBack: "Back to News",
+    newsNotFound: "News not found",
+    newsReadMore: "Read more →",
+    shareNews: "Share",
+    linkCopied: "Link copied!",
+    linkCopy: "Скопировать ссылку",
   }
 }
 
