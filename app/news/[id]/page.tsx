@@ -5,6 +5,7 @@ const NEXT_PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL || "https://imtahanv
 const NEXT_PUBLIC_API_URL_FOR_IMAGE = process.env.NEXT_PUBLIC_API_URL_FOR_IMAGE || "https://imtahanver.net";
 const NEXT_PUBLIC_SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://imtahanver.net";
 const NEXT_PUBLIC_API_KEY = process.env.NEXT_PUBLIC_API_KEY || "dv_prod_9f2c7e8b4a6d1e0f3a9c5b7d8e2a1f4c6b9e0d3a8f7c5b4e2a9d119712004";
+const NEXT_PUBLIC_FB_APP_ID = process.env.NEXT_PUBLIC_FB_APP_ID || "123456789012345"; // Əgər Facebook App ID-niz varsa buraya yazın
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -65,6 +66,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       alternates: {
         canonical: currentCanonicalUrl,
       },
+      // fb:app_id buraya əlavə olunur:
+      other: {
+        "fb:app_id": NEXT_PUBLIC_FB_APP_ID,
+      },
       openGraph: {
         title: title,
         description: description,
@@ -76,7 +81,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           ? [
               {
                 url: imageUrl,
-                width: 600, // Kvadrat nisbəti şəklin kəsilmədən (contain) görünməsini təmin edir
+                width: 600,
                 height: 600,
                 alt: title,
               },
@@ -84,7 +89,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           : [],
       },
       twitter: {
-        card: "summary", // 'summary' rejimi şəkli kəsmədən contain kimi göstərir
+        card: "summary",
         title: title,
         description: description,
         images: imageUrl ? [imageUrl] : [],
