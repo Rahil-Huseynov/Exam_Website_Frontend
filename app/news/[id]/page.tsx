@@ -66,8 +66,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       alternates: {
         canonical: currentCanonicalUrl,
       },
+      // fb:app_id teqini name əvəzinə property kimi generasiya etmək üçün:
       other: {
-        "fb:app_id": NEXT_PUBLIC_FB_APP_ID,
+        "property:fb:app_id": NEXT_PUBLIC_FB_APP_ID,
       },
       openGraph: {
         title: title,
