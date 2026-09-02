@@ -584,7 +584,7 @@ class ApiClient {
     return this.request<User>("/auth/me")
   }
 
-  async getNewsImage(id: string): Promise<PublicNewsItem> {
+  async getNewsShare(id: string): Promise<PublicNewsItem> {
     return this.request(`news/${id}?lang=az`, { method: "GET" })
   }
 

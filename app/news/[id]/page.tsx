@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
 import NewsDetailClient from "./news-detail-client";
+import { api, type PublicNewsItem } from "@/lib/api";
 
-const NEXT_PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL || "https://imtahanver.net/api";
 const NEXT_PUBLIC_API_URL_FOR_IMAGE = process.env.NEXT_PUBLIC_API_URL_FOR_IMAGE || "https://imtahanver.net";
 const NEXT_PUBLIC_SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://imtahanver.net";
-const NEXT_PUBLIC_API_KEY = process.env.NEXT_PUBLIC_API_KEY || "dv_prod_9f2c7e8b4a6d1e0f3a9c5b7d8e2a1f4c6b9e0d3a8f7c5b4e2a9d119712004";
-const NEXT_PUBLIC_FB_APP_ID = process.env.NEXT_PUBLIC_FB_APP_ID || "123456789012345"; // Əgər Facebook App ID-niz varsa buraya yazın
+const NEXT_PUBLIC_FB_APP_ID = process.env.NEXT_PUBLIC_FB_APP_ID || "123456789012345";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -24,23 +23,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   try {
-    const res = await fetch(`${NEXT_PUBLIC_API_URL}/news/${id}?lang=az`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": NEXT_PUBLIC_API_KEY,
-      },
-      cache: "no-store",
-    });
-
-    if (!res.ok) {
-      return {
-        title: "İmtahanVer.net | Xəbər",
-        alternates: { canonical: currentCanonicalUrl },
-      };
-    }
-
-    const news = await res.json();
+    // API klası vasitəsilə getNewsShare metodunu çağırırıq
+    const news = (await api.getNewsShare(id)) as PublicNewsItem;
 
     if (!news || !news.title) {
       return {
@@ -66,7 +50,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       alternates: {
         canonical: currentCanonicalUrl,
       },
-      // fb:app_id buraya əlavə olunur:
       other: {
         "fb:app_id": NEXT_PUBLIC_FB_APP_ID,
       },
@@ -96,6 +79,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       },
     };
   } catch (error) {
+    console.error("generateMetadata error:", error);
     return {
       title: "İmtahanVer.net | Xəbər",
       alternates: { canonical: currentCanonicalUrl },
