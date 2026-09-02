@@ -126,7 +126,7 @@ export type AdminResultItem = {
   id: string
   status: "IN_PROGRESS" | "FINISHED" | "WAITING_AI"
   startedAt: string
-  expiresAt:  string
+  expiresAt: string
   finishedAt?: string | null
   score: number
   total: number
@@ -583,6 +583,11 @@ class ApiClient {
   async getProfile() {
     return this.request<User>("/auth/me")
   }
+
+  async getNewsImage(id: string): Promise<PublicNewsItem> {
+    return this.request(`news/${id}?lang=az`, { method: "GET" })
+  }
+
   async getNewsById(id: string, lang: "az" | "en" | "ru" = "az") {
     const qs = new URLSearchParams({ lang }).toString()
     return this.request<PublicNewsItem>(`/news/${encodeURIComponent(id)}?${qs}`)
