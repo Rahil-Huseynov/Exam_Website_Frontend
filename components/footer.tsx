@@ -13,7 +13,7 @@ export function Footer() {
   return (
     <footer className="border-t bg-card/50 backdrop-blur-sm mt-auto">
       <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-8">
           <div className="space-y-4">
             <img className="w-40" src="/Logo.png" alt="İmtahanVer.net logosu" />
             <p className="text-sm text-muted-foreground">
@@ -77,6 +77,9 @@ export function Footer() {
                 +994 51 559 31 72
               </a>
             </div>
+          </div>
+            <div>
+            <iframe src="https://epoint.az/az/widget?id=11284&type=users"  frameborder="0" allowtransparency="true" scrolling="no" width="180" height="90"></iframe>
           </div>
         </div>
 
