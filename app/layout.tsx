@@ -127,6 +127,14 @@ export const metadata: Metadata = {
     title: "İmtahanVer.net | Onlayn İmtahan Platforması",
     description:
       "Universitet və doktorantura imtahanlarına hazırlaşmaq üçün onlayn platforma.",
+    images: [
+      {
+        url: `${SITE_URL}/favicon.png`,
+        width: 512,
+        height: 512,
+        alt: "İmtahanVer.net",
+      },
+    ],
   },
 
   twitter: {
@@ -134,6 +142,14 @@ export const metadata: Metadata = {
     title: "İmtahanVer.net",
     description:
       "Universitet və doktorantura imtahanlarına hazırlaşmaq üçün platforma.",
+    images: [
+      {
+        url: `${SITE_URL}/favicon.png`,
+        width: 512,
+        height: 512,
+        alt: "İmtahanVer.net",
+      },
+    ],
   },
 
   icons: {
