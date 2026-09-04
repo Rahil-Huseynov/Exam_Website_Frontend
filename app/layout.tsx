@@ -129,7 +129,7 @@ export const metadata: Metadata = {
       "Universitet və doktorantura imtahanlarına hazırlaşmaq üçün onlayn platforma.",
     images: [
       {
-        url: `${SITE_URL}/favicon.png`,
+        url: `${SITE_URL}/og-image.png`,
         width: 512,
         height: 512,
         alt: "İmtahanVer.net",
@@ -144,7 +144,7 @@ export const metadata: Metadata = {
       "Universitet və doktorantura imtahanlarına hazırlaşmaq üçün platforma.",
     images: [
       {
-        url: `${SITE_URL}/favicon.png`,
+        url: `${SITE_URL}/og-image.png`,
         width: 512,
         height: 512,
         alt: "İmtahanVer.net",
