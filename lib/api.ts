@@ -660,6 +660,10 @@ class ApiClient {
       body: fd,
     })
   }
+
+  async getExamById(id: string): Promise<Exam> {
+    return this.request(`/banks/${id}`)  
+  }
   async updateUniversity(
     universityId: string,
     data: { name?: string; nameAz?: string; nameEn?: string; nameRu?: string; logo?: string | null },

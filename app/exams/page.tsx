@@ -481,7 +481,14 @@ export default function ExamsPage() {
                       </div>
                     </CardContent>
 
-                    <CardFooter>
+                    <CardFooter className="grid gap-2">
+                      <Button
+                        variant="outline"
+                        className="w-full h-11 border-violet-300 text-violet-700 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-300 dark:hover:bg-violet-950/40"
+                        onClick={() => router.push(`/exams/${exam.id}`)}
+                      >
+                        {t("moreDetails")}
+                      </Button>
                       <Button
                         className="w-full h-11 bg-gradient-to-r from-violet-600 to-blue-600 hover:from-violet-700 hover:to-blue-700"
                         disabled={isStarting}

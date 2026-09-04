@@ -2,6 +2,7 @@ export type Locale = "az" | "en" | "ru"
 
 export const translations = {
   az: {
+    "moreDetails": "Ətraflı",
     login: "Giriş",
     logout: "Çıxış",
     register: "Qeydiyyat",
@@ -960,9 +961,18 @@ export const translations = {
     shareNews: "Paylaş",
     linkCopied: "Link kopyalandı!",
     linkCopy: "Linki kopyala",
+    "backToExams": "İmtahanlara qayıt",
+    "examNotFound": "İmtahan tapılmadı",
+    "examNotFoundDesc": "Axtardığınız imtahan mövcud deyil və ya silinib.",
+    "shareExam": "İmtahanı paylaş",
+    "shareExamText": "İmtahana bax",
+    "linkCopyFailed": "Link kopyalanmadı",
+    "copyLink": "Linki kopyala",
+    "copied": "Kopyalandı",
   },
   en: {
     login: "Login",
+    "moreDetails": "More Details",
     logout: "Logout",
     register: "Register",
     email: "Email",
@@ -1916,10 +1926,19 @@ export const translations = {
     shareNews: "Share",
     linkCopied: "Link copied!",
     linkCopy: "Copy link",
+    "backToExams": "Back to exams",
+    "examNotFound": "Exam not found",
+    "examNotFoundDesc": "The exam you are looking for does not exist or has been deleted.",
+    "shareExam": "Share exam",
+    "shareExamText": "View exam",
+    "linkCopyFailed": "Failed to copy link",
+    "copyLink": "Copy link",
+    "copied": "Copied"
 
   },
   ru: {
     login: "Войти",
+    "moreDetails": "Подробнее",
     logout: "Выйти",
     register: "Регистрация",
     email: "Электронная почта",
@@ -2886,6 +2905,15 @@ export const translations = {
     shareNews: "Share",
     linkCopied: "Link copied!",
     linkCopy: "Скопировать ссылку",
+    "backToExams": "Назад к экзаменам",
+    "examNotFound": "Экзамен не найден",
+    "examNotFoundDesc": "Искомый экзамен не существует или был удалён.",
+    "shareExam": "Поделиться экзаменом",
+    "shareExamText": "Смотреть экзамен",
+    "linkCopyFailed": "Не удалось скопировать ссылку",
+    "copyLink": "Копировать ссылку",
+    "copied": "Скопировано"
+
   }
 }
 
