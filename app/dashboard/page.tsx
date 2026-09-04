@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState, useCallback } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
@@ -33,7 +33,11 @@ import {
 
 import { toastError } from "@/lib/toast"
 import { fromCents, toCents } from "@/lib/utils"
-import { deleteCookie_EXAM_DURATION_COOKIE, EXAM_DURATION_COOKIE, setCookie_EXAM_DURATION_COOKIE } from "@/helper/ExamDurationMinutesHelper"
+import {
+  deleteCookie_EXAM_DURATION_COOKIE,
+  EXAM_DURATION_COOKIE,
+  setCookie_EXAM_DURATION_COOKIE,
+} from "@/helper/ExamDurationMinutesHelper"
 import Image from "next/image"
 
 type Attempt = any
@@ -68,7 +72,6 @@ function setTokenBank(token: string, bankId: string) {
 
 function approxCount(value?: number) {
   if (value === undefined || value === null || value <= 0) return "-"
-
   const rounded = Math.floor(value / 10) * 10
   return `${rounded}+`
 }
@@ -78,9 +81,6 @@ export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth()
   const { locale } = useLocale()
   const { t } = useTranslation(locale)
-  if (typeof window !== "undefined") {
-    sessionStorage.clear();
-  }
 
   const [attempts, setAttempts] = useState<Attempt[]>([])
   const [loading, setLoading] = useState(true)
@@ -88,19 +88,30 @@ export default function DashboardPage() {
   const didLoadRef = useRef(false)
 
   const [step, setStep] = useState<Step>(1)
-
   const [universities, setUniversities] = useState<University[]>([])
   const [uniLoading, setUniLoading] = useState(false)
   const [selectedUni, setSelectedUni] = useState<University | null>(null)
-
   const [years, setYears] = useState<number[]>([])
   const [yearsLoading, setYearsLoading] = useState(false)
   const [selectedYear, setSelectedYear] = useState<number | null>(null)
-
   const [exams, setExams] = useState<Exam[]>([])
   const [examsLoading, setExamsLoading] = useState(false)
-
   const [q, setQ] = useState("")
+  const [startingId, setStartingId] = useState<string>("")
+
+  const stepRef = useRef(step)
+  const selectedUniRef = useRef(selectedUni)
+  const selectedYearRef = useRef(selectedYear)
+
+  useEffect(() => {
+    stepRef.current = step
+  }, [step])
+  useEffect(() => {
+    selectedUniRef.current = selectedUni
+  }, [selectedUni])
+  useEffect(() => {
+    selectedYearRef.current = selectedYear
+  }, [selectedYear])
 
   const base = "transition-all duration-300 ease-out"
   const active = "opacity-100 translate-x-0"
@@ -114,7 +125,6 @@ export default function DashboardPage() {
     if (typeof window === "undefined") return
     const el = wizardRef.current
     if (!el) return
-
     requestAnimationFrame(() => {
       el.scrollIntoView({ behavior: "smooth", block: "start" })
     })
@@ -128,27 +138,33 @@ export default function DashboardPage() {
     scrollToWizard()
   }, [step])
 
-  function pushWizardState(next: Step, extra?: Partial<{ uni: University | null; year: number | null }>) {
-    if (typeof window === "undefined") return
-    const state = {
-      __wizard: true,
-      step: next,
-      uni: extra?.uni ?? selectedUni,
-      year: extra?.year ?? selectedYear,
-    }
-    window.history.pushState(state, "")
-  }
+  const pushWizardState = useCallback(
+    (next: Step, extra?: Partial<{ uni: University | null; year: number | null }>) => {
+      if (typeof window === "undefined") return
+      const state = {
+        __wizard: true,
+        step: next,
+        uni: extra?.uni ?? selectedUniRef.current,
+        year: extra?.year ?? selectedYearRef.current,
+      }
+      window.history.pushState(state, "")
+    },
+    [],
+  )
 
-  function replaceWizardState(next: Step, extra?: Partial<{ uni: University | null; year: number | null }>) {
-    if (typeof window === "undefined") return
-    const state = {
-      __wizard: true,
-      step: next,
-      uni: extra?.uni ?? selectedUni,
-      year: extra?.year ?? selectedYear,
-    }
-    window.history.replaceState(state, "")
-  }
+  const replaceWizardState = useCallback(
+    (next: Step, extra?: Partial<{ uni: University | null; year: number | null }>) => {
+      if (typeof window === "undefined") return
+      const state = {
+        __wizard: true,
+        step: next,
+        uni: extra?.uni ?? selectedUniRef.current,
+        year: extra?.year ?? selectedYearRef.current,
+      }
+      window.history.replaceState(state, "")
+    },
+    [],
+  )
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -161,7 +177,8 @@ export default function DashboardPage() {
       const st: any = e.state
 
       if (!st?.__wizard) {
-        if (step === 3) {
+        const currentStep = stepRef.current
+        if (currentStep === 3) {
           setStep(2)
           setSelectedYear(null)
           setExams([])
@@ -169,7 +186,7 @@ export default function DashboardPage() {
           replaceWizardState(2, { year: null })
           return
         }
-        if (step === 2) {
+        if (currentStep === 2) {
           setStep(1)
           setSelectedUni(null)
           setSelectedYear(null)
@@ -204,22 +221,21 @@ export default function DashboardPage() {
 
     window.addEventListener("popstate", onPopState)
     return () => window.removeEventListener("popstate", onPopState)
-  }, [step, selectedUni, selectedYear])
+  }, [replaceWizardState])
 
   useEffect(() => {
     let cancelled = false
-      ; (async () => {
-        try {
-          setUniLoading(true)
-          const list = await api.getUniversities()
-          if (!cancelled) setUniversities(Array.isArray(list) ? list : [])
-        } catch (e: any) {
-          toastError(e?.message || t("errUniversitiesLoad"))
-        } finally {
-          if (!cancelled) setUniLoading(false)
-        }
-      })()
-
+    ;(async () => {
+      try {
+        setUniLoading(true)
+        const list = await api.getUniversities()
+        if (!cancelled) setUniversities(Array.isArray(list) ? list : [])
+      } catch (e: any) {
+        toastError(e?.message || t("errUniversitiesLoad"))
+      } finally {
+        if (!cancelled) setUniLoading(false)
+      }
+    })()
     return () => {
       cancelled = true
     }
@@ -236,22 +252,23 @@ export default function DashboardPage() {
 
     if (didLoadRef.current) return
     didLoadRef.current = true
-      ; (async () => {
-        try {
-          setLoading(true)
-          const data = await api.getUserAttempts(user.id)
-          setAttempts(Array.isArray((data as any)?.attempts) ? (data as any).attempts : [])
-          lastErrorRef.current = ""
-        } catch (err: any) {
-          const msg = err instanceof Error ? err.message : t("errDataLoad")
-          if (lastErrorRef.current !== msg) {
-            lastErrorRef.current = msg
-            toastError(msg)
-          }
-        } finally {
-          setLoading(false)
+
+    ;(async () => {
+      try {
+        setLoading(true)
+        const data = await api.getUserAttempts(user.id)
+        setAttempts(Array.isArray((data as any)?.attempts) ? (data as any).attempts : [])
+        lastErrorRef.current = ""
+      } catch (err: any) {
+        const msg = err instanceof Error ? err.message : t("errDataLoad")
+        if (lastErrorRef.current !== msg) {
+          lastErrorRef.current = msg
+          toastError(msg)
         }
-      })()
+      } finally {
+        setLoading(false)
+      }
+    })()
   }, [authLoading, user, router, t])
 
   async function onSelectUniversity(u: University) {
@@ -320,25 +337,24 @@ export default function DashboardPage() {
   const displayName = getDisplayName(user, locale)
   const balanceCents = toCents((user as any)?.balance)
 
-  const completedAttempts = attempts.filter((a) => a?.completedAt || a?.finishedAt || a?.status === "FINISHED")
+  const completedAttempts = attempts.filter(
+    (a) => a?.completedAt || a?.finishedAt || a?.status === "FINISHED",
+  )
+
   const averageScore =
     completedAttempts.length > 0
       ? completedAttempts.reduce((sum, a) => {
-        const score = Number(a?.score || 0)
-        const total = Number(a?.totalQuestions || a?.total || 1)
-        return sum + (score / (total || 1)) * 100
-      }, 0) / completedAttempts.length
+          const score = Number(a?.score || 0)
+          const total = Number(a?.totalQuestions || a?.total || 1)
+          return sum + (score / (total || 1)) * 100
+        }, 0) / completedAttempts.length
       : 0
-
-  const totalSpent = useMemo(
-    () => attempts.reduce((sum, a) => sum + Number(a?.exam?.price || a?.price || 0), 0),
-    [attempts],
-  )
 
   async function startExam(exam: Exam) {
     try {
       if (!user?.id) {
-        toastError(t("errNotLoggedIn"))
+        toastError(t("errNotLoggedIn") || t("errLoginRequired"))
+        router.push("/login")
         return
       }
 
@@ -350,33 +366,39 @@ export default function DashboardPage() {
         return
       }
 
-      const bankId = String((exam as any).bankId ?? (exam as any).id)
+      const bankId = String((exam as any).bankId ?? (exam as any).id ?? "")
       if (!bankId) {
         toastError(t("errBankNotFound"))
         return
       }
 
-      const tok = await api.createExamToken(bankId, user.id)
-      const token = String((tok as any)?.token || "")
-      const url = String((tok as any)?.url || `/exam-token/${token}`)
-
+      setStartingId(bankId)
 
       deleteCookie_EXAM_DURATION_COOKIE(EXAM_DURATION_COOKIE)
-
       const duration = (exam as any).durationMinutes
       if (duration !== undefined && duration !== null && !Number.isNaN(Number(duration))) {
         setCookie_EXAM_DURATION_COOKIE(EXAM_DURATION_COOKIE, String(duration), Number(EXAM_DURATION_COOKIE))
       }
 
+      const tok = await api.createExamToken(bankId, user.id)
+      const token = String((tok as any)?.token || "")
+      const attemptId = String((tok as any)?.attemptId || "")
+
       if (!token) {
-        toastError(t("errTokenFail"))
+        toastError(t("errTokenFail") || t("errTokenNotCreated"))
         return
       }
 
       setTokenBank(token, bankId)
-      router.push(url)
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem(`exam_attempt_${token}`, attemptId)
+      }
+
+      router.push(`/exam-token/${token}`)
     } catch (e: any) {
       toastError(e?.message || t("errStartExam"))
+    } finally {
+      setStartingId("")
     }
   }
 
@@ -388,6 +410,7 @@ export default function DashboardPage() {
     }
 
     const examLike = {
+      id: bank.id,
       bankId: bank.id,
       price: bank.price ?? 0,
       durationMinutes: bank.durationMinutes ?? bank.duration ?? null,
@@ -407,16 +430,13 @@ export default function DashboardPage() {
       setExams([])
       setQ("")
       setSelectedYear(null)
-      return
-    }
-    if (step === 2) {
+    } else if (step === 2) {
       setStep(1)
       setSelectedUni(null)
       setSelectedYear(null)
       setYears([])
       setExams([])
       setQ("")
-      return
     }
   }
 
@@ -451,7 +471,11 @@ export default function DashboardPage() {
   const recentAttempts = attempts
     .filter((a) => a?.status !== "IN_PROGRESS")
     .slice()
-    .sort((a, b) => new Date(b.startedAt || b.createdAt || 0).getTime() - new Date(a.startedAt || a.createdAt || 0).getTime())
+    .sort(
+      (a, b) =>
+        new Date(b.startedAt || b.createdAt || 0).getTime() -
+        new Date(a.startedAt || a.createdAt || 0).getTime(),
+    )
     .slice(0, 3)
 
   return (
@@ -460,6 +484,7 @@ export default function DashboardPage() {
 
       <main className="container mx-auto px-4 py-12 flex-1">
         <div className="space-y-12">
+          {/* Header */}
           <div className="space-y-3 max-w-2xl">
             <div className="inline-flex items-center gap-2 text-xs font-medium text-primary/70 uppercase tracking-wide">
               <Sparkles className="h-4 w-4" />
@@ -473,10 +498,13 @@ export default function DashboardPage() {
             <p className="text-lg text-muted-foreground max-w-xl">{t("dashboardSubtitle")}</p>
           </div>
 
+          {/* Stats */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card className="border border-border/40 bg-card/50 backdrop-blur-sm rounded-xl hover:bg-card/80 transition-colors">
               <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground">{t("dashboardBalance")}</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  {t("dashboardBalance")}
+                </CardTitle>
                 <Wallet className="h-4 w-4 text-primary/60" />
               </CardHeader>
               <CardContent>
@@ -502,7 +530,9 @@ export default function DashboardPage() {
 
             <Card className="border border-border/40 bg-card/50 backdrop-blur-sm rounded-xl hover:bg-card/80 transition-colors">
               <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground">{t("dashboardCompletedExams")}</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  {t("dashboardCompletedExams")}
+                </CardTitle>
                 <BookOpen className="h-4 w-4 text-primary/60" />
               </CardHeader>
               <CardContent>
@@ -512,7 +542,9 @@ export default function DashboardPage() {
 
             <Card className="border border-border/40 bg-card/50 backdrop-blur-sm rounded-xl hover:bg-card/80 transition-colors">
               <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-medium text-muted-foreground">{t("dashboardAverageScore")}</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  {t("dashboardAverageScore")}
+                </CardTitle>
                 <TrendingUp className="h-4 w-4 text-primary/60" />
               </CardHeader>
               <CardContent>
@@ -520,113 +552,99 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           </div>
-          <CardContent className="p-4">
-            {recentAttempts.length === 0 ? (
-              <div className="text-sm text-muted-foreground">
-                {t("noRecentAttempts")}
-              </div>
-            ) : (
-              <div className="grid gap-3">
-                {recentAttempts.map((a: any) => {
-                  const showAIBadge = a?.bank?.type === "WRITING"
-                  const isTest = a?.bank?.type === "TEST"
 
-                  return (
-                    <div
-                      key={a.id}
-                      className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 sm:p-6 rounded-xl border border-border/30 bg-background/30 transition-shadow"
-                    >
-                      <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0 w-full sm:w-auto">
-                        <div className="flex-shrink-0">
-                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-muted/10 flex items-center justify-center overflow-hidden">
-                            <img
-                              src={`${process.env.NEXT_PUBLIC_API_URL_FOR_IMAGE}${a?.bank?.university?.logo}`}
-                              alt={a?.bank?.university?.name || "University"}
-                              className="w-8 h-8 sm:w-10 sm:h-10 object-contain"
-                              loading="lazy"
-                            />
+          {/* Recent Attempts */}
+          <Card className="border border-border/40 bg-card/50 backdrop-blur-sm rounded-xl">
+            <CardHeader>
+              <CardTitle className="text-lg">{t("recentAttempts") || "Son imtahanlar"}</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 pt-0">
+              {recentAttempts.length === 0 ? (
+                <div className="text-sm text-muted-foreground py-4">{t("noRecentAttempts")}</div>
+              ) : (
+                <div className="grid gap-3">
+                  {recentAttempts.map((a: any) => {
+                    const showAIBadge = a?.bank?.type === "WRITING"
+                    const isTest = a?.bank?.type === "TEST"
+                    const bankId = String(a?.bank?.id || a?.exam?.id || "")
+
+                    return (
+                      <div
+                        key={a.id}
+                        className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-xl border border-border/30 bg-background/30"
+                      >
+                        <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                          <div className="flex-shrink-0">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-muted/10 flex items-center justify-center overflow-hidden">
+                              <img
+                                src={`${process.env.NEXT_PUBLIC_API_URL_FOR_IMAGE}${a?.bank?.university?.logo || ""}`}
+                                alt={a?.bank?.university?.name || "University"}
+                                className="w-8 h-8 sm:w-10 sm:h-10 object-contain"
+                                loading="lazy"
+                              />
+                            </div>
                           </div>
-                        </div>
 
-                        <div className="flex items-center justify-between sm:flex-col sm:items-end w-full sm:w-auto">
-                          <div className="min-w-0 w-full">
+                          <div className="min-w-0 flex-1">
                             <div className="font-medium text-sm leading-snug line-clamp-2">
                               {a?.bank?.title || a?.exam?.title || "—"}
                             </div>
-
                             <div className="text-xs text-muted-foreground mt-1 leading-snug line-clamp-2">
                               {a?.bank?.university?.name} • {a?.bank?.year ?? "-"}
                             </div>
-
-                            <div className="text-xs text-muted-foreground mt-1 truncate">
-                              {new Date(
-                                a.startedAt || a.createdAt || Date.now()
-                              ).toLocaleString()}
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {new Date(a.startedAt || a.createdAt || Date.now()).toLocaleString()}
                             </div>
-
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 truncate">
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                               {showAIBadge ? (
-                                <Image src="/ai.png" alt="AI icon" width={20} height={20} />
+                                <Image src="/ai.png" alt="AI" width={18} height={18} />
                               ) : isTest ? (
-                                <Image src="/test.png" alt="Test icon" width={20} height={20} />
+                                <Image src="/test.png" alt="Test" width={18} height={18} />
                               ) : (
                                 <BookOpen className="h-4 w-4 text-primary/70" />
                               )}
-
-                              <span>{t("examtype")}:</span>
                               <span>
-                                {a.bank.type === "TEST"
+                                {a?.bank?.type === "TEST"
                                   ? t("examTypeTest")
-                                  : a.bank.type === "WRITING" ||
-                                    a.bank.type === "WRITTING"
+                                  : a?.bank?.type === "WRITING" || a?.bank?.type === "WRITTING"
                                     ? t("examTypeWritting")
                                     : "-"}
                               </span>
                             </div>
                           </div>
-
-                          <div className="sm:hidden text-sm font-semibold w-20 text-right">
-                            {a.score ?? "-"} / {a.total ?? "-"}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
-                        <div className="flex items-center justify-between sm:flex-col sm:items-end w-full sm:w-auto">
-                          <div className="hidden sm:block text-sm font-semibold w-20 text-right">
-                            {a.score ?? "-"} / {a.total ?? "-"}
-                          </div>
                         </div>
 
-                        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                          <Button
-                            size="sm"
-                            onClick={() => retakeAttempt(a)}
-                            className="rounded-lg h-9 px-3 shadow-sm w-full sm:w-auto"
-                          >
-                            {t("retake")}
-                          </Button>
+                        <div className="flex items-center gap-3 w-full sm:w-auto">
+                          <div className="text-sm font-semibold whitespace-nowrap">
+                            {a.score ?? "-"} / {a.total ?? "-"}
+                          </div>
 
-                          <Link href={`/results/${a?.id}`} className="w-full sm:w-auto">
+                          <div className="flex gap-2 ml-auto sm:ml-0">
                             <Button
-                              variant="outline"
                               size="sm"
-                              className="rounded-lg h-9 px-3 w-full sm:w-auto"
+                              onClick={() => retakeAttempt(a)}
+                              disabled={startingId === bankId}
+                              className="rounded-lg h-9 px-3 shadow-sm"
                             >
-                              {t("viewResults")}
+                              {startingId === bankId ? t("creatingToken") || "..." : t("retake")}
                             </Button>
-                          </Link>
+
+                            <Link href={`/results/${a?.id}`}>
+                              <Button variant="outline" size="sm" className="rounded-lg h-9 px-3">
+                                {t("viewResults")}
+                              </Button>
+                            </Link>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </CardContent>
+                    )
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-
-
+          {/* Wizard */}
           <div ref={wizardRef} className="scroll-mt-24">
             <Card className="border border-border/40 bg-card/50 backdrop-blur-sm rounded-xl overflow-hidden">
               <CardHeader className="pb-6 border-b border-border/40">
@@ -645,7 +663,12 @@ export default function DashboardPage() {
                     </Badge>
 
                     {step > 1 && (
-                      <Button variant="outline" className="rounded-lg h-9 px-3 bg-transparent" onClick={goBack} size="sm">
+                      <Button
+                        variant="outline"
+                        className="rounded-lg h-9 px-3 bg-transparent"
+                        onClick={goBack}
+                        size="sm"
+                      >
                         <ArrowLeft className="h-4 w-4 mr-1.5" />
                         {t("goBack")}
                       </Button>
@@ -656,7 +679,7 @@ export default function DashboardPage() {
                 <div className="mt-5 flex flex-wrap gap-2 text-xs">
                   <span className="px-3 py-1.5 rounded-lg border border-border/40 bg-background/60 flex items-center gap-1.5">
                     <CheckCircle2 className={`h-4 w-4 ${step >= 1 ? "text-primary" : "text-muted-foreground/30"}`} />
-                    {t("ExamType")}
+                    {t("ExamType") || t("chooseExamType")}
                   </span>
                   <span className="px-3 py-1.5 rounded-lg border border-border/40 bg-background/60 flex items-center gap-1.5">
                     <CheckCircle2 className={`h-4 w-4 ${step >= 2 ? "text-primary" : "text-muted-foreground/30"}`} />
@@ -669,7 +692,7 @@ export default function DashboardPage() {
 
                   {selectedUni && (
                     <span className="px-3 py-1.5 rounded-lg border border-border/40 bg-background/60 text-muted-foreground">
-                      {t("selectedExamType")}: {" "}
+                      {t("selectedExamType")}:{" "}
                       <span className="font-medium text-foreground">{tName(selectedUni, locale)}</span>
                     </span>
                   )}
@@ -682,10 +705,10 @@ export default function DashboardPage() {
               </CardHeader>
 
               <CardContent className="relative min-h-[320px] pt-8">
+                {/* STEP 1 */}
                 <div className={[base, step === 1 ? active : hiddenLeft].join(" ")}>
                   <div className="flex items-center justify-between gap-3 mb-5">
                     <div className="font-semibold text-lg">{t("chooseExamType")}</div>
-
                     {uniLoading && (
                       <div className="text-sm text-muted-foreground flex items-center gap-2">
                         <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent" />
@@ -697,7 +720,7 @@ export default function DashboardPage() {
                   {universities.length === 0 && !uniLoading ? (
                     <div className="text-sm text-muted-foreground py-8 text-center">{t("noUniversities")}</div>
                   ) : (
-                    <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:sm:grid-cols-3 lg:grid-cols-4">
+                    <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                       {universities.map((u) => {
                         const name = tName(u, locale)
                         const logoUrl = resolveLogoUrl((u as any)?.logo)
@@ -706,18 +729,14 @@ export default function DashboardPage() {
                           <button
                             key={u.id}
                             onClick={() => onSelectUniversity(u)}
-                            className={[
-                              "group aspect-square rounded-lg border border-border/40 p-4 text-left bg-card/50",
-                              "hover:border-primary/50 hover:bg-card hover:shadow-md transition-all",
-                              "flex flex-col",
-                            ].join(" ")}
+                            className="group aspect-square rounded-lg border border-border/40 p-4 text-left bg-card/50 hover:border-primary/50 hover:bg-card hover:shadow-md transition-all flex flex-col"
                           >
                             <div className="min-w-0">
                               <div className="font-semibold text-sm leading-snug line-clamp-2">{name}</div>
                             </div>
 
                             <div className="mt-3 flex-1 flex items-center justify-center">
-                              <div className="w-full h-80 rounded-md border border-border/40 bg-background/50 overflow-hidden flex items-center justify-center">
+                              <div className="w-full h-28 rounded-md border border-border/40 bg-background/50 overflow-hidden flex items-center justify-center">
                                 {logoUrl ? (
                                   <img
                                     src={logoUrl || "/placeholder.svg"}
@@ -740,6 +759,8 @@ export default function DashboardPage() {
                     </div>
                   )}
                 </div>
+
+                {/* STEP 2 */}
                 <div className={[base, step === 2 ? active : step < 2 ? hiddenRight : hiddenLeft].join(" ")}>
                   <div className="flex items-center justify-between gap-3 mb-5">
                     <div className="font-semibold text-lg flex items-center gap-2">
@@ -758,16 +779,12 @@ export default function DashboardPage() {
                   ) : (
                     <div className="space-y-4">
                       <div className="text-sm text-muted-foreground">{t("yearHint")}</div>
-
                       <div className="flex flex-wrap gap-2">
                         {years.map((y) => (
                           <button
                             key={y}
                             onClick={() => onSelectYear(y)}
-                            className={[
-                              "px-4 py-2 rounded-lg border border-border/40 text-sm font-medium transition-all",
-                              "bg-card/50 hover:bg-card hover:border-primary/50 hover:shadow-sm",
-                            ].join(" ")}
+                            className="px-4 py-2 rounded-lg border border-border/40 text-sm font-medium transition-all bg-card/50 hover:bg-card hover:border-primary/50 hover:shadow-sm"
                           >
                             {y}
                           </button>
@@ -776,6 +793,8 @@ export default function DashboardPage() {
                     </div>
                   )}
                 </div>
+
+                {/* STEP 3 */}
                 <div className={[base, step === 3 ? active : hiddenRight].join(" ")}>
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
                     <div className="font-semibold text-lg flex items-center gap-2">
@@ -806,26 +825,24 @@ export default function DashboardPage() {
                       {filteredExams.map((exam: any) => {
                         const showAIBadge = exam.type === "WRITING"
                         const isTest = exam.type === "TEST"
+                        const isStarting = startingId === String(exam.bankId || exam.id)
+
                         return (
                           <div
                             key={exam.id}
                             className="flex items-center justify-between p-4 rounded-lg border border-border/40 bg-card/50 hover:bg-card/80 transition-colors group"
                           >
                             <div className="min-w-0 flex-1">
-                              <div className="font-medium text-sm">
-                                {exam.title || exam.name}
-                              </div>
+                              <div className="font-medium text-sm">{exam.title || exam.name}</div>
 
                               <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2">
-                                {/* ICON */}
                                 {showAIBadge ? (
-                                  <Image src="/ai.png" alt="AI icon" width={20} height={20} />
+                                  <Image src="/ai.png" alt="AI" width={18} height={18} />
                                 ) : isTest ? (
-                                  <Image src="/test.png" alt="Test icon" width={20} height={20} />
+                                  <Image src="/test.png" alt="Test" width={18} height={18} />
                                 ) : (
                                   <BookOpen className="h-4 w-4 text-primary/70" />
                                 )}
-
                                 <span>
                                   {t("exam.card.questions_preview", {
                                     count: exam.questionCount ?? 0,
@@ -856,12 +873,10 @@ export default function DashboardPage() {
                             <div className="grid sm:flex items-center gap-3 ml-4">
                               <div className="text-right">
                                 <div className="font-semibold text-sm">
-                                  {Number((exam as any)?.price) == 0 || Number((exam as any)?.price) == 0.0 || Number((exam as any)?.price) == 0.00 ? (
+                                  {Number((exam as any)?.price) === 0 ? (
                                     <span className="text-green-600">{t("free")}</span>
                                   ) : (
-                                    <>
-                                      {fromCents(toCents((exam as any)?.price || 0))} AZN
-                                    </>
+                                    <>{fromCents(toCents((exam as any)?.price || 0))} AZN</>
                                   )}
                                 </div>
                               </div>
@@ -869,25 +884,25 @@ export default function DashboardPage() {
                               <Button
                                 size="sm"
                                 onClick={() => startExam(exam)}
+                                disabled={isStarting}
                                 className="rounded-lg h-8 px-3 group-hover:shadow-md transition-all"
                               >
-                                {t("start")}
+                                {isStarting ? t("creatingToken") || "..." : t("start")}
                               </Button>
                             </div>
                           </div>
                         )
                       })}
                     </div>
-
                   )}
                 </div>
               </CardContent>
             </Card>
           </div>
         </div>
-      </main >
+      </main>
 
       <Footer />
-    </div >
+    </div>
   )
 }
