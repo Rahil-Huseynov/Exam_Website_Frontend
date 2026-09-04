@@ -111,6 +111,20 @@ export default function ExamDetailsPage() {
     }
   }, [examId])
 
+  useEffect(() => {
+    if (exam?.title) {
+      document.title = `${exam.title} | ${t("examsTitle")}`
+    } else if (loading) {
+      document.title = t("loading")
+    } else {
+      document.title = t("examNotFound")
+    }
+
+    return () => {
+      document.title = t("examsTitle") 
+    }
+  }, [exam?.title, loading, t])
+
   async function startExam() {
     if (!exam) return
 
