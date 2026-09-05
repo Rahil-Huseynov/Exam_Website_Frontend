@@ -137,7 +137,7 @@ export default function PaymentsPage() {
   const txCount = transactions.length
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cyan-50">
+    <div className="min-h-screen bg-background">
       <Navbar />
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto space-y-6">
@@ -159,7 +159,7 @@ export default function PaymentsPage() {
           )}
 
           <div className="grid gap-4 md:grid-cols-3">
-            <Card className="border-purple-100 shadow-xl shadow-purple-100/50 backdrop-blur-sm bg-white/90">
+            <Card className="border-purple-100 shadow-xl shadow-purple-100/50 backdrop-blur-sm bg-background">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">{t("yourBalance")}</CardTitle>
                 <CreditCard className="h-4 w-4 text-purple-500" />
@@ -176,7 +176,7 @@ export default function PaymentsPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-purple-100 shadow-xl shadow-purple-100/50 backdrop-blur-sm bg-white/90">
+            <Card className="border-purple-100 shadow-xl shadow-purple-100/50 backdrop-blur-sm bg-background">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">{t("totalSpent")}</CardTitle>
                 <Receipt className="h-4 w-4 text-cyan-500" />
@@ -193,7 +193,7 @@ export default function PaymentsPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-purple-100 shadow-xl shadow-purple-100/50 backdrop-blur-sm bg-white/90">
+            <Card className="border-purple-100 shadow-xl shadow-purple-100/50 backdrop-blur-sm bg-background">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
                   {locale === "az" && "Əməliyyatlar"}
@@ -215,7 +215,7 @@ export default function PaymentsPage() {
             </Card>
           </div>
 
-          <Card className="border-purple-100 shadow-xl shadow-purple-100/50 backdrop-blur-sm bg-white/90">
+          <Card className="border-purple-100 shadow-xl shadow-purple-100/50 backdrop-blur-sm bg-background">
             <CardHeader>
               <CardTitle className="text-2xl">{t("transactionHistory")}</CardTitle>
               <CardDescription>
@@ -239,7 +239,7 @@ export default function PaymentsPage() {
                   {transactions.map((tx) => (
                     <div
                       key={tx.id}
-                      className="flex items-center justify-between p-4 border border-purple-100 rounded-xl bg-gradient-to-r from-purple-50/50 to-cyan-50/50 hover:shadow-lg transition-all duration-300"
+                      className="flex items-center justify-between p-4 border border-purple-100 rounded-xl bg-background hover:shadow-lg transition-all duration-300"
                     >
                       <div className="flex items-center gap-4">
                         {getTransactionIcon(tx.type)}
@@ -282,7 +282,7 @@ export default function PaymentsPage() {
                       type="button"
                       disabled={loading || !canLoadMore}
                       onClick={() => loadTransactions(page + 1, false)}
-                      className="px-4 py-2 rounded-xl border border-purple-200 bg-white hover:bg-purple-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-4 py-2 rounded-xl border border-purple-200 bg-background disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {loading
                         ? (locale === "az" ? "Yüklənir..." : locale === "ru" ? "Загрузка..." : "Loading...")

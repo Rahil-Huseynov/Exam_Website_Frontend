@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useLocale } from "@/contexts/locale-context"
@@ -17,6 +17,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Globe, Sparkles, CheckCircle2 } from "lucide-react"
 import { PublicNavbar } from "@/components/public-navbar"
+import { useAuth } from "@/contexts/auth-context"
 
 export default function ForgotPasswordPage() {
   const router = useRouter()
@@ -28,6 +29,13 @@ export default function ForgotPasswordPage() {
 
   const { locale, setLocale } = useLocale()
   const { t } = useTranslation(locale)
+  const { user } = useAuth()
+
+  useEffect(() => {
+    if (user !== null) {
+      router.replace("/dashboard")
+    }
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

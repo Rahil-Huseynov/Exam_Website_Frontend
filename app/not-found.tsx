@@ -14,7 +14,7 @@ export default function NotFoundPage() {
 
   return (
     <>
-      <div className="min-h-screen flex flex-col bg-white">
+      <div className="min-h-screen flex flex-col bg-background">
         {user ? <Navbar /> : <PublicNavbar />}
 
         <div className="containerspecific">
@@ -46,12 +46,12 @@ export default function NotFoundPage() {
             display: flex;
             justify-content: center;
             align-items: center;
-            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+            background: bg-background;
             padding: 40px 20px;
           }
 
           .card {
-            background: #ffffff;
+            background: bg-background;
             border-radius: 20px;
             padding: 56px 48px;
             max-width: 520px;
@@ -79,7 +79,7 @@ export default function NotFoundPage() {
             content: '';
             position: absolute;
             inset: -8px;
-            background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(59,130,246,0.03));
+            background: bg-background;
             border-radius: 50%;
             filter: blur(24px);
           }
@@ -112,7 +112,7 @@ export default function NotFoundPage() {
             margin-top: 8px;
             padding: 8px 16px;
             border-radius: 9999px;
-            background: #eef2ff;
+            background: bg-background;
             color: #1e3a8a;
             font-size: 13px;
             font-weight: 600;
@@ -124,7 +124,7 @@ export default function NotFoundPage() {
             margin-top: 12px;
             padding: 10px 18px;
             border-radius: 12px;
-            background: linear-gradient(90deg, rgba(59,130,246,0.1), rgba(56,189,248,0.06));
+            background: bg-background;
             color: #1f2937;
             font-weight: 600;
             text-decoration: none;

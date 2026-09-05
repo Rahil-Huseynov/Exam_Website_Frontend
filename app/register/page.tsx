@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 
@@ -23,6 +23,7 @@ import { PublicNavbar } from "@/components/public-navbar"
 
 import { api } from "@/lib/api"
 import { toastError } from "@/lib/toast"
+import { useAuth } from "@/contexts/auth-context"
 
 interface RegisterResponse {
   success: boolean
@@ -42,6 +43,14 @@ export default function RegisterPage() {
   const { locale } = useLocale()
   const { t } = useTranslation(locale)
 
+  const { user } = useAuth()
+
+  useEffect(() => {
+    if (user !== null) {
+      router.replace("/dashboard")
+    }
+  }, []);
+  
   const lastErrorRef = useRef<string>("")
 
   function showError(msg: string) {

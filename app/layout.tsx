@@ -12,6 +12,7 @@ import { ToastContainer } from "react-toastify";
 import { MaintenanceWatcher } from "@/components/MaintenanceWatcher";
 import MaintenanceClient from "@/components/MaintenanceClient";
 import { MaintenanceGuard } from "@/components/MaintenanceGuard";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const geist = Geist({
   subsets: ["latin"],
@@ -198,24 +199,31 @@ export default function RootLayout({
           }}
         />
 
-        <LocaleProvider>
-          <AuthProvider>
-            <MaintenanceClient />
-            <MaintenanceWatcher />
-            <MaintenanceGuard />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <LocaleProvider>
+            <AuthProvider>
+              <MaintenanceClient />
+              <MaintenanceWatcher />
+              <MaintenanceGuard />
 
-            {children}
-          </AuthProvider>
+              {children}
+            </AuthProvider>
 
-          <ToastContainer
-            position="top-right"
-            autoClose={3000}
-            hideProgressBar={false}
-            closeOnClick
-            pauseOnHover
-            draggable
-          />
-        </LocaleProvider>
+            <ToastContainer
+              position="top-right"
+              autoClose={3000}
+              hideProgressBar={false}
+              closeOnClick
+              pauseOnHover
+              draggable
+            />
+          </LocaleProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

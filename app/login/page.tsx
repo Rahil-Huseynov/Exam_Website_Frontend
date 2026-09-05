@@ -17,7 +17,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
-  const { refreshUser } = useAuth()
+  const { refreshUser, user } = useAuth()
   const { locale } = useLocale()
   const { t } = useTranslation(locale)
   const router = useRouter()
@@ -26,6 +26,13 @@ export default function LoginPage() {
       localStorage.clear();
     }
   }, []);
+
+   useEffect(() => {
+    if (user !== null) {
+      router.replace("/dashboard")
+    }
+  }, []);
+  
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const em = email.trim()

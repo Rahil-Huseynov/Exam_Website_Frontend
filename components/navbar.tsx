@@ -15,14 +15,14 @@ import {
 import { Globe, Menu, Wallet, LogOut, Shield } from "lucide-react"
 import { fromCents, toCents } from "@/lib/utils"
 import { useRouter } from "next/navigation"
+import { ThemeToggle } from "./ThemeToggle"
 
 
 export function Navbar() {
   const { user } = useAuth()
   const { locale, setLocale } = useLocale()
   const { t } = useTranslation(locale)
-  const router = useRouter()
-
+  
   const logout = () => {
     if (typeof window !== "undefined") {
       localStorage.clear()
@@ -46,7 +46,7 @@ export function Navbar() {
   const balanceCents = toCents((safeUser as any)?.balance)
 
   return (
-    <nav className="sticky top-0 z-50 border-b bg-white ">
+    <nav className="sticky top-0 z-50 border-b bg-background">
       <div className="mx-auto px-4">
         <div className="flex h-20 items-center justify-between">
           <Link
@@ -101,7 +101,7 @@ export function Navbar() {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
+                <Button variant="ghost" size="icon" className="rounded-full cursor-pointer">
                   <Globe className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
@@ -117,6 +117,7 @@ export function Navbar() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            <ThemeToggle />
             <>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

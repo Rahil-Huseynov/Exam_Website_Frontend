@@ -88,7 +88,7 @@ export default function AttemptDetailsPage({ params, value }: { params: AnyParam
       : `<span class="text-gray-400 italic">Preview görünəcək...</span>`;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-blue-50 to-cyan-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+    <div className="min-h-screen bg-background">
       <Navbar />
       <main className="container mx-auto px-4 py-8">
         <div className="space-y-6">
@@ -127,7 +127,7 @@ export default function AttemptDetailsPage({ params, value }: { params: AnyParam
                 </CardHeader>
 
                 <CardContent>
-                  <div className="flex flex-wrap gap-3">
+                  <div className="flex flex-wrap gap-3 ">
                     {isWritingAttempt ? (
                       <>
                         <Stat
@@ -173,7 +173,7 @@ export default function AttemptDetailsPage({ params, value }: { params: AnyParam
                     if (isWritingAttempt) {
                       if (it.isCorrect === true) {
                         return (
-                          <span className="inline-flex items-center gap-2 text-emerald-600 font-semibold">
+                          <span className="inline-flex items-center gap-2 text-emerald-600 font-semibold bg-background">
                             <CheckCircle2 className="h-5 w-5" />
                             {t("examRunner.result.correct")}
                           </span>
@@ -208,7 +208,7 @@ export default function AttemptDetailsPage({ params, value }: { params: AnyParam
                   })()
 
                   return (
-                    <Card className={`space-y-4 ${it.flag ? 'bg-yellow-100' : ''}`} key={it.answerId ?? q.id}>
+                    <Card className={`space-y-4 ${it.flag ? 'bg-yellow-100 text-black' : ''}`} key={it.answerId ?? q.id}>
                       <CardHeader>
                         <CardTitle className="flex items-center gap-4 ">
                           <div>
@@ -229,7 +229,7 @@ export default function AttemptDetailsPage({ params, value }: { params: AnyParam
                             </button>
                           </div>
 
-                          <div className="flex items-center justify-between w-full">
+                          <div className={`flex ${it.flag ? 'text-black' : ''} items-center justify-between w-full`}>
                             <span>
                               {t("questionsLabel")} #{idx + 1}
                             </span>
@@ -251,11 +251,11 @@ export default function AttemptDetailsPage({ params, value }: { params: AnyParam
                               return (
                                 <div
                                   key={op.id}
-                                  className={`break-all [word-break:break-all] [overflow-wrap:anywhere] px-4 py-3 rounded-xl border flex gap-3 ${isCorrect
-                                    ? "border-emerald-400 bg-emerald-50"
+                                  className={`${it.flag ? 'text-black' : ''} break-all [word-break:break-all] [overflow-wrap:anywhere] px-4 py-3 rounded-xl border flex gap-3 ${isCorrect
+                                    ? `border-emerald-400 bg-background ${it.flag ? 'text-dark dark:text-white' : ''}`
                                     : isSelected
-                                      ? "border-rose-400 bg-rose-50"
-                                      : "border-gray-200"
+                                      ? `border-rose-400 bg-background ${it.flag ? 'text-dark dark:text-white' : ''}`
+                                      : `border-gray-200 ${it.flag ? 'text-black' : ''}`
                                     }`}
                                 >
                                   <span>{isCorrect ? "✅" : isSelected ? "👉" : "•"}</span>
@@ -268,13 +268,13 @@ export default function AttemptDetailsPage({ params, value }: { params: AnyParam
                           <div className="space-y-3">
                             <div>
                               <div className="text-sm text-muted-foreground mb-1">{t("yourAnswer") ?? "Sənin cavabın"}</div>
-                              <HTMLEncodedReader className="whitespace-pre-wrap rounded-xl border p-4 bg-white" content={contentHtml(it.studentTextAnswer ?? "-")} />
+                              <HTMLEncodedReader className="whitespace-pre-wrap rounded-xl border p-4 bg-background" content={contentHtml(it.studentTextAnswer ?? "-")} />
                             </div>
 
                             {it.feedback && (
                               <div>
                                 <div className="text-sm text-muted-foreground mb-1">{t("feedback") ?? "Qeydlər"}</div>
-                                <HTMLEncodedReader className="whitespace-pre-wrap rounded-xl border p-4 bg-white" content={contentHtml(it.feedback ?? "-")} />
+                                <HTMLEncodedReader className="whitespace-pre-wrap rounded-xl border p-4 bg-background" content={contentHtml(it.feedback ?? "-")} />
                               </div>
                             )}
 
@@ -336,7 +336,7 @@ function Stat({
     >
       <div className="text-sm text-muted-foreground">{label}</div>
       <div
-        className={`text-2xl font-bold ${yellow ? "text-yellow-700" : ""
+        className={`text-2xl font-bold text-black ${yellow ? "text-yellow-700" : ""
           } justify-center flex`}
       >
         {value ?? 0}

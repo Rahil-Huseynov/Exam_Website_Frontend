@@ -17,6 +17,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Globe } from "lucide-react"
 import { PublicNavbar } from "@/components/public-navbar"
+import { useAuth } from "@/contexts/auth-context"
 
 export default function ResetPasswordPage() {
   const router = useRouter()
@@ -38,6 +39,13 @@ export default function ResetPasswordPage() {
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
 
+  const { user } = useAuth()
+
+  useEffect(() => {
+    if (user !== null) {
+      router.replace("/dashboard")
+    }
+  }, []);
   const toastErr = (key: TKey, fallback: string, opts?: Parameters<typeof toast.error>[1]) =>
     toast.error(t(key) || fallback, { autoClose: 3000, ...opts })
 

@@ -13,7 +13,7 @@ export default function ErrorPage({ error, reset }: { error: Error; reset: () =>
 
   return (
     <>
-      <div className="min-h-screen flex flex-col bg-white">
+      <div className="min-h-screen flex flex-col bg-background">
         {user ? <Navbar /> : <PublicNavbar />}
 
         <div className="containerspecific">
@@ -50,12 +50,12 @@ export default function ErrorPage({ error, reset }: { error: Error; reset: () =>
             display: flex;
             justify-content: center;
             align-items: center;
-            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+            background: bg-background;
             padding: 40px 20px;
           }
 
           .card {
-            background: #ffffff;
+            background: bg-background;
             border-radius: 20px;
             padding: 56px 48px;
             max-width: 520px;
@@ -78,7 +78,7 @@ export default function ErrorPage({ error, reset }: { error: Error; reset: () =>
             content: '';
             position: absolute;
             inset: -8px;
-            background: linear-gradient(135deg, rgba(239,68,68,0.08), rgba(239,68,68,0.03));
+            background: bg-background;
             border-radius: 50%;
             filter: blur(24px);
           }
@@ -111,7 +111,7 @@ export default function ErrorPage({ error, reset }: { error: Error; reset: () =>
             margin-top: 8px;
             padding: 8px 16px;
             border-radius: 9999px;
-            background: #fee2e2;
+            background: bg-background;
             color: #991b1b;
             font-size: 13px;
             font-weight: 600;
@@ -121,7 +121,7 @@ export default function ErrorPage({ error, reset }: { error: Error; reset: () =>
           .primary-btn {
             padding: 10px 18px;
             border-radius: 12px;
-            background: linear-gradient(90deg, rgba(239,68,68,0.08), rgba(255,115,115,0.04));
+            background: bg-background;
             border: 1px solid rgba(239,68,68,0.12);
             font-weight: 600;
             cursor: pointer;

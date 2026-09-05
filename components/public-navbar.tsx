@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Globe, Menu, X } from "lucide-react"
 import { useEffect, useState } from "react"
+import { ThemeToggle } from "./ThemeToggle"
 
 export function PublicNavbar() {
   const { locale, setLocale } = useLocale()
@@ -43,7 +44,7 @@ export function PublicNavbar() {
   }, [mobileMenuOpen])
 
   return (
-    <nav className="sticky top-0 z-50 border-b bg-card/80 backdrop-blur-xl supports-[backdrop-filter]:bg-card/60">
+    <nav className="sticky top-0 z-50 border-b bg-background">
       <div className="mx-auto px-4">
         <div className="flex h-20 items-center justify-between">
           <Link
@@ -84,7 +85,7 @@ export function PublicNavbar() {
             {/* Language */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
+                <Button variant="ghost" size="icon" className="rounded-full cursor-pointer">
                   <Globe className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
@@ -101,6 +102,8 @@ export function PublicNavbar() {
               </DropdownMenuContent>
             </DropdownMenu>
 
+            <ThemeToggle />
+
             <Button asChild variant="ghost" className="rounded-full hidden xl:flex">
               <Link href="/login">{t("login")}</Link>
             </Button>
@@ -115,7 +118,7 @@ export function PublicNavbar() {
             <Button
               variant="ghost"
               size="icon"
-              className="xl:hidden rounded-full"
+              className="xl:hidden rounded-full cursor-pointer"
               onClick={openMobile}
               aria-label="Open menu"
               aria-expanded={mobileMenuOpen}
@@ -169,7 +172,7 @@ export function PublicNavbar() {
                   <img className="w-30" src="/Logo.png" alt="İmtahanVer.net logosu" />
                 </Link>
 
-                <Button variant="ghost" size="icon" onClick={closeMobile} aria-label="Close menu">
+                <Button className="cursor-pointer" variant="ghost" size="icon" onClick={closeMobile} aria-label="Close menu">
                   <X className="h-5 w-5" />
                 </Button>
               </div>
