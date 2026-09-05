@@ -84,7 +84,7 @@ export function BalanceTopUpTab() {
       : t("noName")
 
   return (
-    <Card className="border-purple-100 shadow-xl shadow-purple-100/50 backdrop-blur-sm bg-white/90">
+    <Card className="border-purple-100 shadow-xl shadow-purple-100/50 backdrop-blur-sm bg-background">
       <CardHeader>
         <CardTitle className="text-lg">{t("balanceTopUpTitle")}</CardTitle>
         <CardDescription>{t("balanceTopUpDesc")}</CardDescription>

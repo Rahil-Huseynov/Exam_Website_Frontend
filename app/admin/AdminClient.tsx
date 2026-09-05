@@ -91,7 +91,7 @@ export default function AdminPage() {
   const isSuperAdmin = user?.role === "superadmin"
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-cyan-50">
+    <div className="min-h-screen bg-background">
       {user ? <Navbar /> : <PublicNavbar />}
 
       <main className="w-full min-h-screen px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8">
@@ -107,7 +107,7 @@ export default function AdminPage() {
 
           {isSuperAdmin ?
             <div className="grid gap-3 sm:gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-              <Card className="border-purple-100 shadow-lg sm:shadow-xl shadow-purple-100/50 backdrop-blur-sm bg-white/90">
+              <Card className="border-purple-100 shadow-lg sm:shadow-xl shadow-purple-100/50 backdrop-blur-sm bg-background">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 sm:px-6 py-3 sm:py-4">
                   <CardTitle className="text-xs sm:text-sm font-medium">{t("totalUsers")}</CardTitle>
                   <Users className="h-4 w-4 text-purple-500 flex-shrink-0" />
@@ -120,7 +120,7 @@ export default function AdminPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-purple-100 shadow-lg sm:shadow-xl shadow-purple-100/50 backdrop-blur-sm bg-white/90">
+              <Card className="border-purple-100 shadow-lg sm:shadow-xl shadow-purple-100/50 backdrop-blur-sm bg-background">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 sm:px-6 py-3 sm:py-4">
                   <CardTitle className="text-xs sm:text-sm font-medium">{t("totalExams")}</CardTitle>
                   <BookOpen className="h-4 w-4 text-cyan-500 flex-shrink-0" />
@@ -133,7 +133,7 @@ export default function AdminPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-purple-100 shadow-lg sm:shadow-xl shadow-purple-100/50 backdrop-blur-sm bg-white/90">
+              <Card className="border-purple-100 shadow-lg sm:shadow-xl shadow-purple-100/50 backdrop-blur-sm bg-background">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 sm:px-6 py-3 sm:py-4">
                   <CardTitle className="text-xs sm:text-sm font-medium">{t("totalRevenue")}</CardTitle>
                   <DollarSign className="h-4 w-4 text-purple-500 flex-shrink-0" />
@@ -146,7 +146,7 @@ export default function AdminPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-purple-100 shadow-lg sm:shadow-xl shadow-purple-100/50 backdrop-blur-sm bg-white/90">
+              <Card className="border-purple-100 shadow-lg sm:shadow-xl shadow-purple-100/50 backdrop-blur-sm bg-background">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-4 sm:px-6 py-3 sm:py-4">
                   <CardTitle className="text-xs sm:text-sm font-medium">{t("examsTaken")}</CardTitle>
                   <FileText className="h-4 w-4 text-cyan-500 flex-shrink-0" />
@@ -163,7 +163,7 @@ export default function AdminPage() {
 
           <Tabs defaultValue="exams" className="space-y-4 sm:space-y-6 w-full overflow-hidden">
             <div className="overflow-x-auto -mx-3 sm:-mx-4 md:-mx-6 px-3 sm:px-4 md:px-6">
-              <TabsList className="bg-white/90 border border-purple-100 rounded-lg sm:rounded-xl inline-flex min-w-full h-full sm:w-full gap-1 sm:gap-2 p-1 sm:p-2">
+              <TabsList className="bg-background border border-purple-100 rounded-lg sm:rounded-xl inline-flex min-w-full h-full sm:w-full gap-1 sm:gap-2 p-1 sm:p-2">
                 <TabsTrigger value="exams" className="text-xs sm:text-sm whitespace-nowrap 
     data-[state=active]:bg-purple-600
     data-[state=active]:text-white

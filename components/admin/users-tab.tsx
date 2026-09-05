@@ -143,7 +143,7 @@ export default function AdminUsersModern() {
     );
 
     return (
-        <div className="min-h-screen bg-slate-50 p-4 sm:p-6">
+        <div className="min-h-screen bg-background p-4 sm:p-6">
             <div className="max-w-7xl mx-auto">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
                     <div>
@@ -157,7 +157,7 @@ export default function AdminUsersModern() {
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 placeholder={t("users.searchPlaceholder")}
-                                className="pl-10 pr-4 py-2 w-full rounded-lg shadow-sm border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                className="pl-10 pr-4 py-2 w-full rounded-lg shadow-sm border border-slate-200 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                 aria-label={t("users.searchAria")}
                             />
                             <svg className="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" viewBox="0 0 20 20" fill="currentColor">
@@ -168,7 +168,7 @@ export default function AdminUsersModern() {
                         <div className="flex flex-wrap items-center gap-2">
                             <button
                                 onClick={() => loadUsers(1, limit, search)}
-                                className="inline-flex items-center gap-2 px-3 py-2 bg-white border rounded-lg shadow-sm text-sm hover:bg-gray-50"
+                                className="inline-flex items-center gap-2 px-3 py-2 bg-background border rounded-lg shadow-sm text-sm hover:bg-background"
                                 title={t("buttons.reload")}>
                                 <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path d="M4 4v5h.582A6 6 0 1110 16v-2a4 4 0 10-3.464-6H4z" /></svg>
                                 {t("buttons.reload")}
@@ -176,27 +176,27 @@ export default function AdminUsersModern() {
 
                             <button
                                 onClick={exportCsv}
-                                className="inline-flex items-center gap-2 px-3 py-2 bg-indigo-600 text-white rounded-lg shadow-sm text-sm hover:bg-indigo-700"
+                                className="inline-flex items-center gap-2 px-3 py-2 bg-indigo-600 text-white rounded-lg shadow-sm text-sm hover:background"
                                 title={t("buttons.csv")}>
                                 <Download className="w-5" />
                                 {t("buttons.csv")}
                             </button>
 
-                            <div className="px-3 py-2 bg-white border rounded-lg text-sm">
+                            <div className="px-3 py-2 bg-background border rounded-lg text-sm">
                                 <div className="text-xs text-slate-400 break-all [word-break:break-all] [overflow-wrap:anywhere]">{t("labels.pageSize")}</div>
                                 <div className="font-medium break-all [word-break:break-all] [overflow-wrap:anywhere]">50</div>
                             </div>
                         </div>
                     </div>
                 </div>
-                 <div className="bg-white rounded-2xl shadow p-4">
+                 <div className="bg-background rounded-2xl shadow p-4">
                     <div className="flex items-center justify-between mb-3">
                         <div className="text-sm text-slate-600 break-all [word-break:break-all] [overflow-wrap:anywhere]">
                             {t("labels.total")}: <span className="font-medium text-slate-800 break-all [word-break:break-all] [overflow-wrap:anywhere]">{totalCount}</span> {t("labels.users")}
                         </div>
                         <div className="hidden sm:flex items-center gap-2">
                             <div className="text-sm text-slate-500">{t("labels.page")}</div>
-                            <div className="inline-flex items-center gap-2 px-3 py-2 bg-slate-100 rounded-lg text-sm">
+                            <div className="inline-flex items-center gap-2 px-3 py-2 bg-background rounded-lg text-sm">
                                 <button onClick={() => setPage(1)} disabled={page <= 1} className="px-2 py-1 rounded disabled:opacity-50">«</button>
                                 <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1} className="px-2 py-1 rounded disabled:opacity-50">‹</button>
                                 <div className="px-2 font-medium">{page}</div>
@@ -209,7 +209,7 @@ export default function AdminUsersModern() {
 
                     <div className="w-full overflow-x-auto max-h-[66vh] border border-slate-100 rounded-lg">
                         <table className="min-w-[980px] w-full table-auto">
-                            <thead className="bg-gradient-to-r from-slate-50 to-slate-50 sticky top-0 z-10">
+                            <thead className="bg-background sticky top-0 z-10">
                                 <tr className="text-xs sm:text-sm text-slate-600">
                                     <th className="px-2 sm:px-4 py-2 sm:py-3 text-center">№</th>
                                     <th className="px-2 sm:px-4 py-2 sm:py-3 text-center">{t("table.publicId")}</th>
@@ -225,14 +225,14 @@ export default function AdminUsersModern() {
                                 {loading ? (
                                     Array.from({ length: 8 }).map((_, i) => (
                                         <tr key={i} className="animate-pulse">
-                                            <td className="px-2 sm:px-4 py-3"><div className="h-4 w-6 bg-slate-200 rounded" /></td>
-                                            <td className="px-2 sm:px-4 py-3"><div className="h-8 w-8 bg-slate-200 rounded" /></td>
-                                            <td className="px-2 sm:px-4 py-3"><div className="h-4 w-28 bg-slate-200 rounded" /></td>
-                                            <td className="px-2 sm:px-4 py-3"><div className="h-4 w-52 bg-slate-200 rounded" /></td>
-                                            <td className="px-2 sm:px-4 py-3"><div className="h-4 w-36 bg-slate-200 rounded" /></td>
-                                            <td className="px-2 sm:px-4 py-3"><div className="h-4 w-24 bg-slate-200 rounded" /></td>
-                                            <td className="px-2 sm:px-4 py-3 text-right"><div className="h-4 w-20 bg-slate-200 rounded ml-auto" /></td>
-                                            <td className="px-2 sm:px-4 py-3"><div className="h-4 w-32 bg-slate-200 rounded" /></td>
+                                            <td className="px-2 sm:px-4 py-3"><div className="h-4 w-6 bg-background rounded" /></td>
+                                            <td className="px-2 sm:px-4 py-3"><div className="h-8 w-8 bg-background rounded" /></td>
+                                            <td className="px-2 sm:px-4 py-3"><div className="h-4 w-28 bg-background rounded" /></td>
+                                            <td className="px-2 sm:px-4 py-3"><div className="h-4 w-52 bg-background rounded" /></td>
+                                            <td className="px-2 sm:px-4 py-3"><div className="h-4 w-36 bg-background rounded" /></td>
+                                            <td className="px-2 sm:px-4 py-3"><div className="h-4 w-24 bg-background rounded" /></td>
+                                            <td className="px-2 sm:px-4 py-3 text-right"><div className="h-4 w-20 bg-background rounded ml-auto" /></td>
+                                            <td className="px-2 sm:px-4 py-3"><div className="h-4 w-32 bg-background rounded" /></td>
                                         </tr>
                                     ))
                                 ) : error ? (
@@ -241,19 +241,19 @@ export default function AdminUsersModern() {
                                     <tr><td colSpan={8} className="p-6 text-center text-slate-500">{t("messages.noUsers")}</td></tr>
                                 ) : (
                                     users.map((u, idx) => (
-                                        <tr key={u.id} className="hover:bg-slate-50 border-b last:border-b-0">
-                                            <td className="text-center px-2 sm:px-4 py-3 text-xs sm:text-sm text-slate-600 break-all [word-break:break-all] [overflow-wrap:anywhere]">{(page - 1) * limit + idx + 1}</td>
-                                            <td className="text-center px-2 sm:px-4 py-3 font-mono text-xs text-slate-700 break-all [word-break:break-all] [overflow-wrap:anywhere]">{u.publicId ?? "-"}</td>
-                                            <td className="text-center px-2 sm:px-4 py-3 text-xs sm:text-sm text-slate-800 break-all [word-break:break-all] [overflow-wrap:anywhere]">{u.email}</td>
-                                            <td className="text-center px-2 sm:px-4 py-3 text-xs sm:text-sm text-slate-700 break-all [word-break:break-all] [overflow-wrap:anywhere]">{formatName(u)}</td>
-                                            <td className="text-center px-2 sm:px-4 py-3 text-xs sm:text-sm text-slate-600 break-all [word-break:break-all] [overflow-wrap:anywhere]">{u.role ?? "-"}</td>
-                                            <td className="text-center px-2 sm:px-4 py-3 text-right font-medium text-xs sm:text-sm text-slate-800 break-all [word-break:break-all] [overflow-wrap:anywhere]">{formatBalance(u.balance)} <span className="text-xs text-slate-400">AZN</span></td>
-                                            <td className="text-center px-2 sm:px-4 py-3 text-xs sm:text-sm text-slate-500 break-all [word-break:break-all] [overflow-wrap:anywhere]">{formatDate(u.createdAt)}</td>
+                                        <tr key={u.id} className="hover:bg-background border-b last:border-b-0">
+                                            <td className="text-center px-2 sm:px-4 py-3 dark:text-white text-xs sm:text-sm text-slate-600 break-all [word-break:break-all] [overflow-wrap:anywhere]">{(page - 1) * limit + idx + 1}</td>
+                                            <td className="text-center px-2 sm:px-4 py-3 dark:text-white font-mono text-xs text-slate-700 break-all [word-break:break-all] [overflow-wrap:anywhere]">{u.publicId ?? "-"}</td>
+                                            <td className="text-center px-2 sm:px-4 py-3 dark:text-white text-xs sm:text-sm text-slate-800 break-all [word-break:break-all] [overflow-wrap:anywhere]">{u.email}</td>
+                                            <td className="text-center px-2 sm:px-4 py-3 dark:text-white text-xs sm:text-sm text-slate-700 break-all [word-break:break-all] [overflow-wrap:anywhere]">{formatName(u)}</td>
+                                            <td className="text-center px-2 sm:px-4 py-3 dark:text-white text-xs sm:text-sm text-slate-600 break-all [word-break:break-all] [overflow-wrap:anywhere]">{u.role ?? "-"}</td>
+                                            <td className="text-center px-2 sm:px-4 py-3 dark:text-white text-right font-medium text-xs sm:text-sm text-slate-800 break-all [word-break:break-all] [overflow-wrap:anywhere]">{formatBalance(u.balance)} <span className="text-xs text-slate-400">AZN</span></td>
+                                            <td className="text-center px-2 sm:px-4 py-3 dark:text-white text-xs sm:text-sm text-slate-500 break-all [word-break:break-all] [overflow-wrap:anywhere]">{formatDate(u.createdAt)}</td>
                                             <td className="text-center px-2 sm:px-4 py-3">
                                                 <div className="flex justify-center items-center gap-2">
                                                     <button
                                                         onClick={() => openUser(u)}
-                                                        className="inline-flex items-center justify-center w-9 h-9 rounded-lg border hover:bg-slate-100"
+                                                        className="inline-flex items-center justify-center w-9 h-9 rounded-lg border hover:bg-background"
                                                         title={t("buttons.view")}>
                                                         <svg className="w-4 h-4 text-slate-600" viewBox="0 0 24 24" fill="none"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
                                                     </button>
@@ -278,7 +278,7 @@ export default function AdminUsersModern() {
                 <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-4">
                     <div className="absolute inset-0 bg-black/50" onClick={closeModal} />
 
-                    <div className="relative w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden" style={{ maxHeight: "88vh" }}>
+                    <div className="relative w-full max-w-4xl bg-background rounded-2xl shadow-2xl overflow-hidden" style={{ maxHeight: "88vh" }}>
                         <div className="flex items-center justify-between gap-4 p-4 border-b">
                             <div>
                                 <h3 className="text-lg font-semibold text-slate-800 break-all [word-break:break-all] [overflow-wrap:anywhere]">{selectedUser?.email ?? selectedUserFull?.email}</h3>
@@ -286,7 +286,7 @@ export default function AdminUsersModern() {
                             </div>
 
                             <div className="flex items-center gap-2">
-                                <button onClick={closeModal} className="px-3 py-2 rounded-lg text-sm border hover:bg-slate-50">{t("buttons.close")}</button>
+                                <button onClick={closeModal} className="px-3 py-2 rounded-lg text-sm border hover:bg-background">{t("buttons.close")}</button>
                             </div>
                         </div>
 
@@ -297,7 +297,7 @@ export default function AdminUsersModern() {
                                         <button
                                             key={tkey}
                                             onClick={() => setActiveTab(tkey)}
-                                            className={`px-3 py-1.5 rounded-lg text-sm ${activeTab === tkey ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-700"} text-left`}
+                                            className={`px-3 py-1.5 rounded-lg text-sm ${activeTab === tkey ? "bg-indigo-600 text-white" : "bg-background"} text-left`}
                                         >
                                             {tkey === "overview" && t("tabs.overview")}
                                             {tkey === "attempts" && `${t("tabs.attempts")} (${(selectedUserFull?.attempts || []).length})`}
@@ -320,35 +320,35 @@ export default function AdminUsersModern() {
                                         <>
                                             {activeTab === "overview" && (
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                                                    <div className="p-4 bg-slate-50 rounded-lg">
+                                                    <div className="p-4 bg-background rounded-lg">
                                                         <div className="text-xs text-slate-400">{t("fields.id")}</div>
                                                         <div className="font-medium break-all [word-break:break-all] [overflow-wrap:anywhere]">{selectedUserFull.id}</div>
                                                     </div>
-                                                    <div className="p-4 bg-slate-50 rounded-lg">
+                                                    <div className="p-4 bg-background rounded-lg">
                                                         <div className="text-xs text-slate-400">{t("fields.publicId")}</div>
                                                         <div className="font-medium break-all [word-break:break-all] [overflow-wrap:anywhere]">{selectedUserFull.publicId ?? '-'}</div>
                                                     </div>
-                                                    <div className="p-4 bg-slate-50 rounded-lg">
+                                                    <div className="p-4 bg-background rounded-lg">
                                                         <div className="text-xs text-slate-400">{t("fields.name")}</div>
                                                         <div className="font-medium break-all [word-break:break-all] [overflow-wrap:anywhere]">{(selectedUserFull.firstName ?? "") + " " + (selectedUserFull.lastName ?? "")}</div>
                                                     </div>
-                                                    <div className="p-4 bg-slate-50 rounded-lg">
+                                                    <div className="p-4 bg-background rounded-lg">
                                                         <div className="text-xs text-slate-400">{t("fields.role")}</div>
                                                         <div className="font-medium break-all [word-break:break-all] [overflow-wrap:anywhere]">{selectedUserFull.role ?? "-"}</div>
                                                     </div>
-                                                    <div className="p-4 bg-slate-50 rounded-lg">
+                                                    <div className="p-4 bg-background rounded-lg">
                                                         <div className="text-xs text-slate-400">{t("fields.balance")}</div>
                                                         <div className="font-medium break-all [word-break:break-all] [overflow-wrap:anywhere]">{selectedUserFull.balance ?? "0.00"} AZN</div>
                                                     </div>
-                                                    <div className="p-4 bg-slate-50 rounded-lg">
+                                                    <div className="p-4 bg-background rounded-lg">
                                                         <div className="text-xs text-slate-400">{t("fields.verified")}</div>
                                                         <div className="font-medium break-all [word-break:break-all] [overflow-wrap:anywhere]">{selectedUserFull.isEmailVerified ? t("common.yes") : t("common.no")}</div>
                                                     </div>
-                                                    <div className="p-4 bg-slate-50 rounded-lg">
+                                                    <div className="p-4 bg-background rounded-lg">
                                                         <div className="text-xs text-slate-400">{t("fields.joined")}</div>
                                                         <div className="font-medium break-all [word-break:break-all] [overflow-wrap:anywhere]">{formatDate(selectedUserFull.createdAt)}</div>
                                                     </div>
-                                                    <div className="p-4 bg-slate-50 rounded-lg">
+                                                    <div className="p-4 bg-background rounded-lg">
                                                         <div className="text-xs text-slate-400">{t("fields.updated")}</div>
                                                         <div className="font-medium break-all [word-break:break-all] [overflow-wrap:anywhere]">{formatDate(selectedUserFull.updatedAt)}</div>
                                                     </div>
@@ -359,7 +359,7 @@ export default function AdminUsersModern() {
                                                 <div className="space-y-3">
                                                     {selectedUserFull.attempts && selectedUserFull.attempts.length > 0 ? (
                                                         selectedUserFull.attempts.map((a: any) => (
-                                                            <div key={a.id} className="p-3 bg-white border rounded-lg flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                                                            <div key={a.id} className="p-3 bg-background border rounded-lg flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
                                                                 <div>
                                                                     <div className="text-sm font-medium break-all [word-break:break-all] [overflow-wrap:anywhere]">{t("attempts.itemTitle")}: {a.id}</div>
                                                                     <div className="text-xs text-slate-500 break-all [word-break:break-all] [overflow-wrap:anywhere]">{t("attempts.bank")}: {a.bankId} • {t("attempts.status")}: {a.status}</div>
@@ -381,7 +381,7 @@ export default function AdminUsersModern() {
                                                 <div className="space-y-3">
                                                     {selectedUserFull.payments && selectedUserFull.payments.length > 0 ? (
                                                         selectedUserFull.payments.map((p: any) => (
-                                                            <div key={p.id} className="p-3 bg-white border rounded-lg flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                                                            <div key={p.id} className="p-3 bg-background border rounded-lg flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                                                                 <div>
                                                                     <div className="text-sm font-medium break-all [word-break:break-all] [overflow-wrap:anywhere]">{t("payments.order")}: {p.orderId}</div>
                                                                     <div className="text-xs text-slate-400 break-all [word-break:break-all] [overflow-wrap:anywhere]">{formatDate(p.createdAt)}</div>
@@ -402,7 +402,7 @@ export default function AdminUsersModern() {
                                                 <div className="space-y-3">
                                                     {selectedUserFull.balanceTransactions && selectedUserFull.balanceTransactions.length > 0 ? (
                                                         selectedUserFull.balanceTransactions.map((bt: any) => (
-                                                            <div key={bt.id} className="p-3 bg-white border rounded-lg flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                                                            <div key={bt.id} className="p-3 bg-background border rounded-lg flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                                                                 <div>
                                                                     <div className="text-sm font-medium break-all [word-break:break-all] [overflow-wrap:anywhere]">{bt.type}</div>
                                                                     <div className="text-xs text-slate-400 break-all [word-break:break-all] [overflow-wrap:anywhere]">{bt.note}</div>
