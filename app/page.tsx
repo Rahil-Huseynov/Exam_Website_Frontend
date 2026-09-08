@@ -22,11 +22,13 @@ import { useTranslation } from "@/lib/i18n"
 import { useAuth } from "@/contexts/auth-context"
 import { Navbar } from "@/components/navbar"
 import { api, University } from "@/lib/api"
+import { useRouter } from "next/navigation"
 
 export default function HomePage() {
   const { locale } = useLocale()
   const { t } = useTranslation(locale)
   const { user } = useAuth()
+  const router = useRouter()
 
   const [universities, setUniversities] = useState<University[]>([])
   const [loadingUnis, setLoadingUnis] = useState(true)
@@ -58,6 +60,21 @@ export default function HomePage() {
     }
     fetchUnis()
   }, [])
+
+  useEffect(() => {
+    if (!user) return;
+
+    if (sessionStorage.getItem("redirected")) return;
+
+    sessionStorage.setItem("redirected", "true");
+
+    if (user.role === "client") {
+      router.replace("/dashboard");
+    } else if (user.role === "admin" || user.role === "superadmin") {
+      router.replace("/admin");
+    }
+  }, [user, router]);
+
 
   // Autoplay
   useEffect(() => {

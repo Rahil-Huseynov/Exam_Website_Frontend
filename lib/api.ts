@@ -10,7 +10,7 @@ export interface User {
   email: string
   balance: number
   publicId: string
-  role: "user" | "admin" | "superadmin"
+  role: "client" | "admin" | "superadmin"
 }
 
 export type ApiUser = {

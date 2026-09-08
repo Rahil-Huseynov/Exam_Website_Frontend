@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ImtahanVer</string>
+    <string name="title_activity_main">ImtahanVer</string>
+    <string name="package_name">com.imtahanver.app</string>
+    <string name="custom_url_scheme">com.imtahanver.app</string>
+</resources>
