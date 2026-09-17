@@ -502,11 +502,11 @@ export default function ExamsPage() {
               })}
             </div>
           )}
-          {loadingMore && (
+          {/* {loadingMore && (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-16 w-16 border-4 border-violet-200 dark:border-violet-900 border-t-violet-600" />
             </div>
-          )}
+          )} */}
           <div ref={loaderRef} className="h-1" />
         </div>
       </main>

@@ -78,8 +78,15 @@ export function Footer() {
               </a>
             </div>
           </div>
-            <div>
-            <iframe src="https://epoint.az/az/widget?id=11284&type=users"  frameborder="0" allowtransparency="true" scrolling="no" width="180" height="90"></iframe>
+          <div>
+            <iframe
+              src="https://epoint.az/az/widget?id=11284&type=users"
+              frameBorder="0"
+              scrolling="no"
+              width="180"
+              height="90"
+              title="Epoint payment widget"
+            />
           </div>
         </div>
 
