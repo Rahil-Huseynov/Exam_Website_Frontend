@@ -69,9 +69,9 @@ export default function HomePage() {
     sessionStorage.setItem("redirected", "true");
 
     if (user.role === "client") {
-      router.replace("/dashboard");
+      router.replace(`/${locale}/dashboard`);
     } else if (user.role === "admin" || user.role === "superadmin") {
-      router.replace("/admin");
+      router.replace(`/${locale}/admin`);
     }
   }, [user, router]);
 
@@ -202,7 +202,7 @@ export default function HomePage() {
                 size="lg"
                 className="rounded-full px-8 py-6 text-lg bg-gradient-to-r from-primary via-secondary to-accent hover:opacity-90 transition-opacity shadow-lg shadow-primary/25"
               >
-                <Link href="/register">{t("homeCtaStart")}</Link>
+                <Link href={`/${locale}/register`}>{t("homeCtaStart")}</Link>
               </Button>
 
               <Button
@@ -211,7 +211,7 @@ export default function HomePage() {
                 size="lg"
                 className="rounded-full px-8 py-6 text-lg bg-transparent"
               >
-                <Link href="/login">{t("homeCtaLogin")}</Link>
+                <Link href={`/${locale}/login`}>{t("homeCtaLogin")}</Link>
               </Button>
             </div>
 
@@ -432,7 +432,7 @@ export default function HomePage() {
                 size="lg"
                 className="rounded-full px-8 py-6 text-lg bg-gradient-to-r from-primary via-secondary to-accent hover:opacity-90 transition-opacity shadow-lg shadow-primary/25"
               >
-                <Link href="/register">{t("homeReadyCta")}</Link>
+                <Link href={`/${locale}/register`}>{t("homeReadyCta")}</Link>
               </Button>
             </div>
           </Card>

@@ -51,7 +51,7 @@ export default function PaymentErrorClient() {
     }
 
     if (!foundKey) {
-      router.replace(user ? "/dashboard" : "/");
+      router.replace(user ? `/${locale}/dashboard` : `/${locale}/`);
       return;
     }
 
@@ -71,7 +71,7 @@ export default function PaymentErrorClient() {
     }, 1000);
 
     const timeout = setTimeout(() => {
-      router.push("/dashboard");
+      router.push(`/${locale}/dashboard`);
     }, 5000);
 
     return () => {
@@ -84,7 +84,7 @@ export default function PaymentErrorClient() {
 
   return (
     <>
-      <div className="min-h-screen flex flex-col bg-white">
+      <div className="min-h-screen flex flex-col bg-background">
         {user ? <Navbar /> : <PublicNavbar />}
 
         <div className="containerspecific">
@@ -111,7 +111,7 @@ export default function PaymentErrorClient() {
             display: flex;
             justify-content: center;
             align-items: center;
-            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+            background: bg-background;
             padding: 40px 20px;
           }
 

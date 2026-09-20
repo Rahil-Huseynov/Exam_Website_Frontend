@@ -48,7 +48,7 @@ export function PublicNavbar() {
       <div className="mx-auto px-4">
         <div className="flex h-20 items-center justify-between">
           <Link
-            href="/"
+            href={`/${locale}/`}
             className="text-2xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent"
             style={{ visibility: mobileMenuOpen ? "hidden" : "visible" }}
             onClick={closeMobile}
@@ -58,25 +58,25 @@ export function PublicNavbar() {
 
           {/* Desktop Menu */}
           <div className="hidden xl:flex items-center gap-8">
-            <Link href="/#" className="text-sm font-medium hover:text-primary transition-colors">
+            <Link href={`/${locale}/#`} className="text-sm font-medium hover:text-primary transition-colors">
               {t("home")}
             </Link>
-            <Link href="/#features" className="text-sm font-medium hover:text-primary transition-colors">
+            <Link href={`/${locale}/#features`} className="text-sm font-medium hover:text-primary transition-colors">
               {t("features")}
             </Link>
-            <Link href="/about" className="text-sm font-medium hover:text-primary transition-colors">
+            <Link href={`/${locale}/about`} className="text-sm font-medium hover:text-primary transition-colors">
               {t("about")}
             </Link>
-            <Link href="/exams" className="px-4 py-2 text-sm font-medium rounded-full hover:bg-muted transition-colors">
+            <Link href={`/${locale}/exams`} className="px-4 py-2 text-sm font-medium rounded-full hover:bg-muted transition-colors">
               {t("takeExam")}
             </Link>
-            <Link href="/faq" className="text-sm font-medium hover:text-primary transition-colors">
+            <Link href={`/${locale}/faq`} className="text-sm font-medium hover:text-primary transition-colors">
               {t("faq")}
             </Link>
-            <Link href="/news" className="text-sm font-medium hover:text-primary transition-colors">
+            <Link href={`/${locale}/news`} className="text-sm font-medium hover:text-primary transition-colors">
               {t("news")}
             </Link>
-            <Link href="/contact" className="text-sm font-medium hover:text-primary transition-colors">
+            <Link href={`/${locale}/contact`} className="text-sm font-medium hover:text-primary transition-colors">
               {t("contact")}
             </Link>
           </div>
@@ -105,13 +105,13 @@ export function PublicNavbar() {
             <ThemeToggle />
 
             <Button asChild variant="ghost" className="rounded-full hidden xl:flex">
-              <Link href="/login">{t("login")}</Link>
+              <Link href={`/${locale}/login`}>{t("login")}</Link>
             </Button>
             <Button
               asChild
               className="rounded-full bg-gradient-to-r from-primary via-secondary to-accent hover:opacity-90 transition-opacity hidden xl:flex"
             >
-              <Link href="/register">{t("register")}</Link>
+              <Link href={`/${locale}/register`}>{t("register")}</Link>
             </Button>
 
             {/* Mobile Menu Button */}
@@ -165,7 +165,7 @@ export function PublicNavbar() {
             <div className="py-6">
               <div className="flex justify-between items-center px-4">
                 <Link
-                  href="/"
+                  href={`/${locale}/`}
                   className="text-2xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent"
                   onClick={closeMobile}
                 >
@@ -180,49 +180,49 @@ export function PublicNavbar() {
             </div>
             <div className="flex flex-col gap-8 px-4">
               <Link
-                href="/"
+                href={`/${locale}/`}
                 className="text-lg font-medium hover:text-primary transition-colors py-2"
                 onClick={closeMobile}
               >
                 {t("home")}
               </Link>
               <Link
-                href="/#features"
+                href={`/${locale}/#features`}
                 className="text-lg font-medium hover:text-primary transition-colors py-2"
                 onClick={closeMobile}
               >
                 {t("features")}
               </Link>
               <Link
-                href="/about"
+                href={`/${locale}/about`}
                 className="text-lg font-medium hover:text-primary transition-colors py-2"
                 onClick={closeMobile}
               >
                 {t("about")}
               </Link>
               <Link
-                href="/exams"
+                href={`/${locale}/exams`}
                 className="text-lg font-medium hover:text-primary transition-colors py-2"
                 onClick={closeMobile}
               >
                 {t("takeExam")}
               </Link>
               <Link
-                href="/faq"
+                href={`/${locale}/faq`}
                 className="text-lg font-medium hover:text-primary transition-colors py-2"
                 onClick={closeMobile}
               >
                 {t("faq")}
               </Link>
               <Link
-                href="/news"
+                href={`/${locale}/news`}
                 className="text-lg font-medium hover:text-primary transition-colors py-2"
                 onClick={closeMobile}
               >
                 {t("news")}
               </Link>
               <Link
-                href="/contact"
+                href={`/${locale}/contact`}
                 className="text-lg font-medium hover:text-primary transition-colors py-2"
                 onClick={closeMobile}
               >
@@ -231,7 +231,7 @@ export function PublicNavbar() {
 
               <div className="grid gap-4 pt-2">
                 <Button asChild variant="ghost" className="rounded-full flex-1">
-                  <Link href="/login" onClick={closeMobile}>
+                  <Link href={`/${locale}/login`} onClick={closeMobile}>
                     {t("login")}
                   </Link>
                 </Button>
@@ -239,7 +239,7 @@ export function PublicNavbar() {
                   asChild
                   className="rounded-full bg-gradient-to-r from-primary via-secondary to-accent hover:opacity-90 transition-opacity flex-1"
                 >
-                  <Link href="/register" onClick={closeMobile}>
+                  <Link href={`/${locale}/register`} onClick={closeMobile}>
                     {t("register")}
                   </Link>
                 </Button>

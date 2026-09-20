@@ -1,4 +1,5 @@
 "use client"
+import { useLocale } from "@/contexts/locale-context"
 import { toast } from "react-toastify"
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 // ================== TYPES ==================
@@ -538,10 +539,12 @@ class ApiClient {
           "Недостаточно средств на балансе",
         )
       }
-      const publicNoAuthEndpoints = ["/", "/faq", "/contact-us"]
+        const { locale } = useLocale()
+      
+      const publicNoAuthEndpoints = [`/${locale}/`, `/${locale}/faq`, `/${locale}/contact-us`]
       const suppress401OnAuth =
         res.status === 401 &&
-        (endpoint.startsWith("/auth/") || publicNoAuthEndpoints.some((p) => endpoint === p))
+        (endpoint.startsWith(`/${locale}/auth/`) || publicNoAuthEndpoints.some((p) => endpoint === p))
       const shouldToast = typeof window !== "undefined" && !options.skipToast && !suppress401OnAuth
       if (shouldToast) this.toastRequestError(message, toastId)
       throw new Error(`${message} (Status: ${res.status})`)

@@ -84,14 +84,14 @@ function getPathWithoutLocale(
   const prefix = `/${locale}`
 
   if (pathname === prefix) {
-    return "/"
+    return `/${locale}/`
   }
 
   if (pathname.startsWith(`${prefix}/`)) {
     return pathname.slice(prefix.length) || "/"
   }
 
-  return pathname || "/"
+  return pathname || `/${locale}/`
 }
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -112,7 +112,7 @@ export async function generateMetadata(): Promise<Metadata> {
   )
 
   const canonicalPath =
-    pathWithoutLocale === "/"
+    pathWithoutLocale === `${locale}/`
       ? `/${locale}`
       : `/${locale}${pathWithoutLocale}`
 
@@ -120,22 +120,22 @@ export async function generateMetadata(): Promise<Metadata> {
 
   const alternateLanguages = {
     az:
-      pathWithoutLocale === "/"
+      pathWithoutLocale === `${locale}/`
         ? `${SITE_URL}/az`
         : `${SITE_URL}/az${pathWithoutLocale}`,
 
     en:
-      pathWithoutLocale === "/"
+      pathWithoutLocale === `${locale}/`
         ? `${SITE_URL}/en`
         : `${SITE_URL}/en${pathWithoutLocale}`,
 
     ru:
-      pathWithoutLocale === "/"
+      pathWithoutLocale === `${locale}/`
         ? `${SITE_URL}/ru`
         : `${SITE_URL}/ru${pathWithoutLocale}`,
 
     "x-default":
-      pathWithoutLocale === "/"
+      pathWithoutLocale === `${locale}/`
         ? `${SITE_URL}/az`
         : `${SITE_URL}/az${pathWithoutLocale}`,
   }

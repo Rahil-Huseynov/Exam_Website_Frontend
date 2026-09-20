@@ -27,7 +27,7 @@ export function Navbar() {
     if (typeof window !== "undefined") {
       localStorage.clear()
     }
-    window.location.href = "/login"
+    window.location.href = `/${locale}/login`
   }
 
   const safeUser = user ?? {
@@ -50,34 +50,34 @@ export function Navbar() {
       <div className="mx-auto px-4">
         <div className="flex h-20 items-center justify-between">
           <Link
-            href="/"
+            href={`/${locale}/`}
             className="text-2xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent"
           >
             <img className="w-30" src="/Logo.png" alt="İmtahanVer.net logosu" />
           </Link>
           <Link
-            href={safeUser ? "/dashboard" : "/"}
+            href={safeUser ? `/${locale}/dashboard` : `/${locale}/`}
             className="text-2xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent"
           >
           </Link>
 
           <div className="hidden 2xl:flex items-center gap-2">
-            <Link href="/dashboard" className="px-4 py-2 text-sm font-medium rounded-full hover:bg-muted transition-colors">
+            <Link href={`/${locale}/dashboard`} className="px-4 py-2 text-sm font-medium rounded-full hover:bg-muted transition-colors">
               {t("home")}
             </Link>
-            <Link href="/balance" className="px-4 py-2 text-sm font-medium rounded-full hover:bg-muted transition-colors">
+            <Link href={`/${locale}/balance`} className="px-4 py-2 text-sm font-medium rounded-full hover:bg-muted transition-colors">
               {t("addBalance")}
             </Link>
-            <Link href="/exams" className="px-4 py-2 text-sm font-medium rounded-full hover:bg-muted transition-colors">
+            <Link href={`/${locale}/exams`} className="px-4 py-2 text-sm font-medium rounded-full hover:bg-muted transition-colors">
               {t("takeExam")}
             </Link>
-            <Link href="/results" className="px-4 py-2 text-sm font-medium rounded-full hover:bg-muted transition-colors">
+            <Link href={`/${locale}/results`} className="px-4 py-2 text-sm font-medium rounded-full hover:bg-muted transition-colors">
               {t("examResults")}
             </Link>
-            <Link href="/payments" className="px-4 py-2 text-sm font-medium rounded-full hover:bg-muted transition-colors">
+            <Link href={`/${locale}/payments`} className="px-4 py-2 text-sm font-medium rounded-full hover:bg-muted transition-colors">
               {t("payments")}
             </Link>
-            <Link href="/news" className="px-4 py-2 text-sm font-medium rounded-full hover:bg-muted transition-colors">
+            <Link href={`/${locale}/news`} className="px-4 py-2 text-sm font-medium rounded-full hover:bg-muted transition-colors">
               {t("news")}
             </Link>
           </div>
@@ -88,7 +88,9 @@ export function Navbar() {
                 <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-primary-foreground font-semibold text-sm">
                   {initial}
                 </div>
-                <Link href="/profile" className="text-sm font-medium">{displayName}</Link>
+                <Link href={`/${locale}/profile`} className="text-sm font-medium">
+                  {displayName}
+                </Link>
               </div>
               <div className="h-6 w-px bg-border" />
               <div className="flex items-center gap-2">
@@ -142,35 +144,35 @@ export function Navbar() {
                   </div>
 
                   <DropdownMenuItem asChild className="rounded-xl cursor-pointer">
-                    <Link href="/dashboard">{t("home")}</Link>
+                    <Link href={`/${locale}/dashboard`}>{t("home")}</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild className="rounded-xl cursor-pointer">
-                    <Link href="/balance">{t("addBalance")}</Link>
+                    <Link href={`/${locale}/balance`}>{t("addBalance")}</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild className="rounded-xl cursor-pointer">
-                    <Link href="/exams">{t("takeExam")}</Link>
+                    <Link href={`/${locale}/exams`}>{t("takeExam")}</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild className="rounded-xl cursor-pointer">
-                    <Link href="/results">{t("examResults")}</Link>
+                    <Link href={`/${locale}/results`}>{t("examResults")}</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild className="rounded-xl cursor-pointer">
-                    <Link href="/payments">{t("payments")}</Link>
+                    <Link href={`/${locale}/payments`}>{t("payments")}</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild className="rounded-xl cursor-pointer">
-                    <Link href="/news">{t("news")}</Link>
+                    <Link href={`/${locale}/news`}>{t("news")}</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild className="rounded-xl cursor-pointer">
-                    <Link href="/profile">{t("profile")}</Link>
+                    <Link href={`/${locale}/profile`}>{t("profile")}</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild className="rounded-xl cursor-pointer">
-                    <Link href="/contact">{t("contact")}</Link>
+                    <Link href={`/${locale}/contact`}>{t("contact")}</Link>
                   </DropdownMenuItem>
 
                   {(safeUser.role === "admin" || safeUser.role === "superadmin") && (
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild className="rounded-xl cursor-pointer">
-                        <Link href="/admin" className="flex items-center gap-2">
+                        <Link href={`/${locale}/admin`} className="flex items-center gap-2">
                           <Shield className="h-4 w-4" />
                           {t("admin")}
                         </Link>
@@ -195,7 +197,7 @@ export function Navbar() {
                   variant="outline"
                   className="hidden 2xl:inline-flex rounded-full border-primary/30 hover:bg-primary/10 bg-transparent"
                 >
-                  <Link href="/admin" className="flex items-center gap-2">
+                  <Link href={`/${locale}/admin`} className="flex items-center gap-2">
                     <Shield className="h-4 w-4" />
                     {t("admin")}
                   </Link>

@@ -45,13 +45,13 @@ export function Footer() {
           <div className="space-y-3">
             <h4 className="font-semibold">{t("footer.pages")}</h4>
             <div className="flex flex-col gap-2 text-sm">
-              <Link href="/about" className="text-muted-foreground hover:text-primary transition-colors">
+              <Link href={`/${locale}/about`} className="text-muted-foreground hover:text-primary transition-colors">
                 {t("about")}
               </Link>
-              <Link href="/faq" className="text-muted-foreground hover:text-primary transition-colors">
+              <Link href={`/${locale}/faq`} className="text-muted-foreground hover:text-primary transition-colors">
                 {t("faq")}
               </Link>
-              <Link href="/contact" className="text-muted-foreground hover:text-primary transition-colors">
+              <Link href={`/${locale}/contact`} className="text-muted-foreground hover:text-primary transition-colors">
                 {t("contact")}
               </Link>
             </div>
@@ -59,10 +59,10 @@ export function Footer() {
           <div className="space-y-3">
             <h4 className="font-semibold">{t("footer.legal")}</h4>
             <div className="flex flex-col gap-2 text-sm">
-              <Link href="/terms" className="text-muted-foreground hover:text-primary transition-colors">
+              <Link href={`/${locale}/terms`} className="text-muted-foreground hover:text-primary transition-colors">
                 {t("terms")}
               </Link>
-              <Link href="/privacy" className="text-muted-foreground hover:text-primary transition-colors">
+              <Link href={`/${locale}/privacy`} className="text-muted-foreground hover:text-primary transition-colors">
                 {t("privacy")}
               </Link>
             </div>

@@ -2,13 +2,16 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 const LOCALES = ["az", "en", "ru"] as const
-
 const DEFAULT_LOCALE = "az"
 
 type Locale = (typeof LOCALES)[number]
 
-function getLocaleFromPathname(pathname: string): Locale | null {
-  const firstSegment = pathname.split("/")[1]
+function getLocaleFromPathname(
+  pathname: string
+): Locale | null {
+  const firstSegment = pathname
+    .split("/")
+    .filter(Boolean)[0]
 
   if (
     firstSegment === "az" ||
@@ -21,7 +24,9 @@ function getLocaleFromPathname(pathname: string): Locale | null {
   return null
 }
 
-function isStaticOrSystemPath(pathname: string): boolean {
+function isStaticOrSystemPath(
+  pathname: string
+): boolean {
   return (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
@@ -34,22 +39,15 @@ function isStaticOrSystemPath(pathname: string): boolean {
   )
 }
 
-export async function proxy(req: NextRequest) {
+export async function proxy(
+  req: NextRequest
+) {
   const pathname = req.nextUrl.pathname
 
   /*
    * ----------------------------------------
-   * 1. STATIC FILES / SYSTEM ROUTES
+   * 1. STATIC / SYSTEM ROUTES
    * ----------------------------------------
-   *
-   * public/:
-   *
-   * /favicon.png
-   * /logo.png
-   * /icons/icon.svg
-   * /images/test.webp
-   *
-   * locale rewrite-dan keçməməlidir.
    */
 
   if (isStaticOrSystemPath(pathname)) {
@@ -62,13 +60,17 @@ export async function proxy(req: NextRequest) {
    * ----------------------------------------
    */
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL
+  const API_URL =
+    process.env.NEXT_PUBLIC_API_URL
 
   if (API_URL) {
     try {
-      const res = await fetch(`${API_URL}/feature/maintenance`, {
-        cache: "no-store",
-      })
+      const res = await fetch(
+        `${API_URL}/feature/maintenance`,
+        {
+          cache: "no-store",
+        }
+      )
 
       if (res.ok) {
         const data: {
@@ -86,17 +88,21 @@ export async function proxy(req: NextRequest) {
         }
       }
     } catch (error) {
-      console.error("Maintenance check failed:", error)
+      console.error(
+        "Maintenance check failed:",
+        error
+      )
     }
   }
 
   /*
    * ----------------------------------------
-   * 3. CHECK LOCALE
+   * 3. GET LOCALE
    * ----------------------------------------
    */
 
-  const locale = getLocaleFromPathname(pathname)
+  const locale =
+    getLocaleFromPathname(pathname)
 
   /*
    * ----------------------------------------
@@ -106,11 +112,14 @@ export async function proxy(req: NextRequest) {
    * /
    *   -> /az
    *
-   * /faq
-   *   -> /az/faq
+   * /exams
+   *   -> /az/exams
    *
    * /news
    *   -> /az/news
+   *
+   * Bu redirect yalnız URL-də locale
+   * olmadıqda işləyir.
    */
 
   if (!locale) {
@@ -126,53 +135,64 @@ export async function proxy(req: NextRequest) {
 
   /*
    * ----------------------------------------
-   * 5. LOCALE-AWARE REQUEST HEADERS
+   * 5. REQUEST HEADERS
    * ----------------------------------------
-   *
-   * Server layout bunları oxuya bilər:
-   *
-   * x-locale
-   * x-original-pathname
    */
 
-  const requestHeaders = new Headers(req.headers)
+  const requestHeaders = new Headers(
+    req.headers
+  )
 
-  requestHeaders.set("x-locale", locale)
-  requestHeaders.set("x-original-pathname", pathname)
+  requestHeaders.set(
+    "x-locale",
+    locale
+  )
+
+  requestHeaders.set(
+    "x-original-pathname",
+    pathname
+  )
 
   /*
    * ----------------------------------------
    * 6. REMOVE LOCALE FOR INTERNAL ROUTE
    * ----------------------------------------
    *
-   * /az/faq
-   *    ↓
-   * /faq
+   * /az
+   *    -> /
    *
-   * /en/news
-   *    ↓
-   * /news
+   * /az/exams
+   *    -> /exams
    *
-   * /ru/about
-   *    ↓
-   * /about
+   * /en/exams
+   *    -> /exams
+   *
+   * /ru/news/123
+   *    -> /news/123
    */
 
   const pathnameWithoutLocale =
     pathname.replace(
-      new RegExp(`^/(${LOCALES.join("|")})(?=/|$)`),
+      new RegExp(
+        `^/(${LOCALES.join("|")})(?=/|$)`
+      ),
       ""
     ) || "/"
 
-  const rewriteUrl = req.nextUrl.clone()
+  const rewriteUrl =
+    req.nextUrl.clone()
 
-  rewriteUrl.pathname = pathnameWithoutLocale
+  rewriteUrl.pathname =
+    pathnameWithoutLocale
 
-  return NextResponse.rewrite(rewriteUrl, {
-    request: {
-      headers: requestHeaders,
-    },
-  })
+  return NextResponse.rewrite(
+    rewriteUrl,
+    {
+      request: {
+        headers: requestHeaders,
+      },
+    }
+  )
 }
 
 export const config = {

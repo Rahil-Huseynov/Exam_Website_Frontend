@@ -37,7 +37,7 @@ export default function ErrorPage({ error, reset }: { error: Error; reset: () =>
                 {t("error.retry")}
               </button>
 
-              <a href="/" className="secondary-link">
+              <a href={`/${locale}/`} className="secondary-link">
                 {t("error.home")}
               </a>
             </div>

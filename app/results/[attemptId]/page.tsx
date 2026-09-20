@@ -103,7 +103,7 @@ export default function AttemptDetailsPage({ params, value }: { params: AnyParam
             </div>
 
             <Button asChild variant="outline" className="gap-2">
-              <Link href="/results">
+              <Link href={`/${locale}/results`}>
                 <ArrowLeft className="h-4 w-4" />
                 {t("goBack")}
               </Link>

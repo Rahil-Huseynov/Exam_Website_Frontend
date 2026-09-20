@@ -64,7 +64,7 @@ export default function ResultsPage() {
               </div>
               <p className="text-muted-foreground text-lg mb-6">{t("noExams")}</p>
               <Button asChild className="h-12 px-8 bg-gradient-to-r from-violet-600 to-blue-600 shadow-md">
-                <Link href="/exams">{t("takeExam")}</Link>
+                <Link href={`/${locale}/exams`}>{t("takeExam")}</Link>
               </Button>
             </div>
           ) : (
@@ -170,7 +170,7 @@ export default function ResultsPage() {
                               size="sm"
                               className="bg-gradient-to-r from-violet-600 to-blue-600 shadow-sm"
                             >
-                              <Link href={`/results/${attempt.id}`}>{t("results.details")}</Link>
+                              <Link href={`/${locale}/results/${attempt.id}`}>{t("results.details")}</Link>
                             </Button>
                           ) : isWaitingAI ? (
                             <Button
@@ -186,7 +186,7 @@ export default function ResultsPage() {
                               size="sm"
                               className="bg-gradient-to-r from-emerald-600 to-teal-600 shadow-sm"
                             >
-                              <Link href={`/exam-continue/${attempt.id}`}>
+                              <Link href={`/${locale}/exam-continue/${attempt.id}`}>
                                 {t("continue") || "Davam et"}
                               </Link>
                             </Button>
@@ -196,7 +196,7 @@ export default function ResultsPage() {
                               size="sm"
                               className="bg-gradient-to-r from-violet-600 to-blue-600 shadow-sm"
                             >
-                              <Link href="/exams">{t("takeExam")}</Link>
+                              <Link href={`/${locale}/exams`}>{t("takeExam")}</Link>
                             </Button>
                           )}
                         </div>

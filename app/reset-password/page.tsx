@@ -43,7 +43,7 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     if (user !== null) {
-      router.replace("/dashboard")
+      router.replace(`/${locale}/dashboard`)
     }
   }, []);
   const toastErr = (key: TKey, fallback: string, opts?: Parameters<typeof toast.error>[1]) =>
@@ -107,7 +107,7 @@ export default function ResetPasswordPage() {
       setSuccess(true)
 
       toastOk(res?.message || t("resetPasswordToastSuccess" as TKey) || "Şifrə uğurla dəyişdirildi", {
-        onClose: () => router.replace("/login"),
+        onClose: () => router.replace(`/${locale}/login`),
       })
     } catch (err: any) {
       const msg =
@@ -135,7 +135,7 @@ export default function ResetPasswordPage() {
         <div className="w-full max-w-md space-y-4">
           <div className="flex items-center justify-between">
             <Link
-              href="/"
+              href={`/${locale}/`}
               className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-blue-600 bg-clip-text text-transparent flex items-center gap-2"
             >
               <img className="w-40" src="/Logo.png" alt="İmtahanVer.net logosu" />
@@ -217,7 +217,7 @@ export default function ResetPasswordPage() {
                 </Button>
 
                 <p className="text-sm text-muted-foreground text-center">
-                  <Link href="/login" className="text-violet-600 hover:underline font-medium">
+                  <Link href={`/${locale}/login`} className="text-violet-600 hover:underline font-medium">
                     {t("backToLogin" as TKey) || "Girişə qayıt"}
                   </Link>
                 </p>

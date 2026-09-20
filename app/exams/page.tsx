@@ -197,7 +197,7 @@ export default function ExamsPage() {
     try {
       if (!user?.id) {
         toast.error(t("errLoginRequired"));
-        router.push("/login");
+        router.push(`/${locale}/login`);
         return;
       }
 
@@ -231,7 +231,7 @@ export default function ExamsPage() {
         window.sessionStorage.setItem(`exam_attempt_${token}`, attemptId);
       }
 
-      router.push(`/exam-token/${token}`);
+      router.push(`/${locale}/exam-token/${token}`);
     } catch (e: any) {
       toast.error(e?.message || t("errStartExam"));
     } finally {
@@ -485,7 +485,7 @@ export default function ExamsPage() {
                       <Button
                         variant="outline"
                         className="cursor-pointer w-full h-11 border-violet-300 text-violet-700 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-300 dark:hover:bg-violet-950/40"
-                        onClick={() => router.push(`/exams/${exam.id}`)}
+                        onClick={() => router.push(`/${locale}/exams/${exam.id}`)}
                       >
                         {t("moreDetails")}
                       </Button>

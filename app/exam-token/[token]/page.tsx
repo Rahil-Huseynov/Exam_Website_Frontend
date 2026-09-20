@@ -123,13 +123,13 @@ export default function ExamTokenPage({ params }: { params: AnyParams }) {
 
   if (!user?.id) {
     toast.error(t("examTokenNotLoggedIn"));
-    guardedReplace("/login");
+    guardedReplace(`/${locale}/login`);
     return;
   }
 
   if (!token) {
     toast.error(t("examTokenMissing"));
-    guardedReplace("/dashboard");
+    guardedReplace(`/${locale}/dashboard`);
     return;
   }
 
@@ -144,7 +144,7 @@ export default function ExamTokenPage({ params }: { params: AnyParams }) {
 
       if (!storedBankId) {
         toast.error(t("examTokenBankMissingSession"));
-        guardedReplace("/dashboard");
+        guardedReplace(`/${locale}/dashboard`);
         return;
       }
 
@@ -167,7 +167,7 @@ export default function ExamTokenPage({ params }: { params: AnyParams }) {
 
       if (!existingAttemptId) {
         toast.error(t("examTokenAttemptIdMissing"));
-        guardedReplace("/dashboard");
+        guardedReplace(`/${locale}/dashboard`);
         return;
       }
 
@@ -179,7 +179,7 @@ export default function ExamTokenPage({ params }: { params: AnyParams }) {
       }
     } catch (e: any) {
       toast.error(e?.message || t("examTokenStartFail"));
-      guardedReplace("/dashboard");
+      guardedReplace(`/${locale}/dashboard`);
     } finally {
       setLoading(false);
     }

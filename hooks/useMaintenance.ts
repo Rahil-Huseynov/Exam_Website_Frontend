@@ -5,14 +5,16 @@ import { usePathname, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
 import type { User } from "@/lib/api";
+import { useLocale } from "@/contexts/locale-context";
 
 export function useMaintenance() {
   const pathname = usePathname();
   const router = useRouter();
   const { user } = useAuth(); 
+  const { locale } = useLocale()
 
   useEffect(() => {
-    if (pathname.startsWith("/login") || pathname.startsWith("/admin")) {
+    if (pathname.startsWith(`/${locale}/login`) || pathname.startsWith(`/${locale}/admin`)) {
       localStorage.setItem("maintenance", "false");
       localStorage.removeItem("maintenance_redirected");
       return;
@@ -42,8 +44,8 @@ export function useMaintenance() {
         if (data.enabled) {
           localStorage.setItem("maintenance_redirected", "false");
 
-          if (!pathname.startsWith("/maintenance")) {
-            router.replace("/maintenance");
+          if (!pathname.startsWith(`/${locale}/maintenance`)) {
+            router.replace(`/${locale}/maintenance`);
           }
         } else {
           localStorage.removeItem("maintenance_redirected");

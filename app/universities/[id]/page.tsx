@@ -173,7 +173,7 @@ export default function UniversityExamsPage() {
                     : "University not found"}
               </h2>
               <Button asChild className="rounded-full">
-                <Link href="/">
+                <Link href={`/${locale}/`}>
                   {locale === "az"
                     ? "Ana səhifəyə qayıt"
                     : locale === "ru"

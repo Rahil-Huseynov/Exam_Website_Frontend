@@ -33,7 +33,7 @@ export default function NotFoundPage() {
             <span className="badge">{t("notFound.badge")}</span>
 
             <div style={{ marginTop: 18 }}>
-              <Link href="/" className="cta-link">
+              <Link href={`/${locale}`} className="cta-link">
                 {t("notFound.back")}
               </Link>
             </div>

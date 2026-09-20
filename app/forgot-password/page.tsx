@@ -33,7 +33,7 @@ export default function ForgotPasswordPage() {
 
   useEffect(() => {
     if (user !== null) {
-      router.replace("/dashboard")
+      router.replace(`/${locale}/dashboard`)
     }
   }, []);
 
@@ -50,7 +50,7 @@ export default function ForgotPasswordPage() {
 
       toast.success(res?.message || t("forgotPasswordToastSuccess"), {
         autoClose: 2500,
-        onClose: () => router.push("/login"),
+        onClose: () => router.push(`/${locale}/login`),
       })
     } catch (err) {
       const msg = err instanceof Error ? err.message : t("forgotPasswordToastNetwork")
@@ -75,7 +75,7 @@ export default function ForgotPasswordPage() {
         <div className="w-full max-w-md space-y-4">
           <div className="flex items-center justify-between">
             <Link
-              href="/"
+              href={`/${locale}`}
               className="text-2xl font-bold bg-gradient-to-r from-violet-600 to-blue-600 bg-clip-text text-transparent flex items-center gap-2"
             >
               <img className="w-40" src="/Logo.png" alt="İmtahanVer.net logosu" />
@@ -143,7 +143,7 @@ export default function ForgotPasswordPage() {
                 </Button>
 
                 <p className="text-sm text-muted-foreground text-center">
-                  <Link href="/login" className="text-violet-600 hover:underline font-medium">
+                  <Link href={`/${locale}/login`} className="text-violet-600 hover:underline font-medium">
                     {t("forgotPasswordBackToLogin")}
                   </Link>
                 </p>

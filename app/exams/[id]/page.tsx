@@ -26,7 +26,6 @@ import {
   Check,
 } from "lucide-react"
 import { toast, ToastContainer } from "react-toastify"
-// @ts-expect-error CSS side-effect import
 import "react-toastify/dist/ReactToastify.css"
 import Image from "next/image"
 import {
@@ -131,7 +130,7 @@ export default function ExamDetailsPage() {
     try {
       if (!user?.id) {
         toast.error(t("errLoginRequired"))
-        router.push("/login")
+        router.push(`/${locale}/login`)
         return
       }
 
@@ -164,7 +163,7 @@ export default function ExamDetailsPage() {
         window.sessionStorage.setItem(`exam_attempt_${token}`, attemptId)
       }
 
-      router.push(`/exam-token/${token}`)
+      router.push(`/${locale}/exam-token/${token}`)
     } catch (e: any) {
       toast.error(e?.message || t("errStartExam"))
     } finally {
@@ -204,7 +203,7 @@ export default function ExamDetailsPage() {
       <main className="container mx-auto px-4 py-8 flex-1 max-w-5xl">
         {/* Back */}
         <button
-          onClick={() => router.push("/exams")}
+          onClick={() => router.push(`/${locale}/exams`)}
           className="cursor-pointer group mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-violet-600 transition-colors"
         >
           <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
@@ -229,7 +228,7 @@ export default function ExamDetailsPage() {
               {error || t("examNotFoundDesc")}
             </p>
             <Button
-              onClick={() => router.push("/exams")}
+              onClick={() => router.push(`/${locale}/exams`)}
               className="bg-violet-600 hover:bg-violet-700 cursor-pointer"
             >
               {t("backToExams")}

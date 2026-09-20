@@ -969,6 +969,7 @@ export const translations = {
     "linkCopyFailed": "Link kopyalanmadı",
     "copyLink": "Linki kopyala",
     "copied": "Kopyalandı",
+  "examAlreadyFinished": "İmtahan artıq başa çatıb.",
   },
   en: {
     login: "Login",
@@ -1933,8 +1934,10 @@ export const translations = {
     "shareExamText": "View exam",
     "linkCopyFailed": "Failed to copy link",
     "copyLink": "Copy link",
-    "copied": "Copied"
+    "copied": "Copied",
+    "examAlreadyFinished": "The exam has already been finished.",
 
+ 
   },
   ru: {
     login: "Войти",
@@ -2912,8 +2915,10 @@ export const translations = {
     "shareExamText": "Смотреть экзамен",
     "linkCopyFailed": "Не удалось скопировать ссылку",
     "copyLink": "Копировать ссылку",
-    "copied": "Скопировано"
+    "copied": "Скопировано",
+    "examAlreadyFinished": "Экзамен уже завершён.",
 
+  
   }
 }
 

@@ -33,13 +33,13 @@ export default function ExamContinuePage({ params }: { params: AnyParams }) {
     if (ranRef.current) return
 
     if (!attemptId) {
-      router.replace("/results")
+      router.replace(`/${locale}/results`)
       return
     }
 
     if (!user?.id) {
       toast.error(t("examTokenNotLoggedIn") || "Daxil olmalısınız")
-      router.replace("/login")
+      router.replace(`/${locale}/login`)
       return
     }
 
@@ -55,19 +55,19 @@ export default function ExamContinuePage({ params }: { params: AnyParams }) {
 
         if (!s || !status) {
           toast.error(t("attemptNotCreated") || "İmtahan tapılmadı")
-          router.replace("/results")
+          router.replace(`/${locale}/results`)
           return
         }
 
         if (status === "FINISHED" || status === "WAITING_AI") {
           toast.info(t("examAlreadyFinished") || "Bu imtahan artıq bitib")
-          router.replace(`/results/${attemptId}`)
+          router.replace(`/${locale}/results/${attemptId}`)
           return
         }
 
         if (status !== "IN_PROGRESS") {
           toast.error(t("errGeneric") || "İmtahan davam etdirilə bilməz")
-          router.replace("/results")
+          router.replace(`/${locale}/results`)
           return
         }
 
@@ -75,7 +75,7 @@ export default function ExamContinuePage({ params }: { params: AnyParams }) {
       } catch (e: any) {
         console.error("exam-continue error:", e)
         toast.error(e?.message || t("errGeneric") || "Xəta baş verdi")
-        router.replace("/results")
+        router.replace(`/${locale}/results`)
       } finally {
         setLoading(false)
       }
@@ -106,7 +106,7 @@ export default function ExamContinuePage({ params }: { params: AnyParams }) {
             attemptId={attemptId}
             userId={user.id}
             onFinished={() => {
-              router.replace(`/results/${attemptId}`)
+              router.replace(`/${locale}/results/${attemptId}`)
             }}
           />
         ) : (

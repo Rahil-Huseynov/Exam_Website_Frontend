@@ -70,7 +70,7 @@ export async function resendVerificationAction(email: string) {
   }
 }
 export async function logoutAction() {
-  redirect("/")
+  redirect(`/{locale}/`)
 }
 export async function verifyTokenAction(token: string) {
   try {

@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { headers } from "next/headers"
 
 import NewsDetailClient from "./news-detail-client"
+import { useLocale } from "@/contexts/locale-context"
 
 const SITE_URL = "https://imtahanver.net"
 
@@ -56,8 +57,11 @@ function getImageUrl(
     return imageUrl
   }
 
+    const { locale } = useLocale()
+
+
   return `${IMAGE_URL}${
-    imageUrl.startsWith("/") ? "" : "/"
+    imageUrl.startsWith(`${locale}/`) ? "" : `/${locale}/`
   }${imageUrl}`
 }
 

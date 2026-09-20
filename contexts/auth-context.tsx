@@ -17,6 +17,7 @@ import {
   clear401Flag,
 } from "@/helper/clearalldata"
 import { useRouter } from "next/navigation"
+import { useLocale } from "./locale-context"
 
 interface AuthContextType {
   user: User | null
@@ -158,6 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     if (isReloadingRef.current) return
     isReloadingRef.current = true
+    const { locale } = useLocale()
 
     try {
       if (user?.id) await revokeAllExamTokens(user.id)
@@ -165,7 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const pairs = listAllExamTokenPairs()
         for (const p of pairs) clearExamToken(p.bankId)
       }
-    } catch {}
+    } catch { }
 
     didLogoutRef.current = true
     setUser(null)
@@ -175,11 +177,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
         method: "POST",
       })
-    } catch {}
+    } catch { }
 
     if (typeof window !== "undefined") clearAllData()
 
-    router.replace("/login") 
+    router.replace(`/${locale}/login`)
   }, [user?.id, router])
 
   const value = useMemo(

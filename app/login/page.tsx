@@ -29,7 +29,7 @@ export default function LoginPage() {
 
    useEffect(() => {
     if (user !== null) {
-      router.replace("/dashboard")
+      router.replace(`/${locale}/dashboard`)
     }
   }, []);
   
@@ -56,9 +56,9 @@ export default function LoginPage() {
       const user = await refreshUser()
       toast.success(t("loginSuccess"), { toastId: `login:ok:${Date.now()}` })
       if (user && (user.role === "admin" || user.role === "superadmin")) {
-        router.replace("/admin")
+        router.replace(`/${locale}/admin`)
       } else {
-        router.replace("/dashboard")
+        router.replace(`/${locale}/dashboard`)
       }
     } catch (err: any) {
     } finally {
@@ -98,7 +98,7 @@ export default function LoginPage() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="password">{t("password")}</Label>
-                    <Link href="/forgot-password" className="text-sm text-violet-600 hover:underline">
+                    <Link href={`/${locale}/forgot-password`} className="text-sm text-violet-600 hover:underline">
                       {t("forgot")}
                     </Link>
                   </div>
@@ -123,7 +123,7 @@ export default function LoginPage() {
                 </Button>
                 <p className="text-sm text-muted-foreground text-center">
                   {t("noAccount")}{" "}
-                  <Link href="/register" className="text-violet-600 hover:underline font-medium">
+                  <Link href={`/${locale}/register`} className="text-violet-600 hover:underline font-medium">
                     {t("register")}
                   </Link>
                 </p>

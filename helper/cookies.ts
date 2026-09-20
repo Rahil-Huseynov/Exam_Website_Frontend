@@ -1,16 +1,18 @@
 "use server"
 
+import { useLocale } from "@/contexts/locale-context"
 import { refresh } from "next/cache"
 import { cookies } from "next/headers"
 
 export async function setAuthCookie(token: string) {
+  const { locale } = useLocale()
   const cookieStore = await cookies()
   cookieStore.set("accessToken", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     maxAge: 60 * 60 * 24 * 7,
-    path: "/",
+    path: `/${locale}/`,
   })
 }
 

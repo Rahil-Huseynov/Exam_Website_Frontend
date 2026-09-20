@@ -64,12 +64,12 @@ export default function AdminPage() {
     if (typeof window !== "undefined") {
       localStorage.clear()
     }
-    window.location.href = "/login"
+    window.location.href = `/${locale}/login`
   }
 
   useEffect(() => {
     if (!loading && user && user.role !== "admin" && user.role !== "superadmin") {
-      router.push("/dashboard")
+      router.push(`/${locale}/dashboard`)
     }
   }, [user, loading, router])
 

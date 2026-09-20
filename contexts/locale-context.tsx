@@ -7,7 +7,12 @@ import {
   useState,
   type ReactNode,
 } from "react"
-import { usePathname, useRouter } from "next/navigation"
+
+import {
+  usePathname,
+  useRouter,
+} from "next/navigation"
+
 import type { Locale } from "@/lib/i18n"
 
 interface LocaleContextType {
@@ -15,36 +20,58 @@ interface LocaleContextType {
   setLocale: (locale: Locale) => void
 }
 
-const LocaleContext = createContext<LocaleContextType | undefined>(
-  undefined
-)
+const LocaleContext =
+  createContext<
+    LocaleContextType | undefined
+  >(undefined)
 
-const LOCALES: Locale[] = ["az", "en", "ru"]
+const LOCALES: Locale[] = [
+  "az",
+  "en",
+  "ru",
+]
 
-function getLocaleFromPathname(pathname: string): Locale {
-  const firstSegment = pathname.split("/")[1]
+function getLocaleFromPathname(
+  pathname: string
+): Locale {
+  const firstSegment =
+    pathname
+      .split("/")
+      .filter(Boolean)[0]
 
-  if (LOCALES.includes(firstSegment as Locale)) {
-    return firstSegment as Locale
+  if (
+    firstSegment === "az" ||
+    firstSegment === "en" ||
+    firstSegment === "ru"
+  ) {
+    return firstSegment
   }
 
   return "az"
 }
 
-function removeLocaleFromPathname(pathname: string): string {
-  const segments = pathname.split("/").filter(Boolean)
+function removeLocaleFromPathname(
+  pathname: string
+): string {
+  const segments =
+    pathname
+      .split("/")
+      .filter(Boolean)
+
+  if (
+    segments.length > 0 &&
+    LOCALES.includes(
+      segments[0] as Locale
+    )
+  ) {
+    segments.shift()
+  }
 
   if (segments.length === 0) {
     return "/"
   }
 
-  if (LOCALES.includes(segments[0] as Locale)) {
-    segments.shift()
-  }
-
-  return segments.length > 0
-    ? `/${segments.join("/")}`
-    : "/"
+  return `/${segments.join("/")}`
 }
 
 export function LocaleProvider({
@@ -55,37 +82,71 @@ export function LocaleProvider({
   const pathname = usePathname()
   const router = useRouter()
 
-  const [locale, setLocaleState] = useState<Locale>(() =>
-    getLocaleFromPathname(pathname || "/")
-  )
-
-  useEffect(() => {
-    const urlLocale = getLocaleFromPathname(
-      pathname || "/"
+  /*
+   * URL-dən ilkin dili götürürük.
+   */
+  const [locale, setLocaleState] =
+    useState<Locale>(() =>
+      getLocaleFromPathname(
+        pathname || "/"
+      )
     )
 
-    if (urlLocale !== locale) {
-      setLocaleState(urlLocale)
-    }
+  /*
+   * URL dəyişəndə locale-i yenilə.
+   */
+  useEffect(() => {
+    const currentPath =
+      pathname || "/"
 
-    document.documentElement.lang = urlLocale
-  }, [pathname, locale])
+    const detectedLocale =
+      getLocaleFromPathname(
+        currentPath
+      )
 
-  const setLocale = (newLocale: Locale) => {
+    setLocaleState(
+      detectedLocale
+    )
+
+    document.documentElement.lang =
+      detectedLocale
+  }, [pathname])
+
+  /*
+   * Dil dəyişdirildikdə URL-də locale
+   * qorunur.
+   *
+   * /az/exams
+   *      ↓
+   * /en/exams
+   *
+   * /ru/news
+   *      ↓
+   * /en/news
+   */
+  const setLocale = (
+    newLocale: Locale
+  ) => {
     if (newLocale === locale) {
       return
     }
 
-    const currentPath = removeLocaleFromPathname(
-      pathname || "/"
-    )
+    const currentPath =
+      removeLocaleFromPathname(
+        pathname || "/"
+      )
 
     const newPath =
       currentPath === "/"
         ? `/${newLocale}`
         : `/${newLocale}${currentPath}`
 
-    setLocaleState(newLocale)
+    setLocaleState(
+      newLocale
+    )
+
+    document.documentElement.lang =
+      newLocale
 
     router.push(newPath)
   }
@@ -103,13 +164,14 @@ export function LocaleProvider({
 }
 
 export function useLocale() {
-  const ctx = useContext(LocaleContext)
+  const context =
+    useContext(LocaleContext)
 
-  if (!ctx) {
+  if (!context) {
     throw new Error(
       "useLocale must be used within a LocaleProvider"
     )
   }
 
-  return ctx
+  return context
 }

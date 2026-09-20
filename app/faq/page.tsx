@@ -111,7 +111,7 @@ export default function FAQPage() {
               </p>
 
               <a
-                href="/contact"
+                href={`/${locale}/contact`}
                 className="inline-block mt-4 px-8 py-3 rounded-full bg-gradient-to-r from-primary via-secondary to-accent text-white font-semibold hover:opacity-90 transition-opacity"
               >
                 {t("contact")}

@@ -47,8 +47,8 @@ export default function VerifyPage() {
   }
 
   useEffect(() => {
-    if (!email) router.push("/register")
-  }, [email, router])
+    if (!email) router.push(`/${locale}/register`)
+  }, [email, router, locale])
 
   async function handleVerify(e: React.FormEvent) {
     e.preventDefault()
@@ -68,7 +68,7 @@ export default function VerifyPage() {
         setStatus("success")
         toastOnce("success", t("verifySuccess"))
 
-        setTimeout(() => router.push("/dashboard"), 1200)
+        setTimeout(() => router.push(`/${locale}/dashboard`), 1200)
       } else {
         setStatus("error")
         const msg = result?.error || t("verifyFailed")
@@ -113,7 +113,7 @@ export default function VerifyPage() {
 
       <div className="relative min-h-screen flex items-center justify-center p-4">
         <div className="w-full max-w-md">
-          <Link href="/" className="flex items-center justify-center gap-2 mb-6">
+          <Link href={`/${locale}/`} className="flex items-center justify-center gap-2 mb-6">
             <img className="w-40" src="/Logo.png" alt="İmtahanVer.net logosu" />
           </Link>
 

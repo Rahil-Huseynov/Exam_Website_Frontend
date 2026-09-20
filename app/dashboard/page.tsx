@@ -246,7 +246,7 @@ export default function DashboardPage() {
 
     if (!user) {
       setLoading(false)
-      router.replace("/login")
+      router.replace(`/${locale}/login`)
       return
     }
 
@@ -321,7 +321,7 @@ export default function DashboardPage() {
   function resolveLogoUrl(logo?: string | null) {
     if (!logo) return ""
     if (/^https?:\/\//i.test(logo)) return logo
-    return `${apiBase}${logo.startsWith("/") ? "" : "/"}${logo}`
+    return `${apiBase}${logo.startsWith(`/${locale}/`) ? "" : `/${locale}/`}${logo}`
   }
 
   const filteredExams = useMemo(() => {
@@ -354,7 +354,7 @@ export default function DashboardPage() {
     try {
       if (!user?.id) {
         toastError(t("errNotLoggedIn") || t("errLoginRequired"))
-        router.push("/login")
+        router.push(`/${locale}/login`)
         return
       }
 
@@ -510,7 +510,7 @@ export default function DashboardPage() {
               <CardContent>
                 <div className="text-3xl font-bold tracking-tight">{fromCents(balanceCents)} AZN</div>
                 <Button asChild variant="link" className="px-0 h-auto mt-4 text-primary/70 hover:text-primary">
-                  <Link href="/balance" className="flex items-center gap-1 text-sm">
+                  <Link href={`/${locale}/balance`} className="flex items-center gap-1 text-sm">
                     {t("dashboardIncreaseBalance")}
                     <ArrowRight className="h-3 w-3" />
                   </Link>
@@ -629,7 +629,7 @@ export default function DashboardPage() {
                               {startingId === bankId ? t("creatingToken") || "..." : t("retake")}
                             </Button>
 
-                            <Link href={`/results/${a?.id}`}>
+                            <Link href={`/${locale}/results/${a?.id}`}>
                               <Button variant="outline" size="sm" className="rounded-lg h-9 px-3">
                                 {t("viewResults")}
                               </Button>

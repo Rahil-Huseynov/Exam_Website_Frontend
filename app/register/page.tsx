@@ -47,7 +47,7 @@ export default function RegisterPage() {
 
   useEffect(() => {
     if (user !== null) {
-      router.replace("/dashboard")
+      router.replace(`/${locale}/dashboard`)
     }
   }, []);
   
@@ -199,7 +199,7 @@ export default function RegisterPage() {
 
                 <p className="text-sm text-muted-foreground text-center">
                   {t("alreadyHaveAccount")}{" "}
-                  <Link href="/login" className="text-violet-600 hover:underline font-medium">
+                  <Link href={`/${locale}/login`} className="text-violet-600 hover:underline font-medium">
                     {t("login")}
                   </Link>
                 </p>
