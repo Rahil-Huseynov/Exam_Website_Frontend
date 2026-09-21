@@ -6,12 +6,8 @@ const DEFAULT_LOCALE = "az"
 
 type Locale = (typeof LOCALES)[number]
 
-function getLocaleFromPathname(
-  pathname: string
-): Locale | null {
-  const firstSegment = pathname
-    .split("/")
-    .filter(Boolean)[0]
+function getLocaleFromPathname(pathname: string): Locale | null {
+  const firstSegment = pathname.split("/").filter(Boolean)[0]
 
   if (
     firstSegment === "az" ||
@@ -24,9 +20,7 @@ function getLocaleFromPathname(
   return null
 }
 
-function isStaticOrSystemPath(
-  pathname: string
-): boolean {
+function isStaticOrSystemPath(pathname: string): boolean {
   return (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
@@ -39,29 +33,45 @@ function isStaticOrSystemPath(
   )
 }
 
-export async function proxy(
-  req: NextRequest
-) {
+function isPaymentCallbackPath(pathname: string): boolean {
+  return (
+    pathname === "/payment-success" ||
+    pathname === "/payment-error"
+  )
+}
+
+export async function proxy(req: NextRequest) {
   const pathname = req.nextUrl.pathname
 
-  /*
-   * ----------------------------------------
-   * 1. STATIC / SYSTEM ROUTES
-   * ----------------------------------------
-   */
+  // ----------------------------------------
+  // 1. STATIC / SYSTEM ROUTES
+  // ----------------------------------------
 
   if (isStaticOrSystemPath(pathname)) {
     return NextResponse.next()
   }
 
-  /*
-   * ----------------------------------------
-   * 2. MAINTENANCE CHECK
-   * ----------------------------------------
-   */
+  if (isPaymentCallbackPath(pathname)) {
+    const requestHeaders = new Headers(req.headers)
 
-  const API_URL =
-    process.env.NEXT_PUBLIC_API_URL
+    requestHeaders.set("x-locale", DEFAULT_LOCALE)
+    requestHeaders.set(
+      "x-original-pathname",
+      pathname
+    )
+
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    })
+  }
+
+  // ----------------------------------------
+  // 3. MAINTENANCE CHECK
+  // ----------------------------------------
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL
 
   if (API_URL) {
     try {
@@ -95,32 +105,25 @@ export async function proxy(
     }
   }
 
-  /*
-   * ----------------------------------------
-   * 3. GET LOCALE
-   * ----------------------------------------
-   */
+  // ----------------------------------------
+  // 4. GET LOCALE
+  // ----------------------------------------
 
-  const locale =
-    getLocaleFromPathname(pathname)
+  const locale = getLocaleFromPathname(pathname)
 
-  /*
-   * ----------------------------------------
-   * 4. NO LOCALE
-   * ----------------------------------------
-   *
-   * /
-   *   -> /az
-   *
-   * /exams
-   *   -> /az/exams
-   *
-   * /news
-   *   -> /az/news
-   *
-   * Bu redirect yalnız URL-də locale
-   * olmadıqda işləyir.
-   */
+  // ----------------------------------------
+  // 5. NO LOCALE
+  // ----------------------------------------
+  //
+  // /
+  //   -> /az
+  //
+  // /exams
+  //   -> /az/exams
+  //
+  // /news
+  //   -> /az/news
+  //
 
   if (!locale) {
     const url = req.nextUrl.clone()
@@ -133,15 +136,11 @@ export async function proxy(
     return NextResponse.redirect(url)
   }
 
-  /*
-   * ----------------------------------------
-   * 5. REQUEST HEADERS
-   * ----------------------------------------
-   */
+  // ----------------------------------------
+  // 6. REQUEST HEADERS
+  // ----------------------------------------
 
-  const requestHeaders = new Headers(
-    req.headers
-  )
+  const requestHeaders = new Headers(req.headers)
 
   requestHeaders.set(
     "x-locale",
@@ -153,23 +152,9 @@ export async function proxy(
     pathname
   )
 
-  /*
-   * ----------------------------------------
-   * 6. REMOVE LOCALE FOR INTERNAL ROUTE
-   * ----------------------------------------
-   *
-   * /az
-   *    -> /
-   *
-   * /az/exams
-   *    -> /exams
-   *
-   * /en/exams
-   *    -> /exams
-   *
-   * /ru/news/123
-   *    -> /news/123
-   */
+  // ----------------------------------------
+  // 7. REMOVE LOCALE FOR INTERNAL ROUTE
+  // ----------------------------------------
 
   const pathnameWithoutLocale =
     pathname.replace(
@@ -179,11 +164,9 @@ export async function proxy(
       ""
     ) || "/"
 
-  const rewriteUrl =
-    req.nextUrl.clone()
+  const rewriteUrl = req.nextUrl.clone()
 
-  rewriteUrl.pathname =
-    pathnameWithoutLocale
+  rewriteUrl.pathname = pathnameWithoutLocale
 
   return NextResponse.rewrite(
     rewriteUrl,

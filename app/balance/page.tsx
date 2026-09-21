@@ -64,6 +64,8 @@ export default function BalancePage() {
       return
     }
 
+    localStorage.setItem("payment_locale", locale)
+
     setLoading(true)
     try {
       const orderId = `BALANCE_${user.id}_${Date.now()}`
