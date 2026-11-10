@@ -63,9 +63,8 @@ const toAbsImage = (u: string) => {
     return u
   }
 
-  return `${NEXT_PUBLIC_API_URL_FOR_IMAGE}${
-    u.startsWith("/") ? "" : "/"
-  }${u}`
+  return `${NEXT_PUBLIC_API_URL_FOR_IMAGE}${u.startsWith("/") ? "" : "/"
+    }${u}`
 }
 
 type NewsLanguage = "az" | "en" | "ru"
@@ -110,7 +109,7 @@ export default function NewsDetailClient() {
         if (!cancelled) {
           toast.error(
             error?.message ||
-              "Failed to load news"
+            "Failed to load news"
           )
 
           setItem(null)
@@ -235,30 +234,49 @@ export default function NewsDetailClient() {
                           item.createdAt
                         }
                       >
-                        {new Date(
-                          item.publishedAt ||
-                            item.createdAt
-                        ).toLocaleDateString(
-                          locale === "az"
-                            ? "az-AZ"
-                            : locale === "ru"
-                              ? "ru-RU"
-                              : "en-US",
-                          {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
+                        {(() => {
+                          const date = new Date(
+                            item.publishedAt || item.createdAt
+                          )
+
+                          if (Number.isNaN(date.getTime())) {
+                            return item.publishedAt || item.createdAt
                           }
-                        )}
+
+                          if (lang === "az") {
+                            const months = [
+                              "yanvar",
+                              "fevral",
+                              "mart",
+                              "aprel",
+                              "may",
+                              "iyun",
+                              "iyul",
+                              "avqust",
+                              "sentyabr",
+                              "oktyabr",
+                              "noyabr",
+                              "dekabr",
+                            ]
+
+                            return `${date.getDate()} ${months[date.getMonth()]
+                              } ${date.getFullYear()}`
+                          }
+
+                          return new Intl.DateTimeFormat(
+                            lang === "ru" ? "ru-RU" : "en-US",
+                            {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                              timeZone: "Europe/Warsaw",
+                            }
+                          ).format(date)
+                        })()}
                       </time>
                     </CardDescription>
 
                   </div>
-
-                  <Badge className="bg-gradient-to-r from-primary via-secondary to-accent text-white border-0 shrink-0">
-                    {t("newsBadge")}
-                  </Badge>
-
                 </div>
               </CardHeader>
 
@@ -342,7 +360,7 @@ export default function NewsDetailClient() {
 
                         toast.success(
                           t("linkCopied") ||
-                            "Link copied!"
+                          "Link copied!"
                         )
                       } catch {
                         toast.error(

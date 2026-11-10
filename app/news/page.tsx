@@ -49,9 +49,8 @@ const toAbsImage = (u: string) => {
     return u
   }
 
-  return `${NEXT_PUBLIC_API_URL_FOR_IMAGE}${
-    u.startsWith("/") ? "" : "/"
-  }${u}`
+  return `${NEXT_PUBLIC_API_URL_FOR_IMAGE}${u.startsWith("/") ? "" : "/"
+    }${u}`
 }
 
 export default function NewsPage() {
@@ -120,23 +119,51 @@ export default function NewsPage() {
   }
 
   const formatDate = (date: string) => {
-    try {
-      return new Date(date).toLocaleDateString(
-        locale === "az"
-          ? "az-AZ"
-          : locale === "ru"
-            ? "ru-RU"
-            : "en-US",
-        {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        }
-      )
-    } catch {
+  if (!date) return ""
+
+  try {
+    const parsedDate = new Date(date)
+
+    if (Number.isNaN(parsedDate.getTime())) {
       return date
     }
+
+    if (lang === "az") {
+      const months = [
+        "yanvar",
+        "fevral",
+        "mart",
+        "aprel",
+        "may",
+        "iyun",
+        "iyul",
+        "avqust",
+        "sentyabr",
+        "oktyabr",
+        "noyabr",
+        "dekabr",
+      ]
+
+      const day = parsedDate.getDate()
+      const month = months[parsedDate.getMonth()]
+      const year = parsedDate.getFullYear()
+
+      return `${day} ${month} ${year}`
+    }
+
+    return new Intl.DateTimeFormat(
+      lang === "ru" ? "ru-RU" : "en-US",
+      {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        timeZone: "Europe/Warsaw",
+      }
+    ).format(parsedDate)
+  } catch {
+    return date
   }
+}
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/5 to-accent/5 flex flex-col">
@@ -164,9 +191,8 @@ export default function NewsPage() {
               disabled={loading}
             >
               <RefreshCcw
-                className={`h-4 w-4 mr-2 ${
-                  loading ? "animate-spin" : ""
-                }`}
+                className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""
+                  }`}
               />
 
               {t("newsRefresh")}
@@ -266,10 +292,6 @@ export default function NewsPage() {
                             </time>
                           </CardDescription>
                         </div>
-
-                        <Badge className="bg-gradient-to-r from-primary via-secondary to-accent text-white border-0 shrink-0">
-                          {t("newsBadge")}
-                        </Badge>
                       </div>
                     </CardHeader>
 
