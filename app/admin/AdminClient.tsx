@@ -62,7 +62,7 @@ export default function AdminPage() {
 
   const logout = () => {
     if (typeof window !== "undefined") {
-      localStorage.clear()
+      localStorage.removeItem("accessToken")
     }
     window.location.href = `/${locale}/login`
   }

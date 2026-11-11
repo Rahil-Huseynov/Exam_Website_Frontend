@@ -22,10 +22,10 @@ export function Navbar() {
   const { user } = useAuth()
   const { locale, setLocale } = useLocale()
   const { t } = useTranslation(locale)
-  
+
   const logout = () => {
     if (typeof window !== "undefined") {
-      localStorage.clear()
+      localStorage.removeItem("accessToken")
     }
     window.location.href = `/${locale}/login`
   }

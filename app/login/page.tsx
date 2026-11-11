@@ -23,7 +23,7 @@ export default function LoginPage() {
   const router = useRouter()
   useEffect(() => {
     if (typeof window !== "undefined") {
-      localStorage.clear();
+      localStorage.removeItem("accessToken");
     }
   }, []);
 
