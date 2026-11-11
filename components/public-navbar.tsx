@@ -13,6 +13,7 @@ import {
 import { ArrowDownToLine, Globe, Menu, X } from "lucide-react"
 import { useEffect, useState } from "react"
 import { ThemeToggle } from "./ThemeToggle"
+import { Capacitor } from "@capacitor/core"
 
 export function PublicNavbar() {
   const { locale, setLocale } = useLocale()
@@ -103,14 +104,16 @@ export function PublicNavbar() {
             </DropdownMenu>
 
             <ThemeToggle />
-            <Link
-              href={`/${locale}/download`}
-              aria-label="Download app"
-              title="Download app"
-              className="group inline-flex h-8 w-8 items-center justify-center rounded-fulls text-muted-foreground transition-all duration-200 hover:border-primary hover:bg-primary/10 hover:text-primary active:scale-95"
-            >
-              <ArrowDownToLine className="h-5 w-5 transition-transform duration-200 group-hover:translate-y-0.5" />
-            </Link>
+            {!Capacitor.isNativePlatform() && (
+              <Link
+                href={`/${locale}/download`}
+                aria-label="Download app"
+                title="Download app"
+                className="group inline-flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-all duration-200 hover:border-primary hover:bg-primary/10 hover:text-primary active:scale-95"
+              >
+                <ArrowDownToLine className="h-5 w-5 transition-transform duration-200 group-hover:translate-y-0.5" />
+              </Link>
+            )}
             <Button asChild variant="ghost" className="rounded-full hidden xl:flex">
               <Link href={`/${locale}/login`}>{t("login")}</Link>
             </Button>
