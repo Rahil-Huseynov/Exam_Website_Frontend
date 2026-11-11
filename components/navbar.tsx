@@ -16,8 +16,7 @@ import { Globe, Menu, Wallet, LogOut, Shield, ArrowDownToLine } from "lucide-rea
 import { fromCents, toCents } from "@/lib/utils"
 import { useRouter } from "next/navigation"
 import { ThemeToggle } from "./ThemeToggle"
-import { Capacitor } from "@capacitor/core/types/global"
-
+import { Capacitor } from "@capacitor/core"
 
 export function Navbar() {
   const { user } = useAuth()

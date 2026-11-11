@@ -6,7 +6,8 @@
     "build": "next build",
     "dev": "next dev",
     "lint": "eslint .",
-    "start": "next start"
+    "start": "next start",
+    "build:apk": "npm run build && npx cap sync android && cd android && ./gradlew assembleRelease && cd .. && mkdir -p public/downloads && cp android/app/build/outputs/apk/release/ImtahanVer-v1.0.apk public/downloads/imtahanver.apk"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.1",

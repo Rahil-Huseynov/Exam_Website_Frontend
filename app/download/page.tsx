@@ -80,8 +80,7 @@ export default function DownloadPage() {
               </div>
 
               <a
-                href="/downloads/imtahanver.apk"
-                download
+                href="/api/download-apk"
                 className="flex items-center justify-center gap-3 w-full px-6 py-4 rounded-2xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold hover:opacity-90 transition-opacity"
               >
                 <Download className="w-5 h-5" />
