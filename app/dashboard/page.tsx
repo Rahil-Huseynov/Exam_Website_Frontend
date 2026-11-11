@@ -321,7 +321,7 @@ export default function DashboardPage() {
   function resolveLogoUrl(logo?: string | null) {
     if (!logo) return ""
     if (/^https?:\/\//i.test(logo)) return logo
-    return `${apiBase}${logo.startsWith(`/${locale}/`) ? "" : `/${locale}/`}${logo}`
+    return `${apiBase}${logo}`
   }
 
   const filteredExams = useMemo(() => {
