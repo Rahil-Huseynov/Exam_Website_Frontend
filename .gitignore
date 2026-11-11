@@ -1,6 +1,6 @@
 # dependencies
 node_modules/
-
+B
 # Next.js
 .next/
 out/
@@ -54,3 +54,44 @@ android/app/src/main/assets/public/
 # Misc
 coverage/
 dist/
+
+
+# Android APK files
+*.apk
+*.aab
+/public/downloads/*.apk
+android/**/*.apk
+android/**/*.aab
+android/app/build/
+android/build/
+
+# Android signing credentials
+Bandroid/keystore.properties
+android/app/*.jks
+android/app/*.keystore
+
+
+# Android signing credentials
+android/keystore.properties
+android/keystore.properties.save
+android/app/*.jks
+android/app/*.keystore
+
+# APK files
+*.apk
+*.aab
+
+# Android build files
+android/build/
+android/app/build/
+
+# Android signing credentials
+android/keystore.properties
+android/keystore.properties.save
+
+# APK and AAB files
+*.apk
+*.aab
+
+# Temporary files
+android/variables.gradleo
